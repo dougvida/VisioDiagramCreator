@@ -1,0 +1,607 @@
+﻿using Microsoft.Office.Interop.Visio;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using VisioDiagramCreator.Models;
+using Visio1 = Microsoft.Office.Interop.Visio;
+using System.Windows.Forms;
+
+namespace VisioDiagramCreator.Visio
+{
+	public class VisioHelper
+	{
+		public Visio1.Application appVisio;
+		public Visio1.Documents vDocuments;
+		public Visio1.Document vDocument;
+		Visio1.Document stencils;
+		public Visio1.Page pageObj;
+
+		/// <summary>
+		/// ShowVisioDiagram
+		/// This method can control if the Visio document is visiable or not.
+		/// One thing I have noticed is if the visio document is hidden you will need to
+		/// open Visio to open the hidden file to save it or discard it.
+		/// </summary>
+		/// <param name="show"><options>VisioVariables.ShowDiagram.NoShow or VisioVariables.ShowDiagram.Show</options></param>
+		public void ShowVisioDiagram(VisioVariables.ShowDiagram show)
+		{
+			if (show == VisioVariables.ShowDiagram.Show)
+			{
+				appVisio.Visible = true;	// show the diagram
+			}
+			else
+			{
+				appVisio.Visible = false;	// dont show the diagram
+			}
+		}
+
+		/// <summary>
+		/// VisioForceCloseAll
+		/// Close all the Visio documents
+		/// </summary>
+		public void VisioForceCloseAll()
+		{
+			if (vDocuments != null)
+			{
+				while (vDocuments.Count > 0)
+				{
+					vDocuments.Application.ActiveDocument.Close();
+				}
+			}
+			if (appVisio != null)
+			{
+				appVisio.Quit();
+			}
+		}
+
+		/// <summary>
+		/// SetupPage
+		/// Set the Visio diagram page Orientation and page size
+		/// </summary>
+		/// <param name="currentPage">Current visio page</param>
+		/// <param name="orientation"><options>"Portrait" or "Landscape"</options></param>
+		/// <param name="size"><options>"Letter", "Tabloid", "Ledger", "Legal", "A3", "A4"</options></param>
+		/// <return>bool<options>true error or false success</options></return>
+		private bool SetupDiagramPage(Visio1.Page currentPage, string orientation, string size)
+		{
+			Visio1.Shape sheet = currentPage.PageSheet;
+			string width = string.Empty;
+			string height = string.Empty;
+
+			if (currentPage == null || string.IsNullOrEmpty(orientation) || string.IsNullOrEmpty(size) )
+			{
+				return true;
+			}
+
+			switch(size.ToUpper())
+			{
+				case "TABLOID":
+					width = "8.5 in";
+					height = "11 in";
+					break;
+				case "LEDGER":
+					width = "8.5 in";
+					height = "11 in";
+					break;
+				case "LEGAL":
+					width = "8.5 in";
+					height = "11 in";
+					break;
+				case "A3":
+					width = "8.5 in";
+					height = "11 in";
+					break;
+				case "A4":
+					width = "8.5 in";
+					height = "11 in";
+					break;
+				case "LETTER":
+				default:
+					width = "8.5 in";
+					height = "11 in";
+					break;
+			}
+
+			switch(orientation.ToUpper())
+			{
+				case "LANDSCAPE":
+					currentPage.PageSheet.Cells["PageWidth"].FormulaU = height;
+					currentPage.PageSheet.Cells["PageHeight"].FormulaU = width;
+					currentPage.PageSheet.Cells["PrintPageOrientation"].FormulaU = "2";
+
+					//currentPage.PageSheet.get_CellsSRC((short)Visio1.VisSectionIndices.visSectionObject, (short)Visio1.VisRowIndices.visRowPrintProperties, (short)Visio1.VisCellIndices.visPageWidth).FormulaU = height;
+					//currentPage.PageSheet.get_CellsSRC((short)Visio1.VisSectionIndices.visSectionObject, (short)Visio1.VisRowIndices.visRowPrintProperties, (short)Visio1.VisCellIndices.visPageHeight).FormulaU = width;
+					//currentPage.PageSheet.get_CellsSRC((short)Visio1.VisSectionIndices.visSectionObject, (short)Visio1.VisRowIndices.visRowPrintProperties, (short)Visio1.VisCellIndices.visPageDrawSizeType).FormulaU = "3";
+					break;
+				case "PORTRAIT":
+				default:
+					currentPage.PageSheet.Cells["PageWidth"].FormulaU = width;
+					currentPage.PageSheet.Cells["PageHeight"].FormulaU = height;
+					currentPage.PageSheet.Cells["PrintPageOrientation"].FormulaU = "1";
+
+					//sheet.get_CellsSRC((short)Visio1.VisSectionIndices.visSectionObject, (short)Visio1.VisRowIndices.visRowPrintProperties, (short)Visio1.VisCellIndices.visPageWidth).FormulaU = height;
+					//sheet.get_CellsSRC((short)Visio1.VisSectionIndices.visSectionObject, (short)Visio1.VisRowIndices.visRowPrintProperties, (short)Visio1.VisCellIndices.visPageHeight).FormulaU = width;
+					//sheet.get_CellsSRC((short)Visio1.VisSectionIndices.visSectionObject, (short)Visio1.VisRowIndices.visRowPrintProperties, (short)Visio1.VisCellIndices.visPageDrawSizeType).FormulaU = "1";
+					break;
+			}
+			return false;	// successful
+		}
+
+		/// <summary>
+		/// _setupVisioDiagram
+		/// this will setup the visio document
+		/// </summary>
+		/// <param name="allData">DiagramData</param>
+		/// <returns>Visio.Pages</returns>
+		private Visio1.Pages _setupVisioDiagram(DiagramData allData, VisioVariables.ShowDiagram dspMode)
+		{
+			string sErr = string.Empty;
+
+			// Start Visio
+			appVisio = new Visio1.Application();
+			this.ShowVisioDiagram(dspMode);					// don't show the diagram
+
+			vDocuments = appVisio.Documents;
+			try
+			{ 
+				//var visioDocument = docsObj.Add(diagramData.TemplateFilePath);
+				vDocument = vDocuments.Add(allData.TemplateFilePath);
+			}
+			catch(Exception ex1)
+			{
+				sErr = "Error with the Template file";
+				throw new Exception(sErr, ex1);
+			}
+
+			// this is only needed if the visio template file does not contain the stencil
+			// Use this method if the stencil needs to be added to the Visio document
+			// we should test if stencil is found to determine which one to use
+			//Visio1.Document stincels = appVisio.Documents.Add(diagramData.StencilFilePath);
+			try
+			{
+				// use this method if the template file already contains the stencil
+				stencils = vDocuments[allData.StencilFilePath];
+			}
+			catch(Exception ex2)
+			{
+				sErr = "Error with the stencil file.  Possible issue is the stencil file name changed\nDoes not match what the Template file is using";
+				throw new Exception(sErr, ex2);
+			}
+
+			// this section is if we want to add more than one page to the document
+			Visio1.Pages pagesObj = appVisio.ActiveDocument.Pages;
+			pageObj = pagesObj[1];
+			//pageObj.AutoSize = false;
+			//appVisio.Visible = true;
+			//pageObj.AutoSizeDrawing();
+
+			// Assuming 'No theme' is set for the page, no arrow will be shown so change theme to see connector arrow
+			pageObj.SetTheme("Office Theme");
+
+			// Create a new document.
+			//Visio1.Document doc = vApp.Documents.Add("");
+
+			// The new document will have one page, get the a reference to it.
+			Visio1.Page page1 = vDocument.Pages[1];
+
+			// Add a second page.
+			Visio1.Page page2 = vDocument.Pages.Add();
+
+			// Name the pages. This is what is shown in the page tabs.
+			page1.Name = "Diagram1";
+			page2.Name = "Diagram2";
+
+			// Move the second page to the first position in the list of pages.
+			page2.Index = 1;
+			//return page1.Index;
+
+			// Page 1 is Standard
+			if (!SetupDiagramPage(page1, "Portrait", "Letter"))
+			{
+				double xPosition1 = page1.PageSheet.get_CellsU("PageWidth").ResultIU;
+				double yPosition1 = page1.PageSheet.get_CellsU("PageHeight").ResultIU;
+				var pageOrientation = page1.PageSheet.get_CellsU("PrintPageOrientation").ResultIU;
+			}
+			
+			// Page 2 is Landscape
+			//if (!SetupPage(page2, "Landscape", "Legal"))
+			//{
+			//	double xPosition2 = page2.PageSheet.get_CellsU("PageWidth").ResultIU;
+			//	double yPosition2 = page2.PageSheet.get_CellsU("PageHeight").ResultIU;
+			//	var pageOrientation2 = page2.PageSheet.get_CellsU("PrintPageOrientation").ResultIU;
+			//}
+
+			return pagesObj;
+		}
+
+		/// <summary>
+		/// DrawAllShapes
+		/// Draw all the visio stencils obtained from the data file
+		/// </summary>
+		/// <param name="diagramData">DiagramData</param>
+		/// <exception cref="Exception"></exception>
+		public void DrawAllShapes(DiagramData diagramData, VisioVariables.ShowDiagram dspMode)
+		{
+			Visio1.Pages vPages = _setupVisioDiagram(diagramData, dspMode);
+			Visio1.Shape shpObj = null;
+
+			foreach (Device device in diagramData.Devices)
+			{
+				try
+				{
+					// draw other shapes
+					// add list of shaps to ignore
+					if (!device.ShapeInfo.UniqueKey.Contains("CTS"))
+					{
+						shpObj = _drawShape(device);
+						device.ShapeInfo.ShpObj = shpObj;   // save this stencil object
+					}
+				}
+				catch (Exception ex)
+				{
+					throw new Exception(string.Format("Stencil Name {0} not found.  - {1}",device.ShapeInfo.UniqueKey,ex.Message));
+				}
+			}
+			// use before saving AutoSizeDrawing
+			appVisio.AutoLayout = true;
+			pageObj.AutoSize = true;
+			pageObj.AutoSizeDrawing();
+		}
+
+		/// <summary>
+		/// _drawShape
+		/// draw the visio stencil on the visio document
+		/// update the dictionaries in the DiagramData object for connection info
+		/// </summary>
+		/// <param name="device">Device</param>
+		/// <returns>Visio.Shape object</returns>
+		/// <exception cref="Exception"></exception>		
+		private Visio1.Shape _drawShape(Device device)
+		{
+			Visio1.Master stnObj = stencils.Masters[device.ShapeInfo.StencilImage];
+			if (stnObj == null)
+			{
+				MessageBox.Show("Can't find master stencil: " + device.ShapeInfo.StencilImage);
+				throw new Exception(device.ShapeInfo.StencilImage + "Visio Helper PageStencil");
+			}
+			Visio1.Shape shpObj = appVisio.ActivePage.Drop(stnObj, device.ShapeInfo.Pos_x, device.ShapeInfo.Pos_y);
+			shpObj.NameU = device.ShapeInfo.UniqueKey;
+
+			if ("NetworkPipe".Equals(device.ShapeInfo.StencilImage))
+			{  
+				// we need to resize the stencil NetworkPipe (remember this is rotated 90deg
+				// so we need to go East for Height and South for Width
+				if (device.ShapeInfo.Width > 0.0)
+				{
+					// we need to make wider (increase south)
+					shpObj.Resize(VisResizeDirection.visResizeDirS, device.ShapeInfo.Height, VisUnitCodes.visDrawingUnits);
+				}
+				if (device.ShapeInfo.Height > 0.0)
+				{
+					// we need to make taller (increase east)
+					shpObj.Resize(VisResizeDirection.visResizeDirE, device.ShapeInfo.Width, VisUnitCodes.visDrawingUnits);
+				}
+			}
+			else
+			{
+				// normal stencils are normal (east-width and south-height)
+				if (device.ShapeInfo.Width > 0.0)
+				{
+					// we need to make wider (increase east)
+					shpObj.Resize(VisResizeDirection.visResizeDirE, device.ShapeInfo.Width, VisUnitCodes.visDrawingUnits);
+				}
+				if (device.ShapeInfo.Height > 0.0)
+				{
+					// we need to make taller (increase south)
+					shpObj.Resize(VisResizeDirection.visResizeDirS, device.ShapeInfo.Height, VisUnitCodes.visDrawingUnits);
+				}
+			}
+
+			//var linePatternCell = shpConn.get_CellsU("LinePattern");
+			string rgb = string.Empty;
+			switch (device.ShapeInfo.FillColor.Trim().ToUpper())
+			{
+				case "YELLOW":
+					rgb = VisioVariables.COLOR_YELLOW_LIGHT;
+					break;
+				case "GREEN":
+					rgb = VisioVariables.COLOR_GREEN_SERVER;
+					break;
+				case "RED":
+					rgb = VisioVariables.COLOR_RED;
+					break;
+				case "BLUE":
+					rgb = VisioVariables.COLOR_BLUE_SERVER;
+					break;
+				case "CYAN":
+					rgb = VisioVariables.COLOR_CYAN;
+					break;
+				case "ORANGE":
+					rgb = VisioVariables.COLOR_ORANGE_SERVER;
+					break;
+				case "LIGHT BLUE":
+					rgb = VisioVariables.COLOR_BLUE_LIGHT;
+					break;
+				default:
+					// no fill
+					break;
+			}
+			if (!string.IsNullOrEmpty(rgb))
+			{
+				var targetCell = shpObj.get_CellsSRC(
+					 (short)Visio1.VisSectionIndices.visSectionObject,
+					 (short)Visio1.VisRowIndices.visRowFill,
+					 (short)Visio1.VisCellIndices.visFillForegnd);
+				targetCell.FormulaU = rgb;
+			}
+
+
+			if (!string.IsNullOrEmpty(device.ShapeInfo.StencilLabel))
+			{
+				shpObj.Text = device.ShapeInfo.StencilLabel;
+				//shpObj.TextStyleKeepFmt = "Normal";		// Using this code would not allow the font size to be changed
+				//shpObj.Cells("Char.Size").FormulaU = "8 pt";
+				//string fontSize = shpObj.get_Cells("Char.Size").Formula;
+
+				// check if we have an IP that needs to be displayed
+				if (!string.IsNullOrEmpty(device.OmniIP))
+				{
+					shpObj.Text += " (" + device.OmniIP + ")";
+				}
+				if (!string.IsNullOrEmpty(device.OmniPorts))
+				{
+					shpObj.Text += " (" + device.OmniPorts + ")";
+				}
+				int textLen = shpObj.Text.Length;
+
+
+				//shpObj.Text = box.Name;
+				////set the shape fore color
+				//shpObj.Characters.set_CharProps(
+				//					 (short)Microsoft.Office.Interop.Visio.
+				//						  VisCellIndices.visCharacterColor,
+				//					 (short)Utilities.GetVisioColor(box.ForeColor));
+				//
+				////set the shape back color
+				//shpObj.get_CellsSRC((short)VisSectionIndices.visSectionObject,
+				//			(short)VisRowIndices.visRowFill,
+				//	 (short)VisCellIndices.visFillForegnd).FormulaU =
+				//	 "RGB(" + box.BackColor.R.ToString() + "," + box.BackColor.G.ToString() + ","
+				//	 + box.BackColor.B.ToString() + ")";
+				//
+				//
+
+				// dont resize the text for the Title and Footer stencils
+				//				if (!"Title".Equals(device.ShapeInfo.StencilImage) && !"Footer".Equals(device.ShapeInfo.StencilImage))
+				//				{
+				//					if (textLen > 25)
+				//					{
+				//						double scale = shpObj.get_CellsSRC((short)Visio1.VisSectionIndices.visSectionUser, (short)Visio1.VisRowIndices.visRowUser, (short)Visio1.VisCellIndices.visUserValue).ResultIU;
+				//						scale = 0.5;
+				//						//Then set the font, and the TextMargins(for any that are non - zero) with the following(assuming the normal font size is 12 and the left margin is 4pt.:
+				//						shpObj.get_CellsSRC((short)Visio1.VisSectionIndices.visSectionCharacter, 0, (short)Visio1.VisCellIndices.visCharacterSize).FormulaU = (scale * 12).ToString() + "pt";
+				//						shpObj.get_CellsSRC((short)Visio1.VisSectionIndices.visSectionObject, (short)Visio1.VisRowIndices.visRowText, (short)Visio1.VisCellIndices.visTxtBlkLeftMargin).FormulaU = (scale * 4).ToString() + "pt";
+				//					}
+				//				}
+			}
+			Console.WriteLine("draw Stencil: " + device.ShapeInfo.StencilImage);
+			return shpObj;
+		}
+
+		private void setShapeTextBottom()
+		{
+//			Visio1.Selection sel = null;
+//			
+//			sel = Visio1.ActiveWindow.Selection;
+//
+//			foreach(Visio1.Shape shp in sel)
+//			{ 
+//				// '// 'Add' the Text Transfomrm section, if it's not there:
+//
+//				if (!shp.RowExists   ((short)Visio1.VisSectionIndices.visSectionObject,
+//										 (short)Visio1.VisRowIndices.visRowTextXForm,
+//										 (short)Visio1.VisExistsFlags.visExistsAnywhere ))
+//				{
+//					shp.AddRow((short)Visio1.VisSectionIndices.visSectionObject, (short)Visio1.VisRowIndices.visRowTextXForm, (short)Visio1.VisRowTags.visTagDefault);
+//				}
+//
+//				//	Set the text transform formulas:
+//				shp.get_CellsU("TxtHeight").FormulaForceU = "Height*0";
+//				shp.get_CellsU("TxtPinY").FormulaForceU = "Height*0";
+//
+//				//	Set the paragraph alignment formula:
+//				shp.get_CellsU("VerticalAlign").FormulaForceU = "0";
+//			}
+		}
+
+		/// <summary>
+		/// ConnectShapes
+		/// this function will connect all the shapes that are required.
+		/// it will use the All shaps map to lookup the shape object for the connectFrom and connectTo values
+		/// special handling is if the Shape object for the ShpFromObj and To are null don't draw a connection
+		/// </summary>
+		/// <param name="shapeConnectionMap">Dictionary<int, VisioShapeConnect></int></param>
+		/// <returns>bool - false success</returns>
+		public bool ConnectShapes(DiagramData diagData)
+		{
+			ShapeConnection LookupShapeConnection = null;
+
+			Visio1.Shape shpObj = null;
+			Visio1.Shape shpConn = null;
+
+			// The new document will have one page, get the a reference to it.
+			Visio1.Page page1 = vDocument.Pages[1];
+
+			// Assuming 'No theme' is set for the page, no arrow will be shown so change theme to see connector arrow
+			//page1.SetTheme("Office Theme");
+
+			for (int nCnt = 0; nCnt < diagData.ShapeConnectionsMap.Count; nCnt++)
+			{
+				// nCnt is the key
+				if (diagData.ShapeConnectionsMap.TryGetValue(nCnt, out LookupShapeConnection))
+				{
+					shpObj = LookupShapeConnection.device.ShapeInfo.ShpObj;
+
+					// Drop the built-in connector object somewhere on the page:
+					shpConn = appVisio.ActivePage.Drop(pageObj.Application.ConnectorToolDataObject, 0.0, 0.0);
+
+					// Set the connector properties, using different arrows, colors, and patterns for many-to-many relationships.
+					shpConn.get_CellsU("ShdwPattern").ResultIU = VisioVariables.SHDW_PATTERN;
+					shpConn.get_CellsU("BeginArrow").ResultIU = VisioVariables.ARROW_NONE;
+					shpConn.get_CellsU("EndArrow").ResultIU = VisioVariables.ARROW_NONE;
+					shpConn.get_CellsU("LineColor").FormulaU = VisioVariables.COLOR_BLACK;
+					shpConn.get_CellsU("Rounding").ResultIU = VisioVariables.ROUNDING;
+					shpConn.get_CellsU("LinePattern").ResultIU = VisioVariables.LINE_PATTERN_SOLID;
+					shpConn.get_CellsU("LineWeight").FormulaU = VisioVariables.LINE_WEIGHT_1;
+
+					if (LookupShapeConnection.LinePattern > 0)
+					{
+						shpConn.get_CellsU("LinePattern").ResultIU = LookupShapeConnection.LinePattern;
+					}
+
+					//if("Site-".Contains(LookupShapeConnection.device.ShapeInfo.UniqueKey))
+					//{
+					//	int xx = 0;
+					//}
+					switch ((string)LookupShapeConnection.ArrowType.Trim().ToUpper())
+					{
+						case VisioVariables.sARROW_START:
+							shpConn.get_CellsU("BeginArrow").ResultIU = VisioVariables.BEGIN_ARROW;
+							break;
+						case VisioVariables.sARROW_END:
+							shpConn.get_CellsU("EndArrow").ResultIU = VisioVariables.END_ARROW;
+							break;
+						case VisioVariables.sARROW_BOTH:
+							shpConn.get_CellsU("BeginArrow").ResultIU = VisioVariables.BEGIN_ARROW;
+							shpConn.get_CellsU("EndArrow").ResultIU = VisioVariables.END_ARROW;
+							break;
+						default:
+							shpConn.get_CellsU("BeginArrow").ResultIU = VisioVariables.ARROW_NONE;
+							shpConn.get_CellsU("EndArrow").ResultIU = VisioVariables.ARROW_NONE;
+							break;
+					}
+
+					// set connection text
+					if (!string.IsNullOrEmpty(LookupShapeConnection.LineLabel))
+					{
+						shpConn.Text = LookupShapeConnection.LineLabel;
+					}
+
+					//var linePatternCell = shpConn.get_CellsU("LinePattern");
+					switch (LookupShapeConnection.LineColor.Trim().ToUpper())
+					{
+						case "YELLOW":
+							shpConn.get_CellsU("LineColor").FormulaU = VisioVariables.COLOR_YELLOW_LIGHT;
+							break;
+						case "GREEN":
+							shpConn.get_CellsU("LineColor").FormulaU = VisioVariables.COLOR_GREEN;
+							break;
+						case "RED":
+							shpConn.get_CellsU("LineColor").FormulaU = VisioVariables.COLOR_RED;
+							break;
+						case "BLUE":
+							shpConn.get_CellsU("LineColor").FormulaU = VisioVariables.COLOR_BLUE;
+							break;
+						case "CYAN":
+							shpConn.get_CellsU("LineColor").FormulaU = VisioVariables.COLOR_CYAN;
+							break;
+						case "ORANGE":
+							shpConn.get_CellsU("LineColor").FormulaU = VisioVariables.COLOR_ORANGE;
+							break;
+						case "LIGHT BLUE":
+							shpConn.get_CellsU("LineColor").FormulaU = VisioVariables.COLOR_BLUE_LIGHT;
+							break;
+						default:
+						case "BLACK":
+							shpConn.get_CellsU("LineColor").FormulaU = VisioVariables.COLOR_BLACK;
+							break;
+					}
+
+					if (LookupShapeConnection.ShpFromObj != null && LookupShapeConnection.ShpToObj != null)
+					{
+						// Connect its Begin to the 'ShpFromObj' shape:
+						shpConn.get_CellsU("BeginX").GlueTo(LookupShapeConnection.ShpFromObj.get_CellsU("PinX"));
+						// Connect its End to the 'To' shape:
+						shpConn.get_CellsU("EndX").GlueTo(LookupShapeConnection.ShpToObj.get_CellsU("PinX"));
+						Console.WriteLine("draw connection from: {0} To:{1}", LookupShapeConnection.device.ShapeInfo.ConnectFrom, LookupShapeConnection.device.ShapeInfo.ConnectTo);
+					}
+					else
+					{
+						Console.WriteLine("SKIP drawing this connection from: {0} To:{1}", LookupShapeConnection.device.ShapeInfo.ConnectFrom, LookupShapeConnection.device.ShapeInfo.ConnectTo);
+
+					}
+				}
+			}
+			return false;
+		}
+
+		/// <summary>
+		/// ListStencils
+		/// List all the stencils in the master stencil document
+		/// </summary>
+		public void ListDocuymentStencils(DiagramData diagramData)
+		{
+			Visio1.Pages vPages = _setupVisioDiagram(diagramData, VisioVariables.ShowDiagram.Show);
+
+			ArrayList masterArray_0 = new ArrayList();
+			ArrayList masterArray_1 = new ArrayList();
+			Visio1.Document doc_0 = vDocuments[1];    // Document stencil figures
+			Visio1.Document doc_1 = vDocuments[2];    // Stencil figures
+			Visio1.Masters masters_0 = doc_0.Masters;
+			Visio1.Masters masters_1 = doc_1.Masters;
+			foreach (Visio1.Master master in masters_0)
+			{
+				// Document stencil figures
+				masterArray_0.Add(master.NameU);   // THIS WILL CONTAIN DIAGRAM FIGURES
+				Console.WriteLine("Master0 - ID:{0} Name:{1} NameU:{2}",master.ID, master.Name, master.NameU);
+			}
+			this.VisioForceCloseAll();
+
+			//foreach (Visio1.Master master in masters_1)
+			//{
+			//	// all the master stencil figures
+			//	masterArray_1.Add(master.NameU);  // THIS WILL CONTAIN STENCIL FIGURES
+			//	Console.WriteLine("Master1 - ID:{0} Name:{1} NameU:-{2}",master.ID, master.Name, master.NameU);
+			//}
+		}
+	}
+}
+
+
+// fill a shap with color
+// PPS Solved! To remove the dependency on those sub-shapes, you need to change their Fillstyle to Normal.
+// Just add new line of code ssh.FillStyle = 'Normal'.
+//
+//
+//import win32com.client as w32
+//visio = w32.Dispatch("visio.Application")
+//visio.Visible = 1
+//# create document based on Detailed Network Diagram template (use full path)
+//doc = visio.Documents.Add("C:\Program Files\Microsoft Office\root\Office16\visio content\1033\dtlnet_m.vstx")
+//# use one of docked stencils 
+//stn2 = visio.Documents("PERIPH_M.vssx")
+//#define 'Server' master-shape
+//server = stn2.Masters("Server")
+//#define page
+//page = doc.Pages.Item(1)
+//# rename page
+//page.name = "My drawing"
+//# drop master-shape on page, define 'Server' instance
+//serv = page.Drop(server, 0, 0)
+//# iterate sub-shapes (side edges) 
+//for i in range (2,6):
+//    #define one od side edges from 'Server'
+//    ssh = serv.shapes(i)
+//    # Change Fill Style to 'Normal'
+//    ssh.FillStyle = 'Normal'
+//    # fix FillForegnd cell for side edge
+//    ssh.Cells('Fillforegnd').FormulaForceU = 'Guard(Sheet.' + str(serv.id) + '!FillForegnd)'
+//    # fix FillBkgnd cell for side edge
+//    ssh.Cells('FillBkgnd').FormulaForceU = 'Guard(Sheet.' + str(serv.id) + '!FillBkgnd)'
+//    # instead formula 'Guard(x)' rewrite formula 'Guard(1)'    
+//    ssh.Cells('FillPattern').FormulaForceU = 'Guard(1)'
+//
+//# fill main shape in 'Server' master-shape
+//serv.Cells("FillForegnd").FormulaForceU = '5'
+//
