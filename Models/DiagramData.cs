@@ -21,6 +21,16 @@ namespace VisioDiagramCreator.Models
 		public string TemplateFilePath { get; set; }
 		public string StencilFilePath { get; set; }
 
+		public int MaxVisioPages { get; set; } = 1;		// default is 1 page visio document
+
 		public List<Device> Devices { get; set; }
+
+		public void Reset()
+		{
+			AllShapesMap.Clear();
+			ShapeConnectionsMap.Clear();
+			MaxVisioPages = 1;
+			Devices.Clear();
+		}
 	}
 }

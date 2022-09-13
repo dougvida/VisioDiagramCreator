@@ -3,6 +3,13 @@ using System.Collections.Generic;
 using Visio1 = Microsoft.Office.Interop.Visio;
 using Microsoft.Office.Interop.Visio;
 using System.Windows.Forms;
+using System.Xml.Linq;
+using System.Linq;
+using VisioDiagramCreator.Visio.Models;
+using System.Drawing.Design;
+using System.Text;
+using System.Collections;
+using VisioAutomation.VDX.Elements;
 
 namespace VisioDiagramCreator.Visio
 {
@@ -14,58 +21,56 @@ namespace VisioDiagramCreator.Visio
 		/// </summary>
 		/// <param name="diagamFilePathName"></param>
 		/// <return>Dictionary<int, ShapeInformation> </return>
-		public Dictionary<int, ShapeInformation> GetAllShapesProperties(string diagamFilePathName)
+		public Dictionary<int, ShapeInformation> GetAllShapesProperties(string diagamFilePathName, VisioVariables.ShowDiagram dspMode)
 		{
 			// Open up one of Visio's sample drawings.
-			Visio1.Application app = new Visio1.Application();
-			Visio1.Document doc = app.Documents.Open(diagamFilePathName);
+			Visio1.Application appVisio = new Visio1.Application();
+			new VisioHelper().ShowVisioDiagram(appVisio, dspMode);              // don't show the diagram
 
-			// Get the first page in the sample drawing.
-			Visio1.Page page = doc.Pages[1];
+			Visio1.Document vDocuments = appVisio.Documents.Open(diagamFilePathName);
+			// The new document will have one page, get the a reference to it.
+			Visio1.Page page = vDocuments.Pages[1];
 
-			Console.WriteLine("Active Document:{0}: Master in document:{1}", app.ActiveDocument, app.ActiveDocument.Masters);
+			new VisioHelper().ShowVisioDiagram(appVisio, VisioVariables.ShowDiagram.Show);
+			Console.WriteLine("Active Document:{0}: Master in document:{1}", appVisio.ActiveDocument, appVisio.ActiveDocument.Masters);
 
-			// Start with the collection of shapes on the page and 
-			// print the properties we find,
-			return printProperties(doc);
+			// get the connectors for each shape in the diagram 
+			return getShapeConnections(vDocuments);
 		}
 
-		/* This function will travel recursively through a collection of 
-		 * shapes and print the custom properties in each shape. 
-		 * 
-		 * The reason I don't simply look at the shapes in Page.Shapes is 
-		 * that when you use the Group command the shapes you group become 
-		 * child shapes of the group shape and are no longer one of the 
-		 * items in Page.Shapes.
-		 * 
-		 * This function will not recursive into shapes which have a Master. 
-		 * This means that shapes which were created by dropping from stencils 
-		 * will have their properties printed but properties of child shapes 
-		 * inside them will be ignored. I do this because such properties are 
-		 * not typically shown to the user and are often used to implement 
-		 * features of the shapes such as data graphics.
-		 * 
-		 * An alternative halting condition for the recursion which may be 
-		 * sensible for many drawing types would be to stop when you 
-		 * find a shape with custom properties.
-		 */
-		public static Dictionary<int, ShapeInformation> printProperties(Visio1.Document doc)
+		private static Dictionary<int, ShapeInformation> getShapeConnections(Visio1.Document doc)
 		{
 			// Look at each shape in the collection.
 			Visio1.Page page = doc.Pages[1];
+
 			Dictionary<int, ShapeInformation> AllPageShapesMap = new Dictionary<int, ShapeInformation>();
+			Dictionary<int, ConnectShpExcelData> dExcelConnectShapeMap = new Dictionary<int, ConnectShpExcelData>();
+
+			Dictionary<int, string> dConnectTo = null;
+			Dictionary<int, string> dConnectFrom = null;
+			HashSet<int> connFromHS = null;
+			HashSet<int> connToHS = null;
+
 			ShapeInformation shpInfo = null;
 			try
 			{
+				ConnectShpExcelData cntShpData = null;
+
 				foreach (Visio1.Shape shape in page.Shapes)
 				{
-					// Use this index to look at each row in the properties 
-					// section.
+					// Use this index to look at each row in the properties section.
 					shpInfo = new ShapeInformation();
+					cntShpData = new ConnectShpExcelData();
+
+					dConnectTo = new Dictionary<int, string>();
+					dConnectFrom = new Dictionary<int, string>();
+					connFromHS = new HashSet<int>();
+					connToHS = new HashSet<int>();
 
 					shpInfo.ID = shape.ID;
+					shpInfo.UniqueKey = shape.NameU.Trim();
 
-					short iRow = (short)VisRowIndices.visRowFirst;
+					//short iRow = (short)VisRowIndices.visRowFirst;
 					shpInfo.Pos_x = Math.Truncate(shape.Cells["PinX"].ResultIU * 1000) / 1000;
 					shpInfo.Pos_y = Math.Truncate(shape.Cells["PinY"].ResultIU * 1000) / 1000;
 					shpInfo.Width = Math.Truncate(shape.Cells["Width"].ResultIU * 1000) / 1000;
@@ -74,27 +79,23 @@ namespace VisioDiagramCreator.Visio
 					string sConnFrom = string.Empty;
 					string sConnTo = string.Empty;
 
-					string ShapeType = "Shape";
-					shpInfo.UniqueKey = shape.NameU.Trim();
-
 					string[] saStr = shape.NameU.Split(':');
 					shpInfo.StencilImage = saStr[0].Trim();
 					shpInfo.StencilLabel = shape.Text.Trim();
 
-					AllPageShapesMap.Add(shape.ID, shpInfo);
-
 					if (shpInfo.StencilImage.ToUpper().IndexOf("NETWORKPIPE") >= 0)
 					{
 						// skip this shape
-						Console.WriteLine(string.Format("Skip this ID:{0}; shapeKey:{1} - Stencil Image:{2}", shape.ID, shpInfo.UniqueKey, shpInfo.StencilImage));
+						//Console.WriteLine(string.Format("Skip this ID:{0}; shapeKey:{1} - Stencil Image:{2}", shape.ID, shpInfo.UniqueKey, shpInfo.StencilImage));
 						continue;
 					}
 					if (shape.Style.Equals("Connector"))
 					{
+						int x = 0;
 						continue;
 					}
-					continue;
-					var shpFromConnected = shape.ConnectedShapes(VisConnectedShapesFlags.visConnectedShapesOutgoingNodes, "");
+
+					var shpFromConnected = shape.ConnectedShapes(VisConnectedShapesFlags.visConnectedShapesIncomingNodes, "");
 					if (shpFromConnected != null && shpFromConnected.Length > 0)
 					{
 						Console.WriteLine("");
@@ -104,6 +105,8 @@ namespace VisioDiagramCreator.Visio
 							int Id = 0;
 							foreach (int nIdx in shpFromConnected)
 							{
+								dConnectFrom = new Dictionary<int, string>();
+					
 								Id = nIdx;
 								Visio1.Shape cnnShape = page.Shapes.ItemFromID[nIdx];
 								shpInfo.ConnectFromID = cnnShape.ID;
@@ -111,30 +114,35 @@ namespace VisioDiagramCreator.Visio
 								shpInfo.FromLineColor = "BLACK";
 								shpInfo.FromLinePattern = VisioVariables.LINE_PATTERN_SOLID;
 					
-								bool keyExists = AllPageShapesMap.ContainsKey(shape.ID);
-								if (!keyExists)
+								cntShpData.ID = shpInfo.ID;
+								cntShpData.UniqueKey = shpInfo.UniqueKey;
+					
+								connFromHS.Add(cnnShape.ID);
+					
+								if (!dConnectFrom.ContainsKey(cnnShape.ID))
 								{
-									AllPageShapesMap.Add(shape.ID, shpInfo);
-								}
-								else
-								{
-									ShapeInformation value = new ShapeInformation();
-									AllPageShapesMap.TryGetValue(shape.ID, out value);
-									if (string.IsNullOrEmpty(value.ConnectFrom))
+									dConnectFrom.Add(cnnShape.ID, cnnShape.NameU);
+									if (dConnectFrom.Count != dConnectFrom.Distinct().Count())
 									{
-										value.ConnectFromID = shape.ID;
-										value.ConnectFrom = cnnShape.NameU;
-										AllPageShapesMap[shape.ID] = value;	// update the value
+										Console.WriteLine("Contains duplicates");
 									}
 								}
-					
-								// Print the results.
-								if (!string.IsNullOrEmpty(sConnFrom))
-								{
-									sConnFrom += "\n";
-								}
-								sConnFrom += (string.Format("Connect From: ID:{0};ShapeType:{1}; LookupId:{2}; UniqueKey:{3}; StencilLabel:{4}; PosX:{5}; PoxY:{6}; ConnectFromKey:{7}; ConnecID:{8}",
-																			shape.ID, ShapeType, Id, shpInfo.UniqueKey, shpInfo.StencilLabel, shpInfo.Pos_x, shpInfo.Pos_y, shpInfo.ConnectFrom, cnnShape.ID));
+								//bool keyExists = AllPageShapesMap.ContainsKey(shape.ID);
+								//if (!keyExists)
+								//{
+									AllPageShapesMap.Add(shape.ID, shpInfo);
+								//}
+								//else
+								//{
+								//	ShapeInformation value = new ShapeInformation();
+								//	AllPageShapesMap.TryGetValue(shape.ID, out value);
+								//	if (string.IsNullOrEmpty(value.ConnectFrom))
+								//	{
+								//		value.ConnectFromID = shape.ID;
+								//		value.ConnectFrom = cnnShape.NameU;
+								//		AllPageShapesMap[shape.ID] = value;	// update the value
+								//	}
+								//}
 							}
 						}
 						catch (Exception exp)
@@ -143,7 +151,7 @@ namespace VisioDiagramCreator.Visio
 						}
 					}
 
-					var shpToConnected = shape.ConnectedShapes(VisConnectedShapesFlags.visConnectedShapesIncomingNodes, "");
+					var shpToConnected = shape.ConnectedShapes(VisConnectedShapesFlags.visConnectedShapesOutgoingNodes, "");
 					if (shpToConnected != null && shpToConnected.Length > 0)
 					{
 						try
@@ -152,6 +160,8 @@ namespace VisioDiagramCreator.Visio
 							int Id = 0;
 							foreach (int nIdx in shpToConnected)
 							{
+								dConnectTo = new Dictionary<int, string>();
+
 								Id = nIdx;
 								Visio1.Shape cnnShape = page.Shapes.ItemFromID[nIdx];
 
@@ -161,30 +171,35 @@ namespace VisioDiagramCreator.Visio
 								shpInfo.ToLineColor = "BLACK";
 								shpInfo.ToLinePattern = VisioVariables.LINE_PATTERN_SOLID;
 
-								bool keyExists = AllPageShapesMap.ContainsKey(shape.ID);
-								if (!keyExists)
+								cntShpData.ID = shpInfo.ID;
+								cntShpData.UniqueKey = shpInfo.UniqueKey;
+
+								connToHS.Add(cnnShape.ID);
+
+								if (!dConnectTo.ContainsKey(cnnShape.ID))
 								{
-									AllPageShapesMap.Add(shape.ID, shpInfo);
-								}
-								else
-								{
-									ShapeInformation value = new ShapeInformation();
-									AllPageShapesMap.TryGetValue(shape.ID, out value);
-									if (string.IsNullOrEmpty(value.ConnectTo))
+									dConnectTo.Add(cnnShape.ID, cnnShape.NameU);
+									if (dConnectTo.Count != dConnectTo.Distinct().Count())
 									{
-										value.ConnectFromID = shape.ID;
-										value.ConnectTo = cnnShape.NameU;
-										AllPageShapesMap[shape.ID] = value; // update the value
+										Console.WriteLine("Contains duplicates");
 									}
 								}
-
-								// Print the results.
-								if (!string.IsNullOrEmpty(sConnTo))
-								{
-									sConnTo += "\n";
-								}
-								sConnTo += (string.Format("Connect To: ID:{0}; ShapeType:{1}; LookupId:{2}; UniqueKey:{3}; StencilLabel:{4}; PosX:{5}; PoxY:{6}; ConnectToKey:{7}; ConnectID:{8}",
-																			shape.ID, ShapeType, Id, shpInfo.UniqueKey, shpInfo.StencilLabel, shpInfo.Pos_x, shpInfo.Pos_y, shpInfo.ConnectTo, cnnShape.ID));
+								//bool keyExists = AllPageShapesMap.ContainsKey(shape.ID);
+								//if (!keyExists)
+								//{
+									AllPageShapesMap.Add(shape.ID, shpInfo);
+								//}
+								//else
+								//{
+								//	ShapeInformation value = new ShapeInformation();
+								//	AllPageShapesMap.TryGetValue(shape.ID, out value);
+								//	if (string.IsNullOrEmpty(value.ConnectTo))
+								//	{
+								//		value.ConnectFromID = shape.ID;
+								//		value.ConnectTo = cnnShape.NameU;
+								//		AllPageShapesMap[shape.ID] = value; // update the value
+								//	}
+								//}
 							}
 						}
 						catch (Exception exp)
@@ -202,19 +217,100 @@ namespace VisioDiagramCreator.Visio
 						}
 					}
 
-					if (!string.IsNullOrEmpty(sConnFrom) || !string.IsNullOrEmpty(sConnTo))
+					//if (dConnectFrom != null && dConnectFrom.Count < 1)
+					//{
+					//	dConnectFrom.Clear();
+					//}
+					//if (dConnectTo != null && dConnectTo.Count < 1)
+					//{
+					//	dConnectTo.Clear();
+					//}
+
+					cntShpData.connFromHS = connFromHS;
+					cntShpData.connToHS = connToHS;
+					cntShpData.CntFrom = dConnectFrom;
+					cntShpData.CntTo = dConnectTo;
+					if ( (cntShpData.CntFrom != null && cntShpData.CntFrom.Count > 0) || (cntShpData.CntTo != null && cntShpData.CntTo.Count > 0))
 					{
-						Console.WriteLine("{0}\n{1}", sConnFrom, sConnTo);
+						dExcelConnectShapeMap.Add(cntShpData.ID, cntShpData);
 					}
 				}
+				int y = 0;
 			}
 			catch(Exception ex)
 			{
 				MessageBox.Show(string.Format("Foreach issue: {0}", ex.Message));
 			}
+
+
+			//			dExcelConnectShapeMap = doesKeyExists(dExcelConnectShapeMap);
+			Console.WriteLine("\n\n\n");
+
+			foreach (var item in dExcelConnectShapeMap.Values)
+			{
+				StringBuilder sbStr = new StringBuilder();
+				sbStr.Append(String.Format("Master Shape:{0}:{1}",item.ID, item.UniqueKey));
+				if (item.CntFrom != null && item.CntFrom.Count > 0)
+				{
+					foreach(var from in item.CntFrom)
+					{
+						sbStr.Append(string.Format(" To:{0}:{1}", from.Key.ToString(), from.Value.ToString()));
+					}
+				}
+				if (item.CntTo != null && item.CntTo.Count > 0)
+				{
+					foreach (var to in item.CntTo)
+					{
+						sbStr.Append(string.Format(" To:{0}:{1}",to.Key.ToString(), to.Value.ToString()));
+					}
+				}
+				Console.WriteLine(sbStr.ToString());
+			}
 			return AllPageShapesMap;
 		}
 				
+		private static Dictionary<int, ConnectShpExcelData> doesKeyExists(Dictionary<int, ConnectShpExcelData> connMap)
+		{
+			Dictionary<int, ConnectShpExcelData> newCnnMap = new Dictionary<int, ConnectShpExcelData>();
+			foreach (var first in connMap)
+			{
+				foreach(var second in connMap)
+				{
+					// if second.ID = first.ID skip
+					if (first.Key != second.Key)
+					{
+						if (second.Value.CntFrom != null && second.Value.CntFrom.Count > 0)
+						{
+							// iterate over the CntFrom.   if Key = first.ID remove it
+							foreach (var value in second.Value.CntFrom)
+							{
+								if (value.Key != first.Key)
+								{
+									// keep this entry
+									newCnnMap.Add(value.Key, second.Value);
+								}
+							}
+						}
+						// iterate over the cntTo.  if key = first.ID remove it
+						if (second.Value.CntTo != null && second.Value.CntTo.Count > 0)
+						{
+							// iterate over the CntFrom.   if Key = first.ID remove it
+							foreach (var value in second.Value.CntTo)
+							{
+								if (value.Key != first.Key)
+								{
+									// keep this entry
+									newCnnMap.Add(value.Key, second.Value);
+								}
+							}
+						}
+					}
+				}
+			}
+			return newCnnMap;
+		}
+
+
 				// While there are stil rows to look at.
 				//while (shape.get_CellsSRCExists((short)VisSectionIndices.visSectionProp, iRow, (short)VisCellIndices.visCustPropsValue, (short)0) != 0)
 				//{
@@ -242,7 +338,7 @@ namespace VisioDiagramCreator.Visio
 
 				// Now look at child shapes in the collection.
 				//if (shape.Master == null && shape.Shapes.Count > 0)
-				//	printProperties(doc);
+				//	getShapeConnections(doc);
 			//}
 		//}
 

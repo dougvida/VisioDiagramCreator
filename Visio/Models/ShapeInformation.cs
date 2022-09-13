@@ -10,7 +10,8 @@ namespace VisioDiagramCreator.Visio
 {
 	public class ShapeInformation
 	{
-		public int ID { get; set; } = 0;	// shape ID
+		public int VisioPage { get; set; } = 1;	// Visio Page to place object.  default to Page 1
+		public int ID { get; set; } = 0;				// shape ID
 		public string UniqueKey { get; set; }     // this is used to uniquly identify each shape that has been droped in the document.   used as key for Dictionary
 		public string StencilLabel { get; set; } = String.Empty;  // Text to add to the stencil image
 		public string StencilImage { get; set; } = String.Empty;  // Must be the exact name for the stencil image in the Visio template/document

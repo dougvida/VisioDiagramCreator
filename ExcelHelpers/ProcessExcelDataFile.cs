@@ -16,7 +16,8 @@ namespace VisioDiagramCreator.Helpers
 		{
 			// NOTE ****
 			// the order of this enum must match the column order in the Excel file
-			ShapeType = 0,
+			VisioPage = 0,			// Page indicator to place this shape
+			ShapeType,				// key
 			ShapeKey,				// device unique Key used for connecting visio shapes
 			ShapeImage,				// device visio image name
 			ShapeLabel,				// device label
@@ -77,14 +78,17 @@ namespace VisioDiagramCreator.Helpers
 			int nIdx1 = saTmp1[1].IndexOfAny("0123456789".ToCharArray());	// if a digit is found get the index
 			string endColumn = saTmp1[1].Substring(0, nIdx1);
 
-			for (var y = 2; y <= sheet.RowCount; y++)
+			for (var row = 2; row <= sheet.RowCount; row++)
 			{
-				var cells = sheet[$"A{y}:{endColumn}{y}"].ToList();
+				var cells = sheet[$"A{row}:{endColumn}{row}"].ToList();
 				if (!cells[0].ToString().StartsWith(";")) // first row is a header so skip
 				{
 					try
 					{
-						//saTmp = line.Split(',');
+						if (cells[(int)_cellIndex.VisioPage].IntValue > diagData.MaxVisioPages)
+						{
+							diagData.MaxVisioPages = cells[(int)_cellIndex.VisioPage].IntValue;
+						}
 						switch (cells[(int)_cellIndex.ShapeType].ToString().Trim())
 						{
 							case "Template":
@@ -94,19 +98,6 @@ namespace VisioDiagramCreator.Helpers
 							case "Stencil":
 								diagData.StencilFilePath = cells[(int)_cellIndex.ShapeKey].ToString().Trim().Substring(0, cells[(int)_cellIndex.ShapeKey].ToString().Trim().Length - 1);
 								break;
-
-//							case "Machine":
-//								device = _parseExcelData(cells);
-//								machines.Add(device);
-//								//allData.allPageStencilsMap.Add(machine.ShapeInfo.UniqueKey, machine.ShapeInfo);
-//								break;
-
-//							case "Site":
-//								device = _parseExcelData(cells);
-//								sites.Add(device);
-//								devices.Add(device);
-//								diagData.AllShapesMap.Add(device.ShapeInfo.UniqueKey, device);
-//								break;
 
 							case "Shape":
 								device = _parseExcelData(cells);
@@ -122,7 +113,7 @@ namespace VisioDiagramCreator.Helpers
 					catch (Exception ex)
 					{
 						Console.WriteLine(ex.Message +" - "+ ex.StackTrace);	
-						throw new Exception("Exception:Key: " + cells[1] + " - " + ex.Message); //, ex.StackTrace.ToString);
+						throw new Exception(String.Format("Exception: Duplicate key:({0}) found.\nPlease resolve this issue in the Excel Data file\n{1}", device.ShapeInfo.UniqueKey, ex.Message)); //, ex.StackTrace.ToString);
 					}
 				}
 			}
@@ -151,6 +142,7 @@ namespace VisioDiagramCreator.Helpers
 			ShapeInformation visioInfo = new ShapeInformation();
 			try
 			{
+				visioInfo.VisioPage = data[(int)_cellIndex.VisioPage].IntValue;
 				visioInfo.UniqueKey = data[(int)_cellIndex.ShapeKey].ToString().Trim();      // unique key for this shape
 				visioInfo.StencilImage = data[(int)_cellIndex.ShapeImage].ToString().Trim(); // must match exactly the name in the visio stencil
 				visioInfo.StencilLabel = data[(int)_cellIndex.ShapeLabel].ToString().Trim(); // text to add to the stencil image
@@ -275,6 +267,7 @@ namespace VisioDiagramCreator.Helpers
 				Console.WriteLine(exp.Message+" - "+exp.StackTrace);
 				return null;
 			}
+			//Console.WriteLine("adding stencil:{0}",visioInfo.UniqueKey);
 			return device;
 		}
 	}

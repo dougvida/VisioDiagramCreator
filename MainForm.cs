@@ -1,23 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using System.Windows.Forms;
-using VisioAutomation.VDX.Elements;
 using VisioDiagramCreator.Helpers;
 using VisioDiagramCreator.Models;
 using VisioDiagramCreator.Visio;
 using VisioDiagramCreator.Extensions;
-using Visio1 = Microsoft.Office.Interop.Visio;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.Window;
-using Microsoft.Office.Interop.Excel;
 
 namespace VisioDiagramCreator
 {
@@ -36,6 +25,10 @@ namespace VisioDiagramCreator
 		public MainForm()
 		{
 			InitializeComponent();
+
+			diagramData = new DiagramData();
+			diagramData.TemplateFilePath = @"C:\Omnicell_Diagram_Creator\Templates\OC_ArchitectDiagramTemplate.vstx";
+			diagramData.StencilFilePath = @"C:\Omnicell_Diagram_Creator\Stencils\OC_ArchitectStencils.vssx";
 		}
 
 		private void MainForm_Load(object sender, EventArgs e)
@@ -67,13 +60,6 @@ namespace VisioDiagramCreator
 
 		private void btn_Submit_Click(object sender, EventArgs e)
 		{
-			// we are here because the user selected all the databiles
-			// now we need to process them and build the classes
-			diagramData = new DiagramData();
-
-			diagramData.TemplateFilePath = @"C:\Omnicell_Diagram_Creator\Templates\OC_ArchitectDiagramTemplate.vstx";
-			diagramData.StencilFilePath = @"C:\Omnicell_Diagram_Creator\Stencils\OC_ArchitectStencils.vssx";
-
 			// parse the data file and draw the visio diagram
 			try
 			{
@@ -96,7 +82,6 @@ namespace VisioDiagramCreator
 
 					// Lets make the connections 
 					bool bAns = visHlp.ConnectShapes(diagramData);
-					visHlp.ShowVisioDiagram(VisioVariables.ShowDiagram.Show);
 
 					// we need to close everything
 //					visHlp.VisioForceCloseAll();
@@ -104,14 +89,12 @@ namespace VisioDiagramCreator
 				}
 				else
 				{
-					visHlp.ShowVisioDiagram(VisioVariables.ShowDiagram.Show);
-
 					// for testing to view all the stencils in the document
-					//visHlp.ListDocuymentStencils(diagramData);
+					//visHlp.ListDocuymentStencils(diagramData, VisioVariables.ShowDiagram.Show);
 
 					// buid data file from existing Visio file
 					Console.WriteLine("build excel data file from a Visio file");
-					Dictionary<int, ShapeInformation> shapeMap = new ProcessVisioDiagramShapes().GetAllShapesProperties(tb_buildVisioFilePath.Text.Trim());
+					Dictionary<int, ShapeInformation> shapeMap = new ProcessVisioDiagramShapes().GetAllShapesProperties(tb_buildVisioFilePath.Text.Trim(), VisioVariables.ShowDiagram.Show);
 					Console.WriteLine("\n\n");
 					foreach (var allShp in shapeMap)
 					{
@@ -123,7 +106,7 @@ namespace VisioDiagramCreator
 					// we are dont so we can close the visio document(s)
 					visHlp.VisioForceCloseAll();
 				}
-				diagramData = null;  // Reset everything if we want to run again
+				diagramData.Reset();
 			}
 			catch( IOException ioe)
 			{
