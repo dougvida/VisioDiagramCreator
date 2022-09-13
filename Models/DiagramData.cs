@@ -11,6 +11,9 @@ namespace VisioDiagramCreator.Models
 {
 	public class DiagramData
 	{
+		public string VisioPageOrientation { get; set; } = "Portrait";
+		public string VisioPageSize { get; set; } = "Letter";
+
 		// This map contains all the shapes from the Excel Data file
 		// it will be used to build up the connections with other shapes if needed
 		public Dictionary<string, Device> AllShapesMap = new Dictionary<string, Device>();

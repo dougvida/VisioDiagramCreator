@@ -6,6 +6,7 @@ using System.Linq;
 using VisioDiagramCreator.Models;
 using Visio1 = Microsoft.Office.Interop.Visio;
 using System.Windows.Forms;
+using IronXL.Drawing;
 
 namespace VisioDiagramCreator.Visio
 {
@@ -142,7 +143,7 @@ namespace VisioDiagramCreator.Visio
 
 		/// <summary>
 		/// setupVisioDiagram
-		/// this will setup the visio document
+		/// this will setup the visio document page size and orientation
 		/// </summary>
 		/// <param name="allData">DiagramData</param>
 		/// <returns>Visio.Pages</returns>
@@ -199,33 +200,38 @@ namespace VisioDiagramCreator.Visio
 			page1.Name = "Diagram1";
 			page1.Index = 1;
 
+			// Page 1 is Standard
+			if (!SetupDiagramPage(page1, diagramData.VisioPageOrientation, diagramData.VisioPageSize))
+			{
+				double xPosition = page1.PageSheet.get_CellsU("PageWidth").ResultIU;
+				double yPosition = page1.PageSheet.get_CellsU("PageHeight").ResultIU;
+				var pageOrientation = page1.PageSheet.get_CellsU("PrintPageOrientation").ResultIU;
+				Console.WriteLine(string.Format("page:{0}, Height:{1}, Width:{2} and Orientation:{3}"), page1.Name, yPosition, xPosition, diagramData.VisioPageOrientation);
+			}
+
 			// this section is if we want to add more than one page to the document
 			for (int i = 0; i < diagramData.MaxVisioPages-1; i++)
 			{
 				Visio1.Page page = vDocument.Pages.Add();
 				// Name the pages. This is what is shown in the page tabs.
 				page.Name = "Diagram" + (i+2);
+
+				// Page 1 is Standard
+				if (!SetupDiagramPage(page, diagramData.VisioPageOrientation, diagramData.VisioPageSize))
+				{
+					double xPosition = page.PageSheet.get_CellsU("PageWidth").ResultIU;
+					double yPosition = page.PageSheet.get_CellsU("PageHeight").ResultIU;
+					var pageOrientation = page.PageSheet.get_CellsU("PrintPageOrientation").ResultIU;
+					Console.WriteLine(string.Format("page:{0}, Height:{1}, Width:{2} and Orientation:{3}"), page.Name, yPosition, xPosition, diagramData.VisioPageOrientation);
+				}
 			}
 
 			// Move the second page to the first position in the list of pages.
 			//page2.Index = 1;
 			//return page1.Index;
 
-			// Page 1 is Standard
-			if (!SetupDiagramPage(page1, "Portrait", "Letter"))
-			{
-				double xPosition1 = page1.PageSheet.get_CellsU("PageWidth").ResultIU;
-				double yPosition1 = page1.PageSheet.get_CellsU("PageHeight").ResultIU;
-				var pageOrientation = page1.PageSheet.get_CellsU("PrintPageOrientation").ResultIU;
-			}
 
-			// Page 2 is Landscape
-			//if (!SetupPage(page2, "Landscape", "Legal"))
-			//{
-			//	double xPosition2 = page2.PageSheet.get_CellsU("PageWidth").ResultIU;
-			//	double yPosition2 = page2.PageSheet.get_CellsU("PageHeight").ResultIU;
-			//	var pageOrientation2 = page2.PageSheet.get_CellsU("PrintPageOrientation").ResultIU;
-			//}
+			// set the active page to the first page
 			appVisio.ActiveWindow.Page = pagesObj[1];
 			return pagesObj;
 		}
@@ -270,6 +276,7 @@ namespace VisioDiagramCreator.Visio
 		/// update the dictionaries in the DiagramData object for connection info
 		/// </summary>
 		/// <param name="device">Device</param>
+		/// <param name="Visio.Pages">vPages</param>
 		/// <returns>Visio.Shape object</returns>
 		/// <exception cref="Exception"></exception>		
 		private Visio1.Shape _drawShape(Device device, Visio1.Pages vPages)
@@ -281,10 +288,12 @@ namespace VisioDiagramCreator.Visio
 				MessageBox.Show("Can't find master stencil: " + device.ShapeInfo.StencilImage);
 				throw new Exception(device.ShapeInfo.StencilImage + "Visio Helper PageStencil");
 			}
-			// need to drop on another page
+
 			Visio1.Pages pagesObj = appVisio.ActiveDocument.Pages;
+			// switch Visio Diagram Page if needed based on the shape data VisioPage value
 			appVisio.ActiveWindow.Page = pagesObj[device.ShapeInfo.VisioPage];
 
+			// draw the shape on the document
 			shpObj = appVisio.ActivePage.Drop(stnObj, device.ShapeInfo.Pos_x, device.ShapeInfo.Pos_y);
 			shpObj.NameU = device.ShapeInfo.UniqueKey;
 
@@ -466,6 +475,7 @@ namespace VisioDiagramCreator.Visio
 					// Drop the built-in connector object on the lower left corner of the page:
 					// need to drop on another page
 					Visio1.Pages pagesObj = appVisio.ActiveDocument.Pages;
+					// switch Visio Diagram Page if needed based on the shape data VisioPage value
 					appVisio.ActiveWindow.Page = pagesObj[lookupShapeConnection.device.ShapeInfo.VisioPage];
 
 					shpConn = appVisio.ActivePage.Drop(pageObj.Application.ConnectorToolDataObject, 0.0, 0.0);
