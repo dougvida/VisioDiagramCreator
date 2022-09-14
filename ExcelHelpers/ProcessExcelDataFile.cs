@@ -66,8 +66,6 @@ namespace VisioDiagramCreator.Helpers
 		/// <exception cref="Exception"></exception>
 		public DiagramData ParseData( string file, DiagramData diagData )
 		{
-			//Microsoft.Office.Interop.Excel.Application xlApp = new Microsoft.Office.Interop.Excel.Application();
-
 			if (string.IsNullOrEmpty(file))
 			{
 				// Error file is empty
@@ -76,14 +74,6 @@ namespace VisioDiagramCreator.Helpers
 
 			List<Device> devices = new List<Device>();
 			Device device = null;
-
-			//Microsoft.Office.Interop.Excel.Workbook xlWorkbook = xlApp.Workbooks.Open(@"S:\Utils\documents\ServerManager\serverlist.xlsx");
-			//Microsoft.Office.Interop.Excel._Worksheet xlWorksheet = xlWorkbook.Sheets[1];
-
-			//if (openExcelFile(file))
-			//{
-			//	int yy = 0;
-			//}
 
 			WorkBook workbook = WorkBook.Load(file);
 			WorkSheet sheet = workbook.WorkSheets.First();
@@ -118,10 +108,18 @@ namespace VisioDiagramCreator.Helpers
 								break;
 
 							default:
-								throw new Exception(string.Format("Exception::ParseData - Unknown label:{0} in CSV file:{1})", cells[(int)_cellIndex.StencilImage].ToString().Trim(),file));
+								if (diagData != null)
+								{
+									diagData.Devices = devices;
+								}
+								if (workbook != null)
+								{
+									workbook.Close();
+								}
+								throw new Exception(string.Format("Exception::ParseData - Unknown label:{0} in CSV file:{1})", cells[(int)_cellIndex.StencilImage].ToString().Trim(), file));
 								break;
 						}
-						Console.WriteLine("ParseData - ShapeType:{0}, Row{1}", cells[(int)_cellIndex.StencilImage].ToString().Trim(),row);
+						Console.WriteLine("ParseData - ShapeType:{0}, Row{1}", cells[(int)_cellIndex.StencilImage].ToString().Trim(), row);
 					}
 				}
 			}
@@ -130,16 +128,17 @@ namespace VisioDiagramCreator.Helpers
 				Console.WriteLine(ex.Message + " - " + ex.StackTrace);
 				throw new Exception(String.Format("Exception::ParseData - Duplicate key:({0}) found.\nPlease resolve this issue in the Excel Data file\n{1}", device.ShapeInfo.UniqueKey, ex.Message)); //, ex.StackTrace.ToString);
 			}
-
-			if (diagData != null)
+			finally
 			{
-				diagData.Devices = devices;
+				if (diagData != null)
+				{
+					diagData.Devices = devices;
+				}
+				if (workbook != null)
+				{
+					workbook.Close();
+				}
 			}
-			if(workbook != null)
-			{ 
-				workbook.Close();
-			}
-
 			return diagData;
 		}
 
