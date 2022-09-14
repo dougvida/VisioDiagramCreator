@@ -47,7 +47,7 @@ namespace VisioDiagramCreator.Visio
 		public const double LINE_PATTERN_DASHDOT = 4; // _ . _ . _ dash/dot-(t)ed line
 
 		public const string LINE_WEIGHT_1 = "1.0 pt";
-		public const string LINE_WEIGHT_2 = "2pt";
+		public const string LINE_WEIGHT_2 = "2 pt";
 
 		public const string LIST_PREFIX = "LIS_";
 		public const string LOOKUP_PREFIX = "LKP_";

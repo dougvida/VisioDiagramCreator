@@ -124,7 +124,7 @@ namespace VisioDiagramCreator.Visio
 									dConnectFrom.Add(cnnShape.ID, cnnShape.NameU);
 									if (dConnectFrom.Count != dConnectFrom.Distinct().Count())
 									{
-										Console.WriteLine("Contains duplicates");
+										Console.WriteLine("getShapeConnections - Contains duplicates");
 									}
 								}
 								//bool keyExists = AllPageShapesMap.ContainsKey(shape.ID);
@@ -147,7 +147,7 @@ namespace VisioDiagramCreator.Visio
 						}
 						catch (Exception exp)
 						{
-							MessageBox.Show(String.Format("ConnectFrom:{0} - {1}", shpInfo.ConnectFrom, exp.Message));
+							MessageBox.Show(String.Format("getShapeConnections - ConnectFrom:{0} - {1}", shpInfo.ConnectFrom, exp.Message));
 						}
 					}
 
@@ -181,7 +181,7 @@ namespace VisioDiagramCreator.Visio
 									dConnectTo.Add(cnnShape.ID, cnnShape.NameU);
 									if (dConnectTo.Count != dConnectTo.Distinct().Count())
 									{
-										Console.WriteLine("Contains duplicates");
+										Console.WriteLine("getShapeConnections - Contains duplicates");
 									}
 								}
 								//bool keyExists = AllPageShapesMap.ContainsKey(shape.ID);
@@ -204,27 +204,9 @@ namespace VisioDiagramCreator.Visio
 						}
 						catch (Exception exp)
 						{
-							MessageBox.Show(string.Format("ConnectTo:{0} - {1}", shpInfo.ConnectTo, exp.Message));
+							MessageBox.Show(string.Format("Exception::getShapeConnections - ConnectTo:{0} - {1}", shpInfo.ConnectTo, exp.Message));
 						}
 					}
-					else
-					{
-						if (!"Connector".Equals(shape.Style))
-						{
-							// Print the results.
-							//	Console.WriteLine(string.Format("Shape:{0}; ShapKey:{1}; StencilImage:{2}; ShapeLabel:{3}; IP; Ports; Devices; PosX:{4}; PoxY:{5}; Width:{6}; Height:{7}",
-							//												ShapeType, shpInfo.UniqueKey, shpInfo.StencilImage, shpInfo.StencilLabel, shpInfo.Pos_x, shpInfo.Pos_y, shpInfo.Width, shpInfo.Height));
-						}
-					}
-
-					//if (dConnectFrom != null && dConnectFrom.Count < 1)
-					//{
-					//	dConnectFrom.Clear();
-					//}
-					//if (dConnectTo != null && dConnectTo.Count < 1)
-					//{
-					//	dConnectTo.Clear();
-					//}
 
 					cntShpData.connFromHS = connFromHS;
 					cntShpData.connToHS = connToHS;
@@ -235,16 +217,11 @@ namespace VisioDiagramCreator.Visio
 						dExcelConnectShapeMap.Add(cntShpData.ID, cntShpData);
 					}
 				}
-				int y = 0;
 			}
 			catch(Exception ex)
 			{
-				MessageBox.Show(string.Format("Foreach issue: {0}", ex.Message));
+				MessageBox.Show(string.Format("Exception::getShapeConnections - Foreach loop:\n{0}", ex.Message));
 			}
-
-
-			//			dExcelConnectShapeMap = doesKeyExists(dExcelConnectShapeMap);
-			Console.WriteLine("\n\n\n");
 
 			foreach (var item in dExcelConnectShapeMap.Values)
 			{

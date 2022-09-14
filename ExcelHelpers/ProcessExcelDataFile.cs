@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using IronXL;
+using Excel = Microsoft.Office.Interop.Excel;
 using VisioDiagramCreator.Models;
 using VisioDiagramCreator.Visio;
+using System.Runtime.InteropServices;
 
 // https://ironsoftware.com/csharp/excel/tutorials/how-to-read-excel-file-csharp/#get-cell-range
 
@@ -18,9 +21,10 @@ namespace VisioDiagramCreator.Helpers
 			// the order of this enum must match the column order in the Excel file
 			VisioPage = 0,			// Page indicator to place this shape
 			ShapeType,				// key
-			ShapeKey,				// device unique Key used for connecting visio shapes
-			ShapeImage,				// device visio image name
-			ShapeLabel,				// device label
+			StencilKey,				// device unique Key used for connecting visio shapes
+			StencilImage,			// device visio image name
+			StencilLabel,			// device label
+			StencilLabelFontSize,// default is what the stencil font size is   (use 12:B for 12 pt. Bold or 12 for 12 pt)
 			Mach_name,				// device machine Name
 			Mach_id,					// device machine Id
 			Site_id,					// device site Id
@@ -55,35 +59,43 @@ namespace VisioDiagramCreator.Helpers
 		/// Parse the Excel data into a DiagramData class.
 		/// this class will hold all the excel data that will be used to transfer into Visio diagram data
 		/// </summary>
-		/// <param name="file"></param>
+		/// <param name="file">Visio File to load</param>
 		/// <param name="diagData">DiagramData</param>
 		/// <returns>DiagramData</returns>
 		/// <exception cref="ArgumentNullException"></exception>
 		/// <exception cref="Exception"></exception>
 		public DiagramData ParseData( string file, DiagramData diagData )
 		{
+			//Microsoft.Office.Interop.Excel.Application xlApp = new Microsoft.Office.Interop.Excel.Application();
+
 			if (string.IsNullOrEmpty(file))
 			{
 				// Error file is empty
-				throw new ArgumentNullException(nameof(file));
+				throw new ArgumentNullException(string.Format("Exception:ParseData(File is missing: {0})",nameof(file)));
 			}
 
 			List<Device> devices = new List<Device>();
 			Device device = null;
 
+			//Microsoft.Office.Interop.Excel.Workbook xlWorkbook = xlApp.Workbooks.Open(@"S:\Utils\documents\ServerManager\serverlist.xlsx");
+			//Microsoft.Office.Interop.Excel._Worksheet xlWorksheet = xlWorkbook.Sheets[1];
+
+			//if (openExcelFile(file))
+			//{
+			//	int yy = 0;
+			//}
+
 			WorkBook workbook = WorkBook.Load(file);
 			WorkSheet sheet = workbook.WorkSheets.First();
-
 			string[] saTmp1 = sheet.RangeAddressAsString.Split(':');
 			int nIdx1 = saTmp1[1].IndexOfAny("0123456789".ToCharArray());	// if a digit is found get the index
 			string endColumn = saTmp1[1].Substring(0, nIdx1);
-
-			for (var row = 2; row <= sheet.RowCount; row++)
+			try
 			{
-				var cells = sheet[$"A{row}:{endColumn}{row}"].ToList();
-				if (!cells[0].ToString().StartsWith(";")) // first row is a header so skip
+				for (var row = 2; row <= sheet.RowCount; row++)
 				{
-					try
+					var cells = sheet[$"A{row}:{endColumn}{row}"].ToList();
+					if (!cells[0].ToString().StartsWith(";")) // first row is a header so skip
 					{
 						if (cells[(int)_cellIndex.VisioPage].IntValue > diagData.MaxVisioPages)
 						{
@@ -92,11 +104,11 @@ namespace VisioDiagramCreator.Helpers
 						switch (cells[(int)_cellIndex.ShapeType].ToString().Trim())
 						{
 							case "Template":
-								diagData.TemplateFilePath = cells[(int)_cellIndex.ShapeKey].ToString().Trim().Substring(0, cells[(int)_cellIndex.ShapeKey].ToString().Trim().Length - 1);
+								diagData.TemplateFilePath = cells[(int)_cellIndex.StencilKey].ToString().Trim().Substring(0, cells[(int)_cellIndex.StencilKey].ToString().Trim().Length - 1);
 								break;
 
 							case "Stencil":
-								diagData.StencilFilePath = cells[(int)_cellIndex.ShapeKey].ToString().Trim().Substring(0, cells[(int)_cellIndex.ShapeKey].ToString().Trim().Length - 1);
+								diagData.StencilFilePath = cells[(int)_cellIndex.StencilKey].ToString().Trim().Substring(0, cells[(int)_cellIndex.StencilKey].ToString().Trim().Length - 1);
 								break;
 
 							case "Shape":
@@ -106,16 +118,17 @@ namespace VisioDiagramCreator.Helpers
 								break;
 
 							default:
-								//throw new Exception("Unknown label in CSV file: " + saTmp[0].Trim().ToString());
+								throw new Exception(string.Format("Exception::ParseData - Unknown label:{0} in CSV file:{1})", cells[(int)_cellIndex.StencilImage].ToString().Trim(),file));
 								break;
 						}
-					}
-					catch (Exception ex)
-					{
-						Console.WriteLine(ex.Message +" - "+ ex.StackTrace);	
-						throw new Exception(String.Format("Exception: Duplicate key:({0}) found.\nPlease resolve this issue in the Excel Data file\n{1}", device.ShapeInfo.UniqueKey, ex.Message)); //, ex.StackTrace.ToString);
+						Console.WriteLine("ParseData - ShapeType:{0}, Row{1}", cells[(int)_cellIndex.StencilImage].ToString().Trim(),row);
 					}
 				}
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine(ex.Message + " - " + ex.StackTrace);
+				throw new Exception(String.Format("Exception::ParseData - Duplicate key:({0}) found.\nPlease resolve this issue in the Excel Data file\n{1}", device.ShapeInfo.UniqueKey, ex.Message)); //, ex.StackTrace.ToString);
 			}
 
 			if (diagData != null)
@@ -130,6 +143,51 @@ namespace VisioDiagramCreator.Helpers
 			return diagData;
 		}
 
+
+		private bool openExcelFile(string file)
+		{
+			Excel.Application excelApp = null;
+			Excel.Workbooks wkbks = null;
+			Excel.Workbook wkbk = null;
+
+			bool wasFoundRunning = false;
+
+			Excel.Application tApp = null;
+			//Checks to see if excel is opened
+			try
+			{
+				tApp = (Excel.Application)System.Runtime.InteropServices.Marshal.GetActiveObject("Excel.Application");
+				if (tApp.Caption.Contains("Architect"))
+				{
+					wasFoundRunning = true;
+				}
+			}
+			catch (Exception)//Excel not open
+			{
+				wasFoundRunning = false;
+			}
+			finally
+			{
+				if (true == wasFoundRunning)
+				{
+					excelApp = tApp;
+					wkbk = excelApp.Workbooks.Add(Type.Missing);
+				}
+				else
+				{
+					excelApp = new Excel.Application();
+					wkbks = excelApp.Workbooks;
+					wkbk = wkbks.Add(Type.Missing);
+				}
+				//Release the temp if in use
+				if (null != tApp) { Marshal.FinalReleaseComObject(tApp); }
+				tApp = null;
+			}
+			//Initialize the sheets in the new workbook
+			return wasFoundRunning;
+		}
+
+
 		/// <summary>
 		/// _parseExcelData
 		/// parse the Excel data into a Device object
@@ -143,10 +201,37 @@ namespace VisioDiagramCreator.Helpers
 			try
 			{
 				visioInfo.VisioPage = data[(int)_cellIndex.VisioPage].IntValue;
-				visioInfo.UniqueKey = data[(int)_cellIndex.ShapeKey].ToString().Trim();      // unique key for this shape
-				visioInfo.StencilImage = data[(int)_cellIndex.ShapeImage].ToString().Trim(); // must match exactly the name in the visio stencil
-				visioInfo.StencilLabel = data[(int)_cellIndex.ShapeLabel].ToString().Trim(); // text to add to the stencil image
-
+				visioInfo.UniqueKey = data[(int)_cellIndex.StencilKey].ToString().Trim();      // unique key for this shape
+				visioInfo.StencilImage = data[(int)_cellIndex.StencilImage].ToString().Trim(); // must match exactly the name in the visio stencil
+				visioInfo.StencilLabel = data[(int)_cellIndex.StencilLabel].ToString().Trim(); // text to add to the stencil image
+				visioInfo.StencilLabelFontSize = data[(int)_cellIndex.StencilLabelFontSize].ToString().Trim(); // stencil fontsize to use.  If blank use stencil text size
+				// decode font size if needed
+				if (!string.IsNullOrEmpty(visioInfo.StencilLabelFontSize))
+				{
+					// get the value can be like   "12:B" or just a number
+					// check if size if over 14 default to stencil size
+					// if < 6 default to stencil size
+					// if the letter 'B' is found we need to make bold
+					// use regex to separate
+					string[] saTmp = visioInfo.StencilLabelFontSize.Split(':');
+					visioInfo.StencilLabelFontSize = saTmp[0].Trim();
+					if ( Int32.Parse(visioInfo.StencilLabelFontSize) > 14 || Int32.Parse(visioInfo.StencilLabelFontSize) < 6)
+					{
+						visioInfo.StencilLabelFontSize = String.Empty;  // too small or too large so default to stencil size
+						visioInfo.isStencilLabelFontBold = false;       // also change to narmal weight
+					}
+					else
+					{
+						if (saTmp.Length > 1)
+						{
+							if (saTmp[1].ToUpper() == "B")
+							{
+								visioInfo.isStencilLabelFontBold = true;
+								visioInfo.LineWeight = VisioVariables.LINE_WEIGHT_2;
+							}
+						}
+					}
+				}
 				device.MachineName = data[(int)_cellIndex.Mach_name ].ToString().Trim();
 				device.MachineId = data[(int)_cellIndex.Mach_id].ToString().Trim();
 				device.SiteId = data[(int)_cellIndex.Site_id].ToString().Trim();

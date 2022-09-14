@@ -66,11 +66,11 @@ namespace VisioDiagramCreator
 				if (_bBuildVisioFromExcelDataFile)
 				{
 					// build visio file form data file
-					Console.WriteLine(String.Format("Build Visio file from an excel data file:{0}", tb_excelDataFile.Text));
+					Console.WriteLine(String.Format("MainForm - Build Visio file from an excel data file:{0}", tb_excelDataFile.Text));
 					diagramData = new ProcessExcelDataFile().ParseData(tb_excelDataFile.Text.Trim(), diagramData);
 					if (diagramData == null)
 					{
-						MessageBox.Show("ERROR: _parseData returned null");
+						MessageBox.Show("MainForm - ERROR: _parseData returned null");
 						visHlp.VisioForceCloseAll();
 						this.Close();
 					}
@@ -90,7 +90,7 @@ namespace VisioDiagramCreator
 				else
 				{
 					// for testing to view all the stencils in the document
-					//visHlp.ListDocuymentStencils(diagramData, VisioVariables.ShowDiagram.Show);
+					//visHlp.ListDocumentStencils(diagramData, VisioVariables.ShowDiagram.Show);
 
 					// buid data file from existing Visio file
 					Console.WriteLine("build excel data file from a Visio file");
@@ -100,7 +100,7 @@ namespace VisioDiagramCreator
 					{
 						int key = allShp.Key;
 						ShapeInformation shpInf = allShp.Value;
-						Console.WriteLine(string.Format("UniqueKey:{0}; Image:{1}, ConnectFrom:{2}; ConnectTo:{3}", shpInf.UniqueKey, shpInf.StencilImage, shpInf.ConnectFrom, shpInf.ConnectTo));
+						Console.WriteLine(string.Format("MainForm - UniqueKey:{0}; Image:{1}, ConnectFrom:{2}; ConnectTo:{3}", shpInf.UniqueKey, shpInf.StencilImage, shpInf.ConnectFrom, shpInf.ConnectTo));
 					}
 
 					// we are dont so we can close the visio document(s)
@@ -110,11 +110,11 @@ namespace VisioDiagramCreator
 			}
 			catch( IOException ioe)
 			{
-				MessageBox.Show(ioe.Message, "Warning File Access Exception", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+				MessageBox.Show(string.Format("Exception::MainForm - {0}",ioe.Message), "Warning File Access Exception", MessageBoxButtons.OK, MessageBoxIcon.Warning);
 			}
 			catch (Exception ex)
 			{
-				MessageBox.Show(ex.Message, "Exception");
+				MessageBox.Show(string.Format("Exception::MainForm - {0}\n{1}", ex.Message,ex.StackTrace), "Exception");
 			}
 		}
 

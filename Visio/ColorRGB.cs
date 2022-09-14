@@ -135,7 +135,7 @@ namespace VisioDiagramCreator.Visio
 			if (!c.HasValue)
 			{
 				string s = $"Failed to parse color string \"{webcolor}\"";
-				throw new Exception(s);
+				throw new Exception(string.Format("Exception::ParseWebColor - {0}",s));
 			}
 
 			return c.Value;

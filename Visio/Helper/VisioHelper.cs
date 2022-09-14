@@ -22,51 +22,6 @@ namespace VisioDiagramCreator.Visio
 		{
 		}
 
-		public VisioHelper(Visio1.Application appVisio)
-		{
-			this.appVisio = appVisio;
-		}
-
-
-		/// <summary>
-		/// ShowVisioDiagram
-		/// This method can control if the Visio document is visiable or not.
-		/// One thing I have noticed is if the visio document is hidden you will need to
-		/// open Visio to open the hidden file to save it or discard it.
-		/// </summary>
-		/// <param name="appV">Visio1.Application</param>
-		/// <param name="show"><options>VisioVariables.ShowDiagram.NoShow or VisioVariables.ShowDiagram.Show</options></param>
-		public void ShowVisioDiagram(Visio1.Application appV, VisioVariables.ShowDiagram show)
-		{
-			if (show == VisioVariables.ShowDiagram.Show)
-			{
-				appV.Visible = true;	// show the diagram
-			}
-			else
-			{
-				appV.Visible = false;	// dont show the diagram
-			}
-		}
-
-		/// <summary>
-		/// VisioForceCloseAll
-		/// Close all the Visio documents
-		/// </summary>
-		public void VisioForceCloseAll()
-		{
-			if (this.vDocuments != null)
-			{
-				while (this.vDocuments.Count > 0)
-				{
-					this.vDocuments.Application.ActiveDocument.Close();
-				}
-			}
-			if (this.appVisio != null)
-			{
-				this.appVisio.Quit();
-			}
-		}
-
 		/// <summary>
 		/// SetupPage
 		/// Set the Visio diagram page Orientation and page size
@@ -81,13 +36,13 @@ namespace VisioDiagramCreator.Visio
 			string width = string.Empty;
 			string height = string.Empty;
 
-			if (currentPage == null || string.IsNullOrEmpty(orientation) || string.IsNullOrEmpty(size) )
+			if (currentPage == null || string.IsNullOrEmpty(orientation) || string.IsNullOrEmpty(size))
 			{
-				MessageBox.Show(string.Format("Error one of the following is null or empty: Page{0}, Orientation:{1}, Size:{3}",currentPage, orientation,size));
+				MessageBox.Show(string.Format("Error one of the following is null or empty: Page{0}, Orientation:{1}, Size:{3}", currentPage, orientation, size));
 				return true;
 			}
 
-			switch(size.ToUpper())
+			switch (size.ToUpper())
 			{
 				case "TABLOID":
 					width = "8.5 in";
@@ -116,7 +71,7 @@ namespace VisioDiagramCreator.Visio
 					break;
 			}
 
-			switch(orientation.ToUpper())
+			switch (orientation.ToUpper())
 			{
 				case "LANDSCAPE":
 					currentPage.PageSheet.Cells["PageWidth"].FormulaU = height;
@@ -138,14 +93,16 @@ namespace VisioDiagramCreator.Visio
 					//sheet.get_CellsSRC((short)Visio1.VisSectionIndices.visSectionObject, (short)Visio1.VisRowIndices.visRowPrintProperties, (short)Visio1.VisCellIndices.visPageDrawSizeType).FormulaU = "1";
 					break;
 			}
-			return false;	// successful
+			return false;  // successful
 		}
 
 		/// <summary>
 		/// setupVisioDiagram
 		/// this will setup the visio document page size and orientation
+		/// also based on tghe dspMode the document is noShow or Show
 		/// </summary>
 		/// <param name="allData">DiagramData</param>
+		/// <param name="dspMode">enum VisioVariables.ShowDiagram</param>
 		/// <returns>Visio.Pages</returns>
 		private Visio1.Pages setupVisioDiagram(DiagramData diagramData, VisioVariables.ShowDiagram dspMode)
 		{
@@ -153,7 +110,7 @@ namespace VisioDiagramCreator.Visio
 
 			// Start Visio
 			appVisio = new Visio1.Application();
-			this.ShowVisioDiagram(appVisio, dspMode);					// don't show the diagram
+			this.ShowVisioDiagram(appVisio, dspMode);             // don't show the diagram
 
 			vDocuments = appVisio.Documents;
 			try
@@ -164,10 +121,10 @@ namespace VisioDiagramCreator.Visio
 				//var visioDocument = docsObj.Add(diagramData.TemplateFilePath);
 				vDocument = vDocuments.Add(diagramData.TemplateFilePath);
 			}
-			catch(Exception ex1)
+			catch (Exception ex1)
 			{
 				sErr = "Error with the Template file";
-				throw new Exception(sErr, ex1);
+				throw new Exception(string.Format("Exception::setupVisioDiagram - {0}\n{1}",sErr, ex1));
 			}
 
 			// this is only needed if the visio template file does not contain the stencil
@@ -179,10 +136,10 @@ namespace VisioDiagramCreator.Visio
 				// use this method if the template file already contains the stencil
 				stencils = vDocuments[diagramData.StencilFilePath];
 			}
-			catch(Exception ex2)
+			catch (Exception ex2)
 			{
 				sErr = "Error with the stencil file.  Possible issue is the stencil file name changed\nDoes not match what the Template file is using";
-				throw new Exception(sErr, ex2);
+				throw new Exception(string.Format("Exception::setupVisioDiagram - {0}\n{1}",sErr, ex2));
 			}
 
 			Visio1.Pages pagesObj = appVisio.ActiveDocument.Pages;
@@ -196,7 +153,7 @@ namespace VisioDiagramCreator.Visio
 			//appVisio.Visible = true;
 
 			// The new document will have one page, get the a reference to it.
-			Visio1.Page page1 = vDocument.Pages[1];		
+			Visio1.Page page1 = vDocument.Pages[1];
 			page1.Name = "Diagram1";
 			page1.Index = 1;
 
@@ -206,25 +163,26 @@ namespace VisioDiagramCreator.Visio
 				double xPosition = page1.PageSheet.get_CellsU("PageWidth").ResultIU;
 				double yPosition = page1.PageSheet.get_CellsU("PageHeight").ResultIU;
 				var pageOrientation = page1.PageSheet.get_CellsU("PrintPageOrientation").ResultIU;
-				Console.WriteLine(string.Format("page:{0}, Height:{1}, Width:{2} and Orientation:{3}"), page1.Name, yPosition, xPosition, diagramData.VisioPageOrientation);
+				Console.WriteLine(string.Format("page:{0}, Height:{1}, Width:{2} and Orientation:{3}", page1.Name, yPosition, xPosition, diagramData.VisioPageOrientation));
 			}
 
 			// this section is if we want to add more than one page to the document
-			for (int i = 0; i < diagramData.MaxVisioPages-1; i++)
+			for (int i = 0; i < diagramData.MaxVisioPages - 1; i++)
 			{
 				Visio1.Page page = vDocument.Pages.Add();
 				// Name the pages. This is what is shown in the page tabs.
-				page.Name = "Diagram" + (i+2);
+				page.Name = "Diagram" + (i + 2);
 
-				// Page 1 is Standard
-				if (!SetupDiagramPage(page, diagramData.VisioPageOrientation, diagramData.VisioPageSize))
-				{
-					double xPosition = page.PageSheet.get_CellsU("PageWidth").ResultIU;
-					double yPosition = page.PageSheet.get_CellsU("PageHeight").ResultIU;
-					var pageOrientation = page.PageSheet.get_CellsU("PrintPageOrientation").ResultIU;
-					Console.WriteLine(string.Format("page:{0}, Height:{1}, Width:{2} and Orientation:{3}"), page.Name, yPosition, xPosition, diagramData.VisioPageOrientation);
-				}
 			}
+
+			// Page 1 is Standard
+//			if (!SetupDiagramPage(page, diagramData.VisioPageOrientation, diagramData.VisioPageSize))
+//			{
+//				double xPosition = page.PageSheet.get_CellsU("PageWidth").ResultIU;
+//				double yPosition = page.PageSheet.get_CellsU("PageHeight").ResultIU;
+//				var pageOrientation = page.PageSheet.get_CellsU("PrintPageOrientation").ResultIU;
+//				Console.WriteLine(string.Format("page:{0}, Height:{1}, Width:{2} and Orientation:{3}"), page.Name, yPosition, xPosition, diagramData.VisioPageOrientation);
+//			}
 
 			// Move the second page to the first position in the list of pages.
 			//page2.Index = 1;
@@ -237,47 +195,13 @@ namespace VisioDiagramCreator.Visio
 		}
 
 		/// <summary>
-		/// DrawAllShapes
-		/// Draw all the visio stencils obtained from the data file
-		/// </summary>
-		/// <param name="diagramData">DiagramData</param>
-		/// <exception cref="Exception"></exception>
-		public void DrawAllShapes(DiagramData diagramData, VisioVariables.ShowDiagram dspMode)
-		{
-			Visio1.Pages vPages = setupVisioDiagram(diagramData, dspMode);
-			Visio1.Shape shpObj = null;
-
-			foreach (Device device in diagramData.Devices)
-			{
-				try
-				{
-					// draw other shapes
-					// add list of shaps to ignore
-					if (!device.ShapeInfo.UniqueKey.Contains("CTS"))
-					{
-						shpObj = _drawShape(device, vPages);
-						device.ShapeInfo.ShpObj = shpObj;   // save this stencil object
-					}
-				}
-				catch (Exception ex)
-				{
-					throw new Exception(string.Format("Stencil Name {0} not found.  - {1}",device.ShapeInfo.UniqueKey,ex.Message));
-				}
-			}
-			// use before saving AutoSizeDrawing
-			appVisio.AutoLayout = true;
-			pageObj.AutoSize = true;
-			pageObj.AutoSizeDrawing();
-		}
-
-		/// <summary>
 		/// _drawShape
 		/// draw the visio stencil on the visio document
 		/// update the dictionaries in the DiagramData object for connection info
 		/// </summary>
 		/// <param name="device">Device</param>
-		/// <param name="Visio.Pages">vPages</param>
-		/// <returns>Visio.Shape object</returns>
+		/// <param name="vPages">Visio.Pages</param>
+		/// <returns>Visio.Shape</returns>
 		/// <exception cref="Exception"></exception>		
 		private Visio1.Shape _drawShape(Device device, Visio1.Pages vPages)
 		{
@@ -285,8 +209,9 @@ namespace VisioDiagramCreator.Visio
 			Visio1.Master stnObj = stencils.Masters[device.ShapeInfo.StencilImage];
 			if (stnObj == null)
 			{
-				MessageBox.Show("Can't find master stencil: " + device.ShapeInfo.StencilImage);
-				throw new Exception(device.ShapeInfo.StencilImage + "Visio Helper PageStencil");
+				string sTmp = string.Format("ERROR::_drawShape - Can't find master stencil:{0}",device.ShapeInfo.StencilImage);
+				MessageBox.Show(sTmp);
+				throw new Exception(sTmp);
 			}
 
 			Visio1.Pages pagesObj = appVisio.ActiveDocument.Pages;
@@ -298,7 +223,7 @@ namespace VisioDiagramCreator.Visio
 			shpObj.NameU = device.ShapeInfo.UniqueKey;
 
 			if ("NetworkPipe".Equals(device.ShapeInfo.StencilImage))
-			{  
+			{
 				// we need to resize the stencil NetworkPipe (remember this is rotated 90deg
 				// so we need to go East for Height and South for Width
 				if (device.ShapeInfo.Width > 0.0)
@@ -365,14 +290,24 @@ namespace VisioDiagramCreator.Visio
 				targetCell.FormulaU = rgb;
 			}
 
-
 			if (!string.IsNullOrEmpty(device.ShapeInfo.StencilLabel))
 			{
 				shpObj.Text = device.ShapeInfo.StencilLabel;
-				//shpObj.TextStyleKeepFmt = "Normal";		// Using this code would not allow the font size to be changed
-				//shpObj.Cells("Char.Size").FormulaU = "8 pt";
-				//string fontSize = shpObj.get_Cells("Char.Size").Formula;
-
+				if (!string.IsNullOrEmpty(device.ShapeInfo.StencilLabelFontSize))
+				{
+					if (device.ShapeInfo.isStencilLabelFontBold)
+					{
+						// bold font
+						shpObj.get_CellsSRC(
+							 (short)Visio1.VisSectionIndices.visSectionCharacter,
+							 (short)0,
+							 (short)Visio1.VisCellIndices.visCharacterStyle).FormulaU = "1";
+						//shpObj.TextStyleKeepFmt = "Bold";    // Using this code would not allow the font size to be changed
+					}
+					shpObj.get_Cells("Char.Size").Formula = "=" + device.ShapeInfo.StencilLabelFontSize + " pt";
+					//shpObj.Cells("Char.Size").FormulaU = device.ShapeInfo.StencilLabelFontSize + " pt";
+					//string fontSize = shpObj.get_Cells("Char.Size").Formula;
+				}
 				// check if we have an IP that needs to be displayed
 				if (!string.IsNullOrEmpty(device.OmniIP))
 				{
@@ -418,8 +353,242 @@ namespace VisioDiagramCreator.Visio
 			return shpObj;
 		}
 
-		private void setShapeTextBottom()
+		/// <summary>
+		/// ShowVisioDiagram
+		/// This method can control if the Visio document is visiable or not.
+		/// One thing I have noticed is if the visio document is hidden you will need to
+		/// open Visio to open the hidden file to save it or discard it.
+		/// </summary>
+		/// <param name="appV">Visio1.Application</param>
+		/// <param name="show"><options>VisioVariables.ShowDiagram.NoShow or VisioVariables.ShowDiagram.Show</options></param>
+		public void ShowVisioDiagram(Visio1.Application appV, VisioVariables.ShowDiagram show)
 		{
+			if (show == VisioVariables.ShowDiagram.Show)
+			{
+				appV.Visible = true;	// show the diagram
+			}
+			else
+			{
+				appV.Visible = false;	// dont show the diagram
+			}
+		}
+
+		/// <summary>
+		/// VisioForceCloseAll
+		/// Close all the Visio documents
+		/// </summary>
+		public void VisioForceCloseAll()
+		{
+			if (this.vDocuments != null)
+			{
+				while (this.vDocuments.Count > 0)
+				{
+					this.vDocuments.Application.ActiveDocument.Close();
+				}
+			}
+			if (this.appVisio != null)
+			{
+				this.appVisio.Quit();
+			}
+		}
+
+		/// <summary>
+		/// DrawAllShapes
+		/// Draw all the visio stencils obtained from the data file
+		/// also based on tghe dspMode the document is noShow or Show
+		/// </summary>
+		/// <param name="diagramData">DiagramData</param>
+		/// <param name="dspMode">enum VisioVariables.ShowDiagram</param>
+		/// <exception cref="Exception"></exception>
+		public void DrawAllShapes(DiagramData diagramData, VisioVariables.ShowDiagram dspMode)
+		{
+			Visio1.Pages vPages = setupVisioDiagram(diagramData, dspMode);
+			Visio1.Shape shpObj = null;
+
+			foreach (Device device in diagramData.Devices)
+			{
+				try
+				{
+					// draw other shapes
+					// add list of shaps to ignore
+					if (!device.ShapeInfo.UniqueKey.Contains("CTS"))
+					{
+						shpObj = _drawShape(device, vPages);
+						device.ShapeInfo.ShpObj = shpObj;   // save this stencil object
+					}
+				}
+				catch (Exception ex)
+				{
+					throw new Exception(string.Format("Exception::setupVisioDiagram - Stencil Name:{0} not found\n{1}",device.ShapeInfo.UniqueKey,ex.Message));
+				}
+			}
+			// use before saving AutoSizeDrawing
+			appVisio.AutoLayout = true;
+			pageObj.AutoSize = true;
+			pageObj.AutoSizeDrawing();
+		}
+
+		/// <summary>
+		/// ConnectShapes
+		/// this function will connect all the shapes that are required.
+		/// it will use the All shaps map to lookup the shape object for the connectFrom and connectTo values
+		/// special handling is if the Shape object for the ShpFromObj and To are null don't draw a connection
+		/// </summary>
+		/// <param name="diagData">DiagramData</param>
+		/// <returns>bool<values>false success</values></returns>
+		public bool ConnectShapes(DiagramData diagData)
+		{
+			ShapeConnection lookupShapeConnection = null;
+
+			//Visio1.Shape shpObj = null;
+			Visio1.Shape shpConn = null;
+
+			try
+			{
+				// iterate over the ShapeConnectionsMap to determine if a connection shape is needed
+				for (int nCnt = 0; nCnt < diagData.ShapeConnectionsMap.Count; nCnt++)
+				{
+					// nCnt is the key
+					if (diagData.ShapeConnectionsMap.TryGetValue(nCnt, out lookupShapeConnection))
+					{
+						//shpObj = lookupShapeConnection.device.ShapeInfo.ShpObj;
+
+						// Drop the built-in connector object on the lower left corner of the page:
+						// need to drop on another page
+						Visio1.Pages pagesObj = appVisio.ActiveDocument.Pages;
+
+						// switch Visio Diagram Page if needed based on the shape data VisioPage value
+						appVisio.ActiveWindow.Page = pagesObj[lookupShapeConnection.device.ShapeInfo.VisioPage];
+
+						// draw the object on the Visio diagram
+						shpConn = appVisio.ActivePage.Drop(pageObj.Application.ConnectorToolDataObject, 0.0, 0.0);
+
+						// Set the connector properties, using different arrows, colors, and patterns for many-to-many relationships.
+						shpConn.get_CellsU("ShdwPattern").ResultIU = VisioVariables.SHDW_PATTERN;
+						shpConn.get_CellsU("BeginArrow").ResultIU = VisioVariables.ARROW_NONE;
+						shpConn.get_CellsU("EndArrow").ResultIU = VisioVariables.ARROW_NONE;
+						shpConn.get_CellsU("LineColor").FormulaU = VisioVariables.COLOR_BLACK;
+						shpConn.get_CellsU("Rounding").ResultIU = VisioVariables.ROUNDING;
+						shpConn.get_CellsU("LinePattern").ResultIU = VisioVariables.LINE_PATTERN_SOLID;
+						shpConn.get_CellsU("LineWeight").FormulaU = VisioVariables.LINE_WEIGHT_1;
+
+						if (lookupShapeConnection.device.ShapeInfo.LineWeight != VisioVariables.LINE_WEIGHT_1)
+						{
+							shpConn.get_CellsU("LineWeight").FormulaU = lookupShapeConnection.device.ShapeInfo.LineWeight;
+						}
+						if (lookupShapeConnection.LinePattern > 0)
+						{
+							shpConn.get_CellsU("LinePattern").ResultIU = lookupShapeConnection.LinePattern;
+						}
+
+						switch ((string)lookupShapeConnection.ArrowType.Trim().ToUpper())
+						{
+							case VisioVariables.sARROW_START:
+								shpConn.get_CellsU("BeginArrow").ResultIU = VisioVariables.BEGIN_ARROW;
+								break;
+							case VisioVariables.sARROW_END:
+								shpConn.get_CellsU("EndArrow").ResultIU = VisioVariables.END_ARROW;
+								break;
+							case VisioVariables.sARROW_BOTH:
+								shpConn.get_CellsU("BeginArrow").ResultIU = VisioVariables.BEGIN_ARROW;
+								shpConn.get_CellsU("EndArrow").ResultIU = VisioVariables.END_ARROW;
+								break;
+							default:
+								shpConn.get_CellsU("BeginArrow").ResultIU = VisioVariables.ARROW_NONE;
+								shpConn.get_CellsU("EndArrow").ResultIU = VisioVariables.ARROW_NONE;
+								break;
+						}
+
+						// set connection text
+						if (!string.IsNullOrEmpty(lookupShapeConnection.LineLabel))
+						{
+							shpConn.Text = lookupShapeConnection.LineLabel;
+						}
+
+						//var linePatternCell = shpConn.get_CellsU("LinePattern");
+						switch (lookupShapeConnection.LineColor.Trim().ToUpper())
+						{
+							case "YELLOW":
+								shpConn.get_CellsU("LineColor").FormulaU = VisioVariables.COLOR_YELLOW_LIGHT;
+								break;
+							case "GREEN":
+								shpConn.get_CellsU("LineColor").FormulaU = VisioVariables.COLOR_GREEN;
+								break;
+							case "RED":
+								shpConn.get_CellsU("LineColor").FormulaU = VisioVariables.COLOR_RED;
+								break;
+							case "BLUE":
+								shpConn.get_CellsU("LineColor").FormulaU = VisioVariables.COLOR_BLUE;
+								break;
+							case "CYAN":
+								shpConn.get_CellsU("LineColor").FormulaU = VisioVariables.COLOR_CYAN;
+								break;
+							case "ORANGE":
+								shpConn.get_CellsU("LineColor").FormulaU = VisioVariables.COLOR_ORANGE;
+								break;
+							case "LIGHT BLUE":
+								shpConn.get_CellsU("LineColor").FormulaU = VisioVariables.COLOR_BLUE_LIGHT;
+								break;
+							default:
+							case "BLACK":
+								shpConn.get_CellsU("LineColor").FormulaU = VisioVariables.COLOR_BLACK;
+								break;
+						}
+
+						// now connect the connector to the objects
+						if (lookupShapeConnection.ShpFromObj != null && lookupShapeConnection.ShpToObj != null)
+						{
+							// Connect its Begin to the 'ShpFromObj' shape:
+							shpConn.get_CellsU("BeginX").GlueTo(lookupShapeConnection.ShpFromObj.get_CellsU("PinX"));
+
+							// Connect its End to the 'To' shape:
+							shpConn.get_CellsU("EndX").GlueTo(lookupShapeConnection.ShpToObj.get_CellsU("PinX"));
+
+							//Console.WriteLine("draw connection from: {0} To:{1}", lookupShapeConnection.device.ShapeInfo.ConnectFrom, lookupShapeConnection.device.ShapeInfo.ConnectTo);
+						}
+						else
+						{
+							Console.WriteLine("SKIP drawing this connection from: {0} To:{1}", lookupShapeConnection.device.ShapeInfo.ConnectFrom, lookupShapeConnection.device.ShapeInfo.ConnectTo);
+						}
+					}
+				}
+			}
+			catch(Exception ex)
+			{
+				throw new Exception(string.Format("Exception::ConnectShapes - {0}", ex.Message));
+			}
+			return false;
+		}
+
+		/// <summary>
+		/// ListStencils
+		/// List all the stencils in the master stencil document
+		/// </summary>
+		/// <param name="diagData">DiagramData</param>
+		/// <param name="dspMode">enum VisioVariables.ShowDiagram</param>
+		public void ListDocumentStencils(DiagramData diagramData, VisioVariables.ShowDiagram dspMode)
+		{
+			Visio1.Pages vPages = setupVisioDiagram(diagramData, dspMode);
+
+			ArrayList masterArray_0 = new ArrayList();
+			ArrayList masterArray_1 = new ArrayList();
+			Visio1.Document doc_0 = vDocuments[1];    // Document stencil figures
+			Visio1.Document doc_1 = vDocuments[2];    // Stencil figures
+			Visio1.Masters masters_0 = doc_0.Masters;
+			Visio1.Masters masters_1 = doc_1.Masters;
+			foreach (Visio1.Master master in masters_0)
+			{
+				// Document stencil figures
+				masterArray_0.Add(master.NameU);   // THIS WILL CONTAIN DIAGRAM FIGURES
+				Console.WriteLine("ListDocumentStencils - Master0 - ID:{0} Name:{1} NameU:{2}",master.ID, master.Name, master.NameU);
+			}
+			this.VisioForceCloseAll();
+		}
+	}
+}
+
+//		private void setShapeTextBottom()
+//		{
 //			Visio1.Selection sel = null;
 //			
 //			sel = Visio1.ActiveWindow.Selection;
@@ -442,163 +611,7 @@ namespace VisioDiagramCreator.Visio
 //				//	Set the paragraph alignment formula:
 //				shp.get_CellsU("VerticalAlign").FormulaForceU = "0";
 //			}
-		}
-
-		/// <summary>
-		/// ConnectShapes
-		/// this function will connect all the shapes that are required.
-		/// it will use the All shaps map to lookup the shape object for the connectFrom and connectTo values
-		/// special handling is if the Shape object for the ShpFromObj and To are null don't draw a connection
-		/// </summary>
-		/// <param name="shapeConnectionMap">Dictionary<int, VisioShapeConnect></int></param>
-		/// <returns>bool - false success</returns>
-		public bool ConnectShapes(DiagramData diagData)
-		{
-			ShapeConnection lookupShapeConnection = null;
-
-			//Visio1.Shape shpObj = null;
-			Visio1.Shape shpConn = null;
-
-			// The new document will have one page, get the a reference to it.
-			//Visio1.Page page1 = vDocument.Pages[1];
-
-			// Assuming 'No theme' is set for the page, no arrow will be shown so change theme to see connector arrow
-			//page1.SetTheme("Office Theme");
-
-			for (int nCnt = 0; nCnt < diagData.ShapeConnectionsMap.Count; nCnt++)
-			{
-				// nCnt is the key
-				if (diagData.ShapeConnectionsMap.TryGetValue(nCnt, out lookupShapeConnection))
-				{
-					//shpObj = lookupShapeConnection.device.ShapeInfo.ShpObj;
-
-					// Drop the built-in connector object on the lower left corner of the page:
-					// need to drop on another page
-					Visio1.Pages pagesObj = appVisio.ActiveDocument.Pages;
-					// switch Visio Diagram Page if needed based on the shape data VisioPage value
-					appVisio.ActiveWindow.Page = pagesObj[lookupShapeConnection.device.ShapeInfo.VisioPage];
-
-					shpConn = appVisio.ActivePage.Drop(pageObj.Application.ConnectorToolDataObject, 0.0, 0.0);
-
-					// Set the connector properties, using different arrows, colors, and patterns for many-to-many relationships.
-					shpConn.get_CellsU("ShdwPattern").ResultIU = VisioVariables.SHDW_PATTERN;
-					shpConn.get_CellsU("BeginArrow").ResultIU = VisioVariables.ARROW_NONE;
-					shpConn.get_CellsU("EndArrow").ResultIU = VisioVariables.ARROW_NONE;
-					shpConn.get_CellsU("LineColor").FormulaU = VisioVariables.COLOR_BLACK;
-					shpConn.get_CellsU("Rounding").ResultIU = VisioVariables.ROUNDING;
-					shpConn.get_CellsU("LinePattern").ResultIU = VisioVariables.LINE_PATTERN_SOLID;
-					shpConn.get_CellsU("LineWeight").FormulaU = VisioVariables.LINE_WEIGHT_1;
-
-					if (lookupShapeConnection.LinePattern > 0)
-					{
-						shpConn.get_CellsU("LinePattern").ResultIU = lookupShapeConnection.LinePattern;
-					}
-
-					switch ((string)lookupShapeConnection.ArrowType.Trim().ToUpper())
-					{
-						case VisioVariables.sARROW_START:
-							shpConn.get_CellsU("BeginArrow").ResultIU = VisioVariables.BEGIN_ARROW;
-							break;
-						case VisioVariables.sARROW_END:
-							shpConn.get_CellsU("EndArrow").ResultIU = VisioVariables.END_ARROW;
-							break;
-						case VisioVariables.sARROW_BOTH:
-							shpConn.get_CellsU("BeginArrow").ResultIU = VisioVariables.BEGIN_ARROW;
-							shpConn.get_CellsU("EndArrow").ResultIU = VisioVariables.END_ARROW;
-							break;
-						default:
-							shpConn.get_CellsU("BeginArrow").ResultIU = VisioVariables.ARROW_NONE;
-							shpConn.get_CellsU("EndArrow").ResultIU = VisioVariables.ARROW_NONE;
-							break;
-					}
-
-					// set connection text
-					if (!string.IsNullOrEmpty(lookupShapeConnection.LineLabel))
-					{
-						shpConn.Text = lookupShapeConnection.LineLabel;
-					}
-
-					//var linePatternCell = shpConn.get_CellsU("LinePattern");
-					switch (lookupShapeConnection.LineColor.Trim().ToUpper())
-					{
-						case "YELLOW":
-							shpConn.get_CellsU("LineColor").FormulaU = VisioVariables.COLOR_YELLOW_LIGHT;
-							break;
-						case "GREEN":
-							shpConn.get_CellsU("LineColor").FormulaU = VisioVariables.COLOR_GREEN;
-							break;
-						case "RED":
-							shpConn.get_CellsU("LineColor").FormulaU = VisioVariables.COLOR_RED;
-							break;
-						case "BLUE":
-							shpConn.get_CellsU("LineColor").FormulaU = VisioVariables.COLOR_BLUE;
-							break;
-						case "CYAN":
-							shpConn.get_CellsU("LineColor").FormulaU = VisioVariables.COLOR_CYAN;
-							break;
-						case "ORANGE":
-							shpConn.get_CellsU("LineColor").FormulaU = VisioVariables.COLOR_ORANGE;
-							break;
-						case "LIGHT BLUE":
-							shpConn.get_CellsU("LineColor").FormulaU = VisioVariables.COLOR_BLUE_LIGHT;
-							break;
-						default:
-						case "BLACK":
-							shpConn.get_CellsU("LineColor").FormulaU = VisioVariables.COLOR_BLACK;
-							break;
-					}
-
-					// now connect the connector to the objects
-					if (lookupShapeConnection.ShpFromObj != null && lookupShapeConnection.ShpToObj != null)
-					{
-						// Connect its Begin to the 'ShpFromObj' shape:
-						shpConn.get_CellsU("BeginX").GlueTo(lookupShapeConnection.ShpFromObj.get_CellsU("PinX"));
-						
-						// Connect its End to the 'To' shape:
-						shpConn.get_CellsU("EndX").GlueTo(lookupShapeConnection.ShpToObj.get_CellsU("PinX"));
-						
-						//Console.WriteLine("draw connection from: {0} To:{1}", lookupShapeConnection.device.ShapeInfo.ConnectFrom, lookupShapeConnection.device.ShapeInfo.ConnectTo);
-					}
-					else
-					{
-						Console.WriteLine("SKIP drawing this connection from: {0} To:{1}", lookupShapeConnection.device.ShapeInfo.ConnectFrom, lookupShapeConnection.device.ShapeInfo.ConnectTo);
-					}
-				}
-			}
-			return false;
-		}
-
-		/// <summary>
-		/// ListStencils
-		/// List all the stencils in the master stencil document
-		/// </summary>
-		public void ListDocuymentStencils(DiagramData diagramData, VisioVariables.ShowDiagram dspMode)
-		{
-			Visio1.Pages vPages = setupVisioDiagram(diagramData, dspMode);
-
-			ArrayList masterArray_0 = new ArrayList();
-			ArrayList masterArray_1 = new ArrayList();
-			Visio1.Document doc_0 = vDocuments[1];    // Document stencil figures
-			Visio1.Document doc_1 = vDocuments[2];    // Stencil figures
-			Visio1.Masters masters_0 = doc_0.Masters;
-			Visio1.Masters masters_1 = doc_1.Masters;
-			foreach (Visio1.Master master in masters_0)
-			{
-				// Document stencil figures
-				masterArray_0.Add(master.NameU);   // THIS WILL CONTAIN DIAGRAM FIGURES
-				Console.WriteLine("Master0 - ID:{0} Name:{1} NameU:{2}",master.ID, master.Name, master.NameU);
-			}
-			this.VisioForceCloseAll();
-
-			//foreach (Visio1.Master master in masters_1)
-			//{
-			//	// all the master stencil figures
-			//	masterArray_1.Add(master.NameU);  // THIS WILL CONTAIN STENCIL FIGURES
-			//	Console.WriteLine("Master1 - ID:{0} Name:{1} NameU:-{2}",master.ID, master.Name, master.NameU);
-			//}
-		}
-	}
-}
+//		}
 
 
 // fill a shap with color
