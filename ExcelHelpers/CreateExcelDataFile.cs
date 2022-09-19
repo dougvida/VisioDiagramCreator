@@ -67,6 +67,11 @@ namespace VisioDiagramCreator.ExcelHelpers
 			// open the file for wright
 			// declare the application object
 			xlApp = new Excel.Application();
+			if (xlApp == null)
+			{
+				MessageBox.Show("Excel is not properly installed!!");
+				return true;	// error
+			}
 
 			// open a file
 			xlWorkbook = xlApp.Workbooks.Open(fileNamePath);
@@ -74,6 +79,25 @@ namespace VisioDiagramCreator.ExcelHelpers
 			return false;
 		}
 
+		private bool writeVisioDataSheet()
+		{
+
+			return false;
+		}
+		private bool writeSystemInfoSheet()
+		{
+			return false;
+		}
+
+		private bool writeInterfacesSheet()
+		{
+			return false;
+		}
+
+		private bool writeTableSheet()
+		{
+			return false;
+		}
 		private void CloseExcelFile()
 		{
 			Marshal.ReleaseComObject(this.xlWorkbook);

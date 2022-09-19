@@ -7,14 +7,15 @@ using VisioDiagramCreator.Models;
 using Visio1 = Microsoft.Office.Interop.Visio;
 using System.Windows.Forms;
 using IronXL.Drawing;
+using System.Threading;
 
 namespace VisioDiagramCreator.Visio
 {
 	public class VisioHelper
 	{
-		public Visio1.Application appVisio;
-		public Visio1.Documents vDocuments;
-		public Visio1.Document vDocument;
+		public Visio1.Application appVisio = null;
+		public Visio1.Documents vDocuments = null;
+		public Visio1.Document vDocument = null;
 		
 		List<Visio1.Document> stencils = new List<Visio1.Document>();
 
@@ -109,20 +110,26 @@ namespace VisioDiagramCreator.Visio
 		private Visio1.Pages setupVisioDiagram(DiagramData diagramData, VisioVariables.ShowDiagram dspMode)
 		{
 			string sErr = string.Empty;
-			Visio1.Document vDocument = null;
 
 			// Start Visio
-			appVisio = new Visio1.Application();
+			this.appVisio = new Visio1.Application();
 			this.ShowVisioDiagram(appVisio, dspMode);             // don't show the diagram
 
-			vDocuments = appVisio.Documents;
+			this.vDocuments = appVisio.Documents;
 			try
 			{
-				// Create a new document. but you will need to add a master stencil
-				vDocument = appVisio.Documents.Add(diagramData.TemplateFilePath);
-
-				// this template already has one stencil attached
-				//vDocument = vDocuments.Add(diagramData.TemplateFilePath);
+				if (!string.IsNullOrEmpty(diagramData.TemplateFilePath))
+				{
+					// we need to check if the file is a template file or not
+					// this will open a template file
+					// Create a new document. but you will need to add a master stencil
+					this.vDocument = appVisio.Documents.Add(diagramData.TemplateFilePath);
+				}
+				else
+				{
+					// create a new blank document
+					this.vDocument = appVisio.Documents.Add("");
+				}
 			}
 			catch (Exception ex1)
 			{
@@ -140,14 +147,16 @@ namespace VisioDiagramCreator.Visio
 				// lets add stencils to the template if they don't alredy exist using the Excel Data File
 				foreach (var stencil in diagramData.StencilFilePaths)
 				{
-					if (vDocuments != null)	// do we have any stencils attached to this template?
+					if (this.vDocuments != null)	// do we have any stencils attached to this template?
 					{
+						var vPage = vDocument.Application.ActivePage;
+
 						// Load the stencil we want
-						Visio1.Document currentStencil = vDocument.Application.Documents.OpenEx(stencil, (short)Visio1.VisOpenSaveArgs.visOpenDocked);
-						stencils.Add(currentStencil);
+						Visio1.Document nStencil = vDocuments.OpenEx(stencil, (short)Visio1.VisOpenSaveArgs.visOpenDocked);
+						stencils.Add(nStencil);
 
 						// show the stencil window
-						Visio1.Window stencilWindow = currentPage.Document.OpenStencilWindow();
+						//Visio1.Window stencilWindow = currentPage.Document.OpenStencilWindow();
 					}
 					else
 					{
@@ -186,7 +195,7 @@ namespace VisioDiagramCreator.Visio
 				Console.WriteLine(string.Format("page:{0}, Height:{1}, Width:{2} and Orientation:{3}", page1.Name, yPosition, xPosition, diagramData.VisioPageOrientation));
 			}
 
-			int cnt = vDocuments.Count;
+			int cnt = this.vDocuments.Count;
 			// this section is if we want to add more than one page to the document
 			// At this point page-1 has already been created
 			for (int i = 0; i < diagramData.MaxVisioPages-1; i++)
@@ -211,7 +220,7 @@ namespace VisioDiagramCreator.Visio
 			//return page1.Index;
 
 			// set the active page to the first page
-			appVisio.ActiveWindow.Page = pagesObj[1];
+			this.appVisio.ActiveWindow.Page = pagesObj[1];
 			return pagesObj;
 		}
 
@@ -228,6 +237,7 @@ namespace VisioDiagramCreator.Visio
 		{
 			Visio1.Shape shpObj = null;
 			Visio1.Master stnObj = null;
+
 			foreach (Visio1.Document stencil in stencils)
 			{
 				stnObj = stencil.Masters[device.ShapeInfo.StencilImage];
@@ -243,12 +253,12 @@ namespace VisioDiagramCreator.Visio
 				throw new Exception(sTmp);
 			}
 
-			Visio1.Pages pagesObj = appVisio.ActiveDocument.Pages;
+			Visio1.Pages pagesObj = this.appVisio.ActiveDocument.Pages;
 			// switch Visio Diagram Page if needed based on the shape data VisioPage value
-			appVisio.ActiveWindow.Page = pagesObj[device.ShapeInfo.VisioPage];
+			this.appVisio.ActiveWindow.Page = pagesObj[device.ShapeInfo.VisioPage];
 
 			// draw the shape on the document
-			shpObj = appVisio.ActivePage.Drop(stnObj, device.ShapeInfo.Pos_x, device.ShapeInfo.Pos_y);
+			shpObj = this.appVisio.ActivePage.Drop(stnObj, device.ShapeInfo.Pos_x, device.ShapeInfo.Pos_y);
 			shpObj.NameU = device.ShapeInfo.UniqueKey;
 			if ("NetworkPipe".Equals(device.ShapeInfo.StencilImage))
 			{
@@ -420,16 +430,23 @@ namespace VisioDiagramCreator.Visio
 		/// </summary>
 		public void VisioForceCloseAll()
 		{
-			if (this.vDocuments != null)
+			try
 			{
-				while (this.vDocuments.Count > 0)
+				if (this.vDocuments != null)
 				{
-					this.vDocuments.Application.ActiveDocument.Close();
+					while (this.vDocuments.Count > 0)
+					{
+						this.vDocuments.Application.ActiveDocument.Close();
+					}
+				}
+				if (this.appVisio != null)
+				{
+					this.appVisio.Quit();
 				}
 			}
-			if (this.appVisio != null)
+			catch (System.Runtime.InteropServices.COMException ex)
 			{
-				this.appVisio.Quit();
+				Console.WriteLine("This exception is OK because the user closed the Visio document before exiting the application:  {0}",ex.Message);
 			}
 		}
 

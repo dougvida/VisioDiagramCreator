@@ -92,13 +92,17 @@ namespace VisioDiagramCreator.ExcelHelpers
 						{
 							diagData.MaxVisioPages = cells[(int)_cellIndex.VisioPage].IntValue;
 						}
-						switch (cells[(int)_cellIndex.ShapeType].ToString().Trim())
+						switch (cells[(int)_cellIndex.ShapeType].ToString().Trim().ToUpper())
 						{
-							case "Template":
+							case "TEMPLATE":				// Open a template.  This may be used with existing stencils already in the document
 								diagData.TemplateFilePath = cells[(int)_cellIndex.StencilKey].ToString().Trim().Substring(0, cells[(int)_cellIndex.StencilKey].ToString().Trim().Length);
 								break;
 
-							case "Stencil":
+							case "BLANK DOCUMENT":		// create a new blank Visio document.  No existing stencils attached.  Not using a Template
+								diagData.TemplateFilePath = "";
+								break;
+
+							case "STENCIL":				// stencils to add
 								string stencilFile = cells[(int)_cellIndex.StencilKey].ToString().Trim().Substring(0, cells[(int)_cellIndex.StencilKey].ToString().Trim().Length);
 								if(!string.IsNullOrEmpty(stencilFile))
 								{
@@ -106,7 +110,7 @@ namespace VisioDiagramCreator.ExcelHelpers
 								}
 								break;
 
-							case "Shape":
+							case "SHAPE":					// stencils to create on the document
 								device = _parseExcelData(cells);
 								devices.Add(device);
 								diagData.AllShapesMap.Add(device.ShapeInfo.UniqueKey, device);
@@ -145,50 +149,6 @@ namespace VisioDiagramCreator.ExcelHelpers
 				}
 			}
 			return diagData;
-		}
-
-
-		private bool openExcelFile(string file)
-		{
-			Excel.Application excelApp = null;
-			Excel.Workbooks wkbks = null;
-			Excel.Workbook wkbk = null;
-
-			bool wasFoundRunning = false;
-
-			Excel.Application tApp = null;
-			//Checks to see if excel is opened
-			try
-			{
-				tApp = (Excel.Application)System.Runtime.InteropServices.Marshal.GetActiveObject("Excel.Application");
-				if (tApp.Caption.Contains("Architect"))
-				{
-					wasFoundRunning = true;
-				}
-			}
-			catch (Exception)//Excel not open
-			{
-				wasFoundRunning = false;
-			}
-			finally
-			{
-				if (true == wasFoundRunning)
-				{
-					excelApp = tApp;
-					wkbk = excelApp.Workbooks.Add(Type.Missing);
-				}
-				else
-				{
-					excelApp = new Excel.Application();
-					wkbks = excelApp.Workbooks;
-					wkbk = wkbks.Add(Type.Missing);
-				}
-				//Release the temp if in use
-				if (null != tApp) { Marshal.FinalReleaseComObject(tApp); }
-				tApp = null;
-			}
-			//Initialize the sheets in the new workbook
-			return wasFoundRunning;
 		}
 
 
@@ -359,5 +319,49 @@ namespace VisioDiagramCreator.ExcelHelpers
 			//Console.WriteLine("adding stencil:{0}",visioInfo.UniqueKey);
 			return device;
 		}
+
+		private bool openExcelFile(string file)
+		{
+			Excel.Application excelApp = null;
+			Excel.Workbooks wkbks = null;
+			Excel.Workbook wkbk = null;
+
+			bool wasFoundRunning = false;
+
+			Excel.Application tApp = null;
+			//Checks to see if excel is opened
+			try
+			{
+				tApp = (Excel.Application)System.Runtime.InteropServices.Marshal.GetActiveObject("Excel.Application");
+				if (tApp.Caption.Contains("Architect"))
+				{
+					wasFoundRunning = true;
+				}
+			}
+			catch (Exception)//Excel not open
+			{
+				wasFoundRunning = false;
+			}
+			finally
+			{
+				if (true == wasFoundRunning)
+				{
+					excelApp = tApp;
+					wkbk = excelApp.Workbooks.Add(Type.Missing);
+				}
+				else
+				{
+					excelApp = new Excel.Application();
+					wkbks = excelApp.Workbooks;
+					wkbk = wkbks.Add(Type.Missing);
+				}
+				//Release the temp if in use
+				if (null != tApp) { Marshal.FinalReleaseComObject(tApp); }
+				tApp = null;
+			}
+			//Initialize the sheets in the new workbook
+			return wasFoundRunning;
+		}
+
 	}
 }
