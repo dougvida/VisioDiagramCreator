@@ -15,7 +15,9 @@ namespace VisioDiagramCreator.Visio
 		public Visio1.Application appVisio;
 		public Visio1.Documents vDocuments;
 		public Visio1.Document vDocument;
-		Visio1.Document stencils;
+		
+		List<Visio1.Document> stencils = new List<Visio1.Document>();
+
 		public Visio1.Page pageObj;
 
 		public VisioHelper()
@@ -107,6 +109,7 @@ namespace VisioDiagramCreator.Visio
 		private Visio1.Pages setupVisioDiagram(DiagramData diagramData, VisioVariables.ShowDiagram dspMode)
 		{
 			string sErr = string.Empty;
+			Visio1.Document vDocument = null;
 
 			// Start Visio
 			appVisio = new Visio1.Application();
@@ -116,25 +119,42 @@ namespace VisioDiagramCreator.Visio
 			try
 			{
 				// Create a new document. but you will need to add a master stencil
-				//Visio1.Document vDocuments = vApp.Documents.Add("");
+				vDocument = appVisio.Documents.Add(diagramData.TemplateFilePath);
 
-				//var visioDocument = docsObj.Add(diagramData.TemplateFilePath);
-				vDocument = vDocuments.Add(diagramData.TemplateFilePath);
+				// this template already has one stencil attached
+				//vDocument = vDocuments.Add(diagramData.TemplateFilePath);
 			}
 			catch (Exception ex1)
 			{
 				sErr = "Error with the Template file";
 				throw new Exception(string.Format("Exception::setupVisioDiagram - {0}\n{1}",sErr, ex1));
 			}
-
-			// this is only needed if the visio template file does not contain the stencil
-			// Use this method if the stencil needs to be added to the Visio document
-			// we should test if stencil is found to determine which one to use
-			//Visio1.Document stincels = appVisio.Documents.Add(diagramData.StencilFilePath);
 			try
 			{
-				// use this method if the template file already contains the stencil
-				stencils = vDocuments[diagramData.StencilFilePath];
+				// this gives a count of all the stencils on the status bar
+				int countStencils = vDocument.Masters.Count;
+
+				// get the current draw page
+				Visio1.Page currentPage = vDocument.Pages[1];
+
+				// lets add stencils to the template if they don't alredy exist using the Excel Data File
+				foreach (var stencil in diagramData.StencilFilePaths)
+				{
+					if (vDocuments != null)	// do we have any stencils attached to this template?
+					{
+						// Load the stencil we want
+						Visio1.Document currentStencil = vDocument.Application.Documents.OpenEx(stencil, (short)Visio1.VisOpenSaveArgs.visOpenDocked);
+						stencils.Add(currentStencil);
+
+						// show the stencil window
+						Visio1.Window stencilWindow = currentPage.Document.OpenStencilWindow();
+					}
+					else
+					{
+						sErr = "Error with vDocument being null.  This should not happen";
+						throw new Exception(string.Format("ERROR::setupVisioDiagram - {0}", sErr));
+					}
+				}
 			}
 			catch (Exception ex2)
 			{
@@ -145,7 +165,7 @@ namespace VisioDiagramCreator.Visio
 			Visio1.Pages pagesObj = appVisio.ActiveDocument.Pages;
 			pageObj = pagesObj[1];
 			pageObj.AutoSize = false;
-			pageObj.AutoSizeDrawing();
+			//pageObj.AutoSizeDrawing();
 
 			// Assuming 'No theme' is set for the page, no arrow will be shown so change theme to see connector arrow
 			pageObj.SetTheme("Office Theme");
@@ -154,8 +174,8 @@ namespace VisioDiagramCreator.Visio
 
 			// The new document will have one page, get the a reference to it.
 			Visio1.Page page1 = vDocument.Pages[1];
-			page1.Name = "Diagram1";
-			page1.Index = 1;
+			page1.Name = "Page-1";
+			//page1.Index = 1;
 
 			// Page 1 is Standard
 			if (!SetupDiagramPage(page1, diagramData.VisioPageOrientation, diagramData.VisioPageSize))
@@ -166,28 +186,29 @@ namespace VisioDiagramCreator.Visio
 				Console.WriteLine(string.Format("page:{0}, Height:{1}, Width:{2} and Orientation:{3}", page1.Name, yPosition, xPosition, diagramData.VisioPageOrientation));
 			}
 
+			int cnt = vDocuments.Count;
 			// this section is if we want to add more than one page to the document
-			for (int i = 0; i < diagramData.MaxVisioPages - 1; i++)
+			// At this point page-1 has already been created
+			for (int i = 0; i < diagramData.MaxVisioPages-1; i++)
 			{
 				Visio1.Page page = vDocument.Pages.Add();
 				// Name the pages. This is what is shown in the page tabs.
-				page.Name = "Diagram" + (i + 2);
+				page.Name = "Page-" + (i + 2);
 
+				// Page 1 is Standard
+				if (!SetupDiagramPage(page, diagramData.VisioPageOrientation, diagramData.VisioPageSize))
+				{
+					double xPosition = page.PageSheet.get_CellsU("PageWidth").ResultIU;
+					double yPosition = page.PageSheet.get_CellsU("PageHeight").ResultIU;
+					var pageOrientation = page.PageSheet.get_CellsU("PrintPageOrientation").ResultIU;
+					Console.WriteLine(string.Format("page:{0}, Height:{1}, Width:{2} and Orientation:{3}", page.Name, yPosition, xPosition, diagramData.VisioPageOrientation));
+				}
 			}
 
-			// Page 1 is Standard
-//			if (!SetupDiagramPage(page, diagramData.VisioPageOrientation, diagramData.VisioPageSize))
-//			{
-//				double xPosition = page.PageSheet.get_CellsU("PageWidth").ResultIU;
-//				double yPosition = page.PageSheet.get_CellsU("PageHeight").ResultIU;
-//				var pageOrientation = page.PageSheet.get_CellsU("PrintPageOrientation").ResultIU;
-//				Console.WriteLine(string.Format("page:{0}, Height:{1}, Width:{2} and Orientation:{3}"), page.Name, yPosition, xPosition, diagramData.VisioPageOrientation);
-//			}
-
 			// Move the second page to the first position in the list of pages.
-			//page2.Index = 1;
+			//page1.Index = 1;
+			//page2.Index = 2;
 			//return page1.Index;
-
 
 			// set the active page to the first page
 			appVisio.ActiveWindow.Page = pagesObj[1];
@@ -206,7 +227,15 @@ namespace VisioDiagramCreator.Visio
 		private Visio1.Shape _drawShape(Device device, Visio1.Pages vPages)
 		{
 			Visio1.Shape shpObj = null;
-			Visio1.Master stnObj = stencils.Masters[device.ShapeInfo.StencilImage];
+			Visio1.Master stnObj = null;
+			foreach (Visio1.Document stencil in stencils)
+			{
+				stnObj = stencil.Masters[device.ShapeInfo.StencilImage];
+				if (stnObj != null)
+				{
+					break;	// found get out of the loop
+				}
+			}
 			if (stnObj == null)
 			{
 				string sTmp = string.Format("ERROR::_drawShape - Can't find master stencil:{0}",device.ShapeInfo.StencilImage);
@@ -221,7 +250,6 @@ namespace VisioDiagramCreator.Visio
 			// draw the shape on the document
 			shpObj = appVisio.ActivePage.Drop(stnObj, device.ShapeInfo.Pos_x, device.ShapeInfo.Pos_y);
 			shpObj.NameU = device.ShapeInfo.UniqueKey;
-
 			if ("NetworkPipe".Equals(device.ShapeInfo.StencilImage))
 			{
 				// we need to resize the stencil NetworkPipe (remember this is rotated 90deg
@@ -257,25 +285,36 @@ namespace VisioDiagramCreator.Visio
 			switch (device.ShapeInfo.FillColor.Trim().ToUpper())
 			{
 				case "YELLOW":
-					rgb = VisioVariables.COLOR_YELLOW_LIGHT;
+					rgb = VisioVariables.COLOR_YELLOW;
 					break;
 				case "GREEN":
-					rgb = VisioVariables.COLOR_GREEN_SERVER;
+					rgb = VisioVariables.COLOR_GREEN;
+					break;
+				case "LIGHT GREEN":
+					rgb = VisioVariables.COLOR_GREEN_LIGHT;
 					break;
 				case "RED":
 					rgb = VisioVariables.COLOR_RED;
 					break;
+				case "GRAY":
+					rgb = VisioVariables.COLOR_GRAY;
+					break;
+
 				case "BLUE":
+					rgb = VisioVariables.COLOR_BLUE;
+					break;
+				case "LIGHT BLUE":
 					rgb = VisioVariables.COLOR_BLUE_SERVER;
 					break;
 				case "CYAN":
 					rgb = VisioVariables.COLOR_CYAN;
 					break;
+
 				case "ORANGE":
-					rgb = VisioVariables.COLOR_ORANGE_SERVER;
+					rgb = VisioVariables.COLOR_ORANGE;
 					break;
-				case "LIGHT BLUE":
-					rgb = VisioVariables.COLOR_BLUE_LIGHT;
+				case "LIGHT ORANGE":
+					rgb = VisioVariables.COLOR_ORANGE_SERVER;
 					break;
 				default:
 					// no fill
@@ -283,13 +322,31 @@ namespace VisioDiagramCreator.Visio
 			}
 			if (!string.IsNullOrEmpty(rgb))
 			{
-				var targetCell = shpObj.get_CellsSRC(
+				//set the shape back color
+				shpObj.get_CellsSRC(
+					(short)VisSectionIndices.visSectionObject,
+					(short)VisRowIndices.visRowFill,
+					(short)VisCellIndices.visFillForegnd).FormulaU = rgb;
+
+				shpObj.get_CellsSRC(
 					 (short)Visio1.VisSectionIndices.visSectionObject,
 					 (short)Visio1.VisRowIndices.visRowFill,
-					 (short)Visio1.VisCellIndices.visFillForegnd);
-				targetCell.FormulaU = rgb;
-			}
+					 (short)Visio1.VisCellIndices.visFillBkgnd).FormulaU = VisioVariables.COLOR_BLACK;
 
+				// for an shape to be filled this needs to be set
+				shpObj.get_CellsSRC(
+					 (short)Visio1.VisSectionIndices.visSectionObject,
+					 (short)Visio1.VisRowIndices.visRowFill,
+					 (short)Visio1.VisCellIndices.visFillPattern).FormulaU = "1";
+
+				shpObj.get_Cells("LineColor").Formula = rgb;
+			}
+			
+			// we want to keep the shape outline color Black for this Stencil
+			if (device.ShapeInfo.UniqueKey.ToUpper().StartsWith("TABLECELL"))
+			{
+				shpObj.get_Cells("LineColor").Formula = VisioVariables.COLOR_BLACK;
+			}
 			if (!string.IsNullOrEmpty(device.ShapeInfo.StencilLabel))
 			{
 				shpObj.Text = device.ShapeInfo.StencilLabel;
@@ -319,22 +376,6 @@ namespace VisioDiagramCreator.Visio
 				}
 				int textLen = shpObj.Text.Length;
 
-
-				//shpObj.Text = box.Name;
-				////set the shape fore color
-				//shpObj.Characters.set_CharProps(
-				//					 (short)Microsoft.Office.Interop.Visio.
-				//						  VisCellIndices.visCharacterColor,
-				//					 (short)Utilities.GetVisioColor(box.ForeColor));
-				//
-				////set the shape back color
-				//shpObj.get_CellsSRC((short)VisSectionIndices.visSectionObject,
-				//			(short)VisRowIndices.visRowFill,
-				//	 (short)VisCellIndices.visFillForegnd).FormulaU =
-				//	 "RGB(" + box.BackColor.R.ToString() + "," + box.BackColor.G.ToString() + ","
-				//	 + box.BackColor.B.ToString() + ")";
-				//
-				//
 
 				// dont resize the text for the Title and Footer stencils
 				//				if (!"Title".Equals(device.ShapeInfo.StencilImage) && !"Footer".Equals(device.ShapeInfo.StencilImage))
@@ -425,7 +466,7 @@ namespace VisioDiagramCreator.Visio
 			// use before saving AutoSizeDrawing
 			appVisio.AutoLayout = true;
 			pageObj.AutoSize = true;
-			pageObj.AutoSizeDrawing();
+			// pageObj.AutoSizeDrawing(); // this can make the page taller
 		}
 
 		/// <summary>
@@ -509,25 +550,34 @@ namespace VisioDiagramCreator.Visio
 						switch (lookupShapeConnection.LineColor.Trim().ToUpper())
 						{
 							case "YELLOW":
-								shpConn.get_CellsU("LineColor").FormulaU = VisioVariables.COLOR_YELLOW_LIGHT;
+								shpConn.get_CellsU("LineColor").FormulaU = VisioVariables.COLOR_YELLOW;
+								break;
+							case "LIGHT GREEN":
+								shpConn.get_CellsU("LineColor").FormulaU = VisioVariables.COLOR_GREEN_LIGHT;
 								break;
 							case "GREEN":
 								shpConn.get_CellsU("LineColor").FormulaU = VisioVariables.COLOR_GREEN;
 								break;
+							case "GRAY":
+								shpConn.get_CellsU("LineColor").FormulaU = VisioVariables.COLOR_GRAY;
+								break;
 							case "RED":
 								shpConn.get_CellsU("LineColor").FormulaU = VisioVariables.COLOR_RED;
-								break;
-							case "BLUE":
-								shpConn.get_CellsU("LineColor").FormulaU = VisioVariables.COLOR_BLUE;
 								break;
 							case "CYAN":
 								shpConn.get_CellsU("LineColor").FormulaU = VisioVariables.COLOR_CYAN;
 								break;
+							case "LIGHT BLUE":
+								shpConn.get_CellsU("LineColor").FormulaU = VisioVariables.COLOR_BLUE_SERVER;
+								break;
+							case "BLUE":
+								shpConn.get_CellsU("LineColor").FormulaU = VisioVariables.COLOR_BLUE;
+								break;
+							case "LIGHT ORANGE":
+								shpConn.get_CellsU("LineColor").FormulaU = VisioVariables.COLOR_ORANGE_SERVER;
+								break;
 							case "ORANGE":
 								shpConn.get_CellsU("LineColor").FormulaU = VisioVariables.COLOR_ORANGE;
-								break;
-							case "LIGHT BLUE":
-								shpConn.get_CellsU("LineColor").FormulaU = VisioVariables.COLOR_BLUE_LIGHT;
 								break;
 							default:
 							case "BLACK":

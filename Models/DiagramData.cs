@@ -22,7 +22,7 @@ namespace VisioDiagramCreator.Models
 		public Dictionary<int, ShapeConnection> ShapeConnectionsMap = new Dictionary<int, ShapeConnection>();
 
 		public string TemplateFilePath { get; set; }
-		public string StencilFilePath { get; set; }
+		public List<string> StencilFilePaths { get; set; }
 
 		public int MaxVisioPages { get; set; } = 1;		// default is 1 page visio document
 
@@ -30,10 +30,21 @@ namespace VisioDiagramCreator.Models
 
 		public void Reset()
 		{
-			AllShapesMap.Clear();
-			ShapeConnectionsMap.Clear();
 			MaxVisioPages = 1;
-			Devices.Clear();
+
+			if (AllShapesMap != null)
+			{
+				AllShapesMap.Clear();
+			}
+			if (ShapeConnectionsMap != null)
+			{
+				ShapeConnectionsMap.Clear();
+
+			}			
+			if (Devices != null)
+			{
+				Devices.Clear();
+			}
 		}
 	}
 }

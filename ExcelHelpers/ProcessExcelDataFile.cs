@@ -11,7 +11,7 @@ using System.Runtime.InteropServices;
 // https://ironsoftware.com/csharp/excel/tutorials/how-to-read-excel-file-csharp/#get-cell-range
 
 
-namespace VisioDiagramCreator.Helpers
+namespace VisioDiagramCreator.ExcelHelpers
 {
 	public class ProcessExcelDataFile
 	{
@@ -74,6 +74,7 @@ namespace VisioDiagramCreator.Helpers
 
 			List<Device> devices = new List<Device>();
 			Device device = null;
+			diagData.StencilFilePaths = new List<string>();
 
 			WorkBook workbook = WorkBook.Load(file);
 			WorkSheet sheet = workbook.WorkSheets.First();
@@ -94,11 +95,15 @@ namespace VisioDiagramCreator.Helpers
 						switch (cells[(int)_cellIndex.ShapeType].ToString().Trim())
 						{
 							case "Template":
-								diagData.TemplateFilePath = cells[(int)_cellIndex.StencilKey].ToString().Trim().Substring(0, cells[(int)_cellIndex.StencilKey].ToString().Trim().Length - 1);
+								diagData.TemplateFilePath = cells[(int)_cellIndex.StencilKey].ToString().Trim().Substring(0, cells[(int)_cellIndex.StencilKey].ToString().Trim().Length);
 								break;
 
 							case "Stencil":
-								diagData.StencilFilePath = cells[(int)_cellIndex.StencilKey].ToString().Trim().Substring(0, cells[(int)_cellIndex.StencilKey].ToString().Trim().Length - 1);
+								string stencilFile = cells[(int)_cellIndex.StencilKey].ToString().Trim().Substring(0, cells[(int)_cellIndex.StencilKey].ToString().Trim().Length);
+								if(!string.IsNullOrEmpty(stencilFile))
+								{
+									diagData.StencilFilePaths.Add(stencilFile);
+								}
 								break;
 
 							case "Shape":

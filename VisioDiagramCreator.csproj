@@ -59,11 +59,12 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ExcelHelpers\CreateExcelDataFile.cs" />
     <Compile Include="ExcelHelpers\ProcessExcelDataFile.cs" />
     <Compile Include="Extensions\FileExtension.cs" />
     <Compile Include="Visio\Models\ConnectShpExcelData.cs" />
     <Compile Include="Visio\Models\ShapeConnection.cs" />
-    <Compile Include="Visio\ColorRGB.cs" />
+    <Compile Include="Visio\Helper\ColorRGB.cs" />
     <Compile Include="Visio\Processing\ProcessVisioDiagramShapes.cs" />
     <Compile Include="Visio\Processing\ProcessVisioShapeConnections.cs" />
     <Compile Include="Visio\Shapes\ShapeHelper.cs" />
@@ -79,7 +80,7 @@
     <Compile Include="Visio\Models\ShapeInformation.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Visio\VisioVariables.cs" />
+    <Compile Include="Visio\Helper\VisioVariables.cs" />
     <EmbeddedResource Include="MainForm.resx">
       <DependentUpon>MainForm.cs</DependentUpon>
     </EmbeddedResource>
@@ -106,6 +107,8 @@
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="Templates\" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

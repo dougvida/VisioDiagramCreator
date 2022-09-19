@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
-using VisioDiagramCreator.Helpers;
 using VisioDiagramCreator.Models;
 using VisioDiagramCreator.Visio;
 using VisioDiagramCreator.Extensions;
+using VisioDiagramCreator.Visio.Models;
+using VisioDiagramCreator.ExcelHelpers;
 
 namespace VisioDiagramCreator
 {
@@ -27,8 +28,8 @@ namespace VisioDiagramCreator
 			InitializeComponent();
 
 			diagramData = new DiagramData();
-			diagramData.TemplateFilePath = @"C:\Omnicell_Diagram_Creator\Templates\OC_ArchitectDiagramTemplate.vstx";
-			diagramData.StencilFilePath = @"C:\Omnicell_Diagram_Creator\Stencils\OC_ArchitectStencils.vssx";
+			//diagramData.TemplateFilePath = @"C:\Omnicell_Diagram_Creator\Templates\OC_ArchitectDiagramTemplate.vstx";
+			//diagramData.StencilFilePath = @"C:\Omnicell_Diagram_Creator\Stencils\OC_ArchitectStencils.vssx";
 		}
 
 		private void MainForm_Load(object sender, EventArgs e)
@@ -95,12 +96,12 @@ namespace VisioDiagramCreator
 					// buid data file from existing Visio file
 					Console.WriteLine("build excel data file from a Visio file");
 					Dictionary<int, ShapeInformation> shapeMap = new ProcessVisioDiagramShapes().GetAllShapesProperties(tb_buildVisioFilePath.Text.Trim(), VisioVariables.ShowDiagram.Show);
-					Console.WriteLine("\n\n");
+					Console.WriteLine("\n");
 					foreach (var allShp in shapeMap)
 					{
-						int key = allShp.Key;
+						int nKey = allShp.Key;
 						ShapeInformation shpInf = allShp.Value;
-						Console.WriteLine(string.Format("MainForm - UniqueKey:{0}; Image:{1}, ConnectFrom:{2}; ConnectTo:{3}", shpInf.UniqueKey, shpInf.StencilImage, shpInf.ConnectFrom, shpInf.ConnectTo));
+						Console.WriteLine(string.Format("MainForm - ID:{0}; UniqueKey:{1}; Image:{2}, ConnectToID:{3}; ConnectTo:{4}; ConnectFromID:{5}; ConnectFrom:{6}", shpInf.ID, shpInf.UniqueKey, shpInf.StencilImage, shpInf.ConnectToID, shpInf.ConnectTo, shpInf.ConnectFromID, shpInf.ConnectFrom));
 					}
 
 					// we are dont so we can close the visio document(s)
