@@ -108,6 +108,13 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
+    <None Include="Data\ScriptData\Advocate_ArchitectData.xlsx" />
+    <None Include="Data\ScriptData\ArchitectShapesData.xlsx" />
+    <None Include="Data\Stencils\Advocate_CustomStencils.vssx" />
+    <None Include="Data\Stencils\OC_ArchitectStencils.vssx" />
+    <None Include="Data\Templates\OC_ArchitectDiagramTemplate.vstx" />
+    <None Include="Data\Templates\OC_ArchitectDiagramTemplateNoStencil.vstx" />
+    <None Include="Data\Templates\Template_ArchitectDataFile.xlsx" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -122,11 +129,7 @@
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Data\ScriptData\" />
-    <Folder Include="Data\Stencils\" />
-    <Folder Include="Templates\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.7.2">
       <Visible>False</Visible>

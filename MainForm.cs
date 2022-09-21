@@ -18,10 +18,10 @@ namespace VisioDiagramCreator
 
 		VisioHelper visHlp = new VisioHelper();
 
-		string excelDataPath = _baseWorkingDir + "\\ExcelData\\";
-
-		static string _baseWorkingDir = @"C:\Omnicell_Diagram_Creator";
-		static string _scriptDataPath = _baseWorkingDir + @"\data\ScriptData";
+		static string baseWorkingDir = @"C:\Omnicell_Diagram_Creator";
+		static string excelDataPath = baseWorkingDir + @"\ExcelData\";
+		static string scriptDataPath = baseWorkingDir + @"\data\ScriptData\";
+		static string visioFilesPath = baseWorkingDir + @"\VisioFiles\";
 
 		public MainForm()
 		{
@@ -197,7 +197,7 @@ namespace VisioDiagramCreator
 		private void btn_VisioFileToRead_Click(object sender, EventArgs e)
 		{
 			string filePath = string.Empty;
-			filePath = FileExtension.getFilePath(_baseWorkingDir + @"\VisioFiles\", "vsdx files (*.vsdx)|*.vsdx", "Select a Visio file to process into an Excel data file");
+			filePath = FileExtension.getFilePath(visioFilesPath, "vsdx files (*.vsdx)|*.vsdx", "Select a Visio file to process into an Excel data file");
 			if (string.IsNullOrEmpty(filePath))
 			{
 				// Cancel was pressed.  filePath will be empty
@@ -222,7 +222,7 @@ namespace VisioDiagramCreator
 		private void btn_readExcelfile_Click(object sender, EventArgs e)
 		{
 			string filePath = string.Empty;
-			filePath = FileExtension.getFilePath(_baseWorkingDir + @"\Data\ScriptData\", "vsdx files (*.xls)|*.xlsx", "Select the Excel data file to build a Visio diagram");
+			filePath = FileExtension.getFilePath(scriptDataPath, "vsdx files (*.xls)|*.xlsx", "Select the Excel data file to build a Visio diagram");
 			if (string.IsNullOrEmpty(filePath))
 			{
 				// Cancel was pressed.  filePath will be empty
