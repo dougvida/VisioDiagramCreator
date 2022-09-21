@@ -1,20 +1,24 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 using System.Windows.Forms;
 using Excel = Microsoft.Office.Interop.Excel;
 using System.Runtime.InteropServices;
+using Microsoft.Office.Interop.Excel;
+using IronXL;
 
+///
+/// helper URL http://csharp.net-informations.com/excel/csharp-format-excel.htm
+/// 
 
 namespace VisioDiagramCreator.ExcelHelpers
 {
 	public class CreateExcelDataFile
 	{
-		private Excel.Application xlApp = null;
-		private Excel.Workbook xlWorkbook = null;
+		private Excel.Application _xlApp = null;
+		private Excel.Workbook _xlWorkbook = null;
+		private Excel.Worksheet _xlWorksheet = null;
+		Excel.Sheets _worksheets = null;		// _xlWorkbook.Worksheets; 
+		
+		object misValue = System.Reflection.Missing.Value;
 
 		Dictionary<int, string> excelHeaderNames = new Dictionary<int, string>{
 
@@ -24,7 +28,7 @@ namespace VisioDiagramCreator.ExcelHelpers
 			{ 2, "Stencil Key"},          // device unique Key used for connecting visio shapes
 			{ 3, "Stencil Image"},        // device visio image name
 			{ 4, "Stencil Label"},        // device label
-			{ 5, "Stencil Label Font Size"},// default is what the stencil font size is   (use 12:B for 12 pt. Bold or 12 for 12 pt)
+			{ 5, "Stencil Font Size"},		// default is what the stencil font size is   (use 12:B for 12 pt. Bold or 12 for 12 pt)
 			{ 6, "Mach_name"},				// device machine Name
 			{ 7, "Mach_id"},					// device machine Id
 			{ 8, "Site_id"},					// device site Id
@@ -66,28 +70,99 @@ namespace VisioDiagramCreator.ExcelHelpers
 			// if so lets overwright it (give warning)
 			// open the file for wright
 			// declare the application object
-			xlApp = new Excel.Application();
-			if (xlApp == null)
+			_xlApp = new Excel.Application();
+			if (_xlApp == null)
 			{
 				MessageBox.Show("Excel is not properly installed!!");
 				return true;	// error
 			}
 
 			// open a file
-			xlWorkbook = xlApp.Workbooks.Open(fileNamePath);
+			_xlWorkbook = _xlApp.Workbooks.Open(fileNamePath);
+
+			return false;
+		}
+		private Excel.Workbook createNewWorkbook(string sWorkbookName)
+		{
+			return _xlApp.Workbooks.Add(sWorkbookName);
+		}
+		private bool saveFile(string fileNamePath)
+		{
+			if (_xlWorkbook != null)
+			{
+				_xlWorksheet.SaveAs("your-file-name.xls");
+				_xlWorkbook.SaveAs(fileNamePath, Excel.XlFileFormat.xlWorkbookNormal, misValue, misValue, misValue, misValue, 
+															Excel.XlSaveAsAccessMode.xlExclusive, misValue, misValue, misValue, misValue, misValue);
+			}
+			closeExcel();
 
 			return false;
 		}
 
+		private void closeExcel()
+		{
+			if (_xlWorkbook != null)
+			{
+				_xlWorkbook.Close(true, misValue, misValue);
+			}
+			if (_xlApp != null)
+			{
+				_xlApp.Quit();
+			}
+
+			Marshal.ReleaseComObject(_xlWorksheet);
+			Marshal.ReleaseComObject(_xlWorkbook);
+			Marshal.ReleaseComObject(_xlApp);
+		}
+
+		private void addNexWorksheet(string sheetName)
+		{
+			_xlApp.DisplayAlerts = false;
+
+			//var xlNewSheet = (Excel.Worksheet)Worksheets.Add(Worksheets[1], Type.Missing, Type.Missing, Type.Missing);
+			//xlNewSheet.Name = sheetName;
+			//xlNewSheet.Cells[1, 1] = "New sheet content";
+		}
+		
+		private void selectWorkSheet(string sheetName)
+		{
+			int nIdx = 1;	// should be the first sheet
+
+			// get the sheet index for the given name to make this correct
+			
+			selectworkSheet(nIdx);
+		}
+		private void selectworkSheet(int nIdx)
+		{
+			// check to ensure the nIdx value is withing range
+
+			_xlWorksheet = (Excel.Worksheet)_xlWorkbook.Worksheets.get_Item(nIdx);
+			_xlWorksheet.Select();
+
+		}
+
+		/// <summary>
+		/// writeVisioDataSheet
+		/// Write the data to the Excel file
+		/// Write to the VisioData tab (index = 1)
+		/// </summary>
+		/// <returns></returns>
 		private bool writeVisioDataSheet()
 		{
 
 			return false;
 		}
+
+		/// <summary>
+		/// wruteSystemInfoSheet
+		/// Write to the SystemInfo sheet
+		/// </summary>
+		/// <returns></returns>
 		private bool writeSystemInfoSheet()
 		{
 			return false;
 		}
+
 
 		private bool writeInterfacesSheet()
 		{
@@ -98,13 +173,8 @@ namespace VisioDiagramCreator.ExcelHelpers
 		{
 			return false;
 		}
-		private void CloseExcelFile()
-		{
-			Marshal.ReleaseComObject(this.xlWorkbook);
-			Marshal.ReleaseComObject(this.xlApp);
-		}
 
-		private bool writeHeader()
+		private bool writeHeader(Dictionary<int, string> headerNames)
 		{
 			// check to ensure file is open
 			// if not open it.

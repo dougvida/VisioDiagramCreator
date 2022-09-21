@@ -24,7 +24,7 @@ namespace VisioDiagramCreator.ExcelHelpers
 			StencilKey,				// device unique Key used for connecting visio shapes
 			StencilImage,			// device visio image name
 			StencilLabel,			// device label
-			StencilLabelFontSize,// default is what the stencil font size is   (use 12:B for 12 pt. Bold or 12 for 12 pt)
+			StencilFontSize,		// default is what the stencil font size is   (use 12:B for 12 pt. Bold or 12 for 12 pt)
 			Mach_name,				// device machine Name
 			Mach_id,					// device machine Id
 			Site_id,					// device site Id
@@ -168,7 +168,7 @@ namespace VisioDiagramCreator.ExcelHelpers
 				visioInfo.UniqueKey = data[(int)_cellIndex.StencilKey].ToString().Trim();      // unique key for this shape
 				visioInfo.StencilImage = data[(int)_cellIndex.StencilImage].ToString().Trim(); // must match exactly the name in the visio stencil
 				visioInfo.StencilLabel = data[(int)_cellIndex.StencilLabel].ToString().Trim(); // text to add to the stencil image
-				visioInfo.StencilLabelFontSize = data[(int)_cellIndex.StencilLabelFontSize].ToString().Trim(); // stencil fontsize to use.  If blank use stencil text size
+				visioInfo.StencilLabelFontSize = data[(int)_cellIndex.StencilFontSize].ToString().Trim(); // stencil fontsize to use.  If blank use stencil text size
 				// decode font size if needed
 				if (!string.IsNullOrEmpty(visioInfo.StencilLabelFontSize))
 				{

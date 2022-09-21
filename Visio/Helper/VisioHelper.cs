@@ -8,6 +8,7 @@ using Visio1 = Microsoft.Office.Interop.Visio;
 using System.Windows.Forms;
 using IronXL.Drawing;
 using System.Threading;
+using System.Security.Cryptography;
 
 namespace VisioDiagramCreator.Visio
 {
@@ -605,6 +606,10 @@ namespace VisioDiagramCreator.Visio
 						// now connect the connector to the objects
 						if (lookupShapeConnection.ShpFromObj != null && lookupShapeConnection.ShpToObj != null)
 						{
+
+							//shpConn.AutoConnect(lookupShapeConnection.ShpFromObj, Visio1.VisAutoConnectDir.visAutoConnectDirNone);
+							//shpConn.AutoConnect(lookupShapeConnection.ShpToObj, Visio1.VisAutoConnectDir.visAutoConnectDirNone);
+							
 							// Connect its Begin to the 'ShpFromObj' shape:
 							shpConn.get_CellsU("BeginX").GlueTo(lookupShapeConnection.ShpFromObj.get_CellsU("PinX"));
 
