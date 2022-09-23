@@ -72,7 +72,7 @@ namespace VisioDiagramCreator.Visio
 								vsConnect.device = device;
 								vConnectMap.Add(nCnt++, vsConnect);
 							}
-							Console.WriteLine("ConnectFrom - Found UniqueFromKey: {0}", str);
+							ConsoleOut.writeLine(string.Format("ConnectFrom - Found UniqueFromKey: {0}", str));
 						}
 					}
 
@@ -107,7 +107,7 @@ namespace VisioDiagramCreator.Visio
 								vsConnect.device = device;
 								vConnectMap.Add(nCnt++, vsConnect);
 							}
-							Console.WriteLine("ConnectTo - Found UniqueToKey: {0}", str);
+							ConsoleOut.writeLine(string.Format("ConnectTo - Found UniqueToKey: {0}", str));
 						}
 					}
 				}

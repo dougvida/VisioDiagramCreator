@@ -7,6 +7,7 @@ using Excel = Microsoft.Office.Interop.Excel;
 using VisioDiagramCreator.Models;
 using VisioDiagramCreator.Visio;
 using System.Runtime.InteropServices;
+using System.Windows.Forms;
 
 // https://ironsoftware.com/csharp/excel/tutorials/how-to-read-excel-file-csharp/#get-cell-range
 
@@ -69,12 +70,13 @@ namespace VisioDiagramCreator.ExcelHelpers
 			if (string.IsNullOrEmpty(file))
 			{
 				// Error file is empty
-				throw new ArgumentNullException(string.Format("Exception:ParseData(File is missing: {0})",nameof(file)));
+				MessageBox.Show(string.Format("Exception:ParseData(File is missing: {0})",nameof(file)));
+				return null;
 			}
 
 			List<Device> devices = new List<Device>();
 			Device device = null;
-			diagData.StencilFilePaths = new List<string>();
+			diagData.visioStencilFilePaths = new List<string>();
 
 			WorkBook workbook = WorkBook.Load(file);
 			WorkSheet sheet = workbook.WorkSheets.First();
@@ -95,18 +97,18 @@ namespace VisioDiagramCreator.ExcelHelpers
 						switch (cells[(int)_cellIndex.ShapeType].ToString().Trim().ToUpper())
 						{
 							case "TEMPLATE":				// Open a template.  This may be used with existing stencils already in the document
-								diagData.TemplateFilePath = cells[(int)_cellIndex.StencilKey].ToString().Trim().Substring(0, cells[(int)_cellIndex.StencilKey].ToString().Trim().Length);
+								diagData.visioTemplateFilePath = cells[(int)_cellIndex.StencilKey].ToString().Trim().Substring(0, cells[(int)_cellIndex.StencilKey].ToString().Trim().Length);
 								break;
 
 							case "BLANK DOCUMENT":		// create a new blank Visio document.  No existing stencils attached.  Not using a Template
-								diagData.TemplateFilePath = "";
+								diagData.visioTemplateFilePath = "";
 								break;
 
 							case "STENCIL":				// stencils to add
 								string stencilFile = cells[(int)_cellIndex.StencilKey].ToString().Trim().Substring(0, cells[(int)_cellIndex.StencilKey].ToString().Trim().Length);
 								if(!string.IsNullOrEmpty(stencilFile))
 								{
-									diagData.StencilFilePaths.Add(stencilFile);
+									diagData.visioStencilFilePaths.Add(stencilFile);
 								}
 								break;
 
@@ -125,17 +127,18 @@ namespace VisioDiagramCreator.ExcelHelpers
 								{
 									workbook.Close();
 								}
-								throw new Exception(string.Format("Exception::ParseData - Unknown label:{0} in CSV file:{1})", cells[(int)_cellIndex.StencilImage].ToString().Trim(), file));
-								break;
+								MessageBox.Show(string.Format("Exception::ParseData - Unknown label:{0} in CSV file:{1})", cells[(int)_cellIndex.StencilImage].ToString().Trim(), file));
+								return null;
 						}
-						Console.WriteLine("ParseData - ShapeType:{0}, Row{1}", cells[(int)_cellIndex.StencilImage].ToString().Trim(), row);
+						ConsoleOut.writeLine(string.Format("ParseData - ShapeType:{0}, Row{1}", cells[(int)_cellIndex.StencilImage].ToString().Trim(), row));
 					}
 				}
 			}
 			catch (Exception ex)
 			{
-				Console.WriteLine(ex.Message + " - " + ex.StackTrace);
-				throw new Exception(String.Format("Exception::ParseData - Duplicate key:({0}) found.\nPlease resolve this issue in the Excel Data file\n{1}", device.ShapeInfo.UniqueKey, ex.Message)); //, ex.StackTrace.ToString);
+				ConsoleOut.writeLine(ex.Message + " - " + ex.StackTrace);
+				MessageBox.Show(String.Format("Exception::ParseData - Duplicate key:({0}) found.\nPlease resolve this issue in the Excel Data file\n{1}", device.ShapeInfo.UniqueKey, ex.Message)); //, ex.StackTrace.ToString);
+				return null;
 			}
 			finally
 			{
@@ -313,10 +316,10 @@ namespace VisioDiagramCreator.ExcelHelpers
 			}
 			catch (Exception exp)
 			{
-				Console.WriteLine(exp.Message+" - "+exp.StackTrace);
+				ConsoleOut.writeLine(exp.Message+" - "+exp.StackTrace);
 				return null;
 			}
-			//Console.WriteLine("adding stencil:{0}",visioInfo.UniqueKey);
+			//ConsoleOut.writeLine("adding stencil:{0}",visioInfo.UniqueKey);
 			return device;
 		}
 
@@ -356,7 +359,10 @@ namespace VisioDiagramCreator.ExcelHelpers
 					wkbk = wkbks.Add(Type.Missing);
 				}
 				//Release the temp if in use
-				if (null != tApp) { Marshal.FinalReleaseComObject(tApp); }
+				if (null != tApp) 
+				{ 
+					Marshal.FinalReleaseComObject(tApp); 
+				}
 				tApp = null;
 			}
 			//Initialize the sheets in the new workbook

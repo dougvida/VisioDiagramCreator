@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Visio1 = Microsoft.Office.Interop.Visio;
-using VisioDiagramCreator.Models;
+﻿using System.Collections.Generic;
 using VisioDiagramCreator.Visio;
 
 namespace VisioDiagramCreator.Models
@@ -21,8 +15,8 @@ namespace VisioDiagramCreator.Models
 		// This map will contain all the connections to and from shaps based on the Excel Data 
 		public Dictionary<int, ShapeConnection> ShapeConnectionsMap = new Dictionary<int, ShapeConnection>();
 
-		public string TemplateFilePath { get; set; }
-		public List<string> StencilFilePaths { get; set; }
+		public string visioTemplateFilePath { get; set; }
+		public List<string> visioStencilFilePaths { get; set; }
 
 		public int MaxVisioPages { get; set; } = 1;		// default is 1 page visio document
 

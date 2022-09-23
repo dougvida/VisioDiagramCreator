@@ -1,15 +1,10 @@
-﻿using System;
+﻿using Microsoft.Office.Interop.Visio;
+using System;
 using System.Collections.Generic;
-using Visio1 = Microsoft.Office.Interop.Visio;
-using Microsoft.Office.Interop.Visio;
-using System.Windows.Forms;
-using System.Xml.Linq;
 using System.Linq;
-using VisioDiagramCreator.Visio.Models;
-using System.Drawing.Design;
-using System.Text;
-using System.Collections;
-using VisioAutomation.VDX.Elements;
+using System.Windows.Forms;
+using VisioDiagramCreator.Models;
+using Visio1 = Microsoft.Office.Interop.Visio;
 
 namespace VisioDiagramCreator.Visio
 {
@@ -32,7 +27,7 @@ namespace VisioDiagramCreator.Visio
 			Visio1.Page page = vDocuments.Pages[1];
 
 			new VisioHelper().ShowVisioDiagram(appVisio, VisioVariables.ShowDiagram.Show);
-			Console.WriteLine("Active Document:{0}: Master in document:{1}", appVisio.ActiveDocument, appVisio.ActiveDocument.Masters);
+			ConsoleOut.writeLine(string.Format("Active Document:{0}: Master in document:{1}", appVisio.ActiveDocument, appVisio.ActiveDocument.Masters));
 
 			// get the connectors for each shape in the diagram 
 			return getShapeConnections(vDocuments);
@@ -84,23 +79,42 @@ namespace VisioDiagramCreator.Visio
 					if (shpInfo.StencilImage.ToUpper().IndexOf("NETWORKPIPE") >= 0)
 					{
 						// skip this shape
-						//Console.WriteLine(string.Format("Skip this ID:{0}; shapeKey:{1} - Stencil Image:{2}", shape.ID, shpInfo.UniqueKey, shpInfo.StencilImage));
+						ConsoleOut.writeLine(string.Format("Skip this ID:{0}; shapeKey:{1} - Stencil Image:{2}", shape.ID, shpInfo.UniqueKey, shpInfo.StencilImage));
 						continue;
 					}
 					if (shape.Style.Equals("Connector"))
 					{
+						Visio1.Connects visconnects2 = shape.Connects;
+						ConsoleOut.writeLine(string.Format("Connector ID:{0}-{1}",shape.ID, shape.Name));
+						for (int k = 1; k <= visconnects2.Count; k++)
+						{
+							Visio1.Connect visconnect = visconnects2[k];
+							Visio1.Shape toshape = visconnect.ToSheet;
+							ConsoleOut.writeLine(string.Format("To Shape ID:{0}-{1} LineLabel:{2}",toshape.ID, toshape.Name, shape.Text));
+						}
+						//ConsoleOut.writeLine(string.Format("Connector ID:{0} - {1}.  connect To/From {2}", shape.ID, shape.Text, ID));
 						continue;
 					}
+
+					ConsoleOut.writeLine(string.Format("shape ID:{0}-{1}",shpInfo.ID, shpInfo.UniqueKey));
 
 					if (shpInfo.ID == 21)
 					{
 						int x = 0;
 					}
+
+					Visio1.Connects visconnects = shape.Connects;
+					ConsoleOut.writeLine(string.Format("Connector ID:{0}-{1}", shape.ID, shape.Name));
+					for (int k = 1; k <= visconnects.Count; k++)
+					{
+						Visio1.Connect visconnect = visconnects[k];
+						Visio1.Shape toshape = visconnect.ToSheet;
+						ConsoleOut.writeLine(string.Format("To Shape ID:{0}-{1} LineLabel:{2}", toshape.ID, toshape.Name, shape.Text));
+					}
 					// get connections To
 					var shpConnection = shape.ConnectedShapes(VisConnectedShapesFlags.visConnectedShapesOutgoingNodes, "");
 					if (shpConnection != null && shpConnection.Length > 0)
 					{
-						Console.WriteLine("");
 						try
 						{
 							int nCnt = 0;
@@ -139,7 +153,6 @@ namespace VisioDiagramCreator.Visio
 					shpConnection = shape.ConnectedShapes(VisConnectedShapesFlags.visConnectedShapesAllNodes, "");
 					if (shpConnection != null && shpConnection.Length > 0)
 					{
-						Console.WriteLine("");
 						try
 						{
 							int nCnt = 0;
@@ -181,7 +194,6 @@ namespace VisioDiagramCreator.Visio
 					{
 						if (!allPageShapesMap.ContainsKey(shape.ID)) // && !allPageShapesMap.ContainsKey(sKey2)) // cnnShape.ID
 						{
-							//dConnectMap.Add(sKey, cnnShape.NameU);		// cnnShape.ID
 							allPageShapesMap.Add(shape.ID, shpInfo);   // shape.ID
 						}
 					}
@@ -193,5 +205,51 @@ namespace VisioDiagramCreator.Visio
 			}
 			return allPageShapesMap;
 		}		
-	} 
+
+
+		private bool ShapesAreConnected(Visio1.Shape shape1, Visio1.Shape shape2)
+		{
+			// in Visio our 2 shapes will each be connected to a connector, not to each other
+			// so we need to see if theyare both connected to the same connector
+
+			bool Connected = false;
+			// since we are pinning the connector to each shape, we only need to check
+			// the fromshapes attribute on each shape
+			Visio1.Connects shape1FromConnects = shape1.FromConnects;
+			Visio1.Connects shape2FromConnects = shape2.FromConnects;
+
+			foreach (Visio1.Shape connect in shape1FromConnects)
+			{
+				// first method
+				// for each shape shape 1 is connected to, see if shape2 is connected 
+				var shape = from Visio1.Shape cs in shape2FromConnects where cs == connect select cs;
+				if (shape.FirstOrDefault() != null) Connected = true;
+
+				// second method, convert shape2's connected shapes to an IEnumerable and
+				// see if it contains any shape1 shapes  
+				IEnumerable<Visio1.Shape> shapesasie = (IEnumerable<Visio1.Shape>)shape2FromConnects;
+
+				if (shapesasie.Contains(connect))
+				{
+					return true;
+				}
+			}
+
+			return Connected;
+
+			//third method
+			//convert both to IEnumerable and check if they intersect
+			IEnumerable<Visio1.Shape> shapes1asie = (IEnumerable<Visio1.Shape>)shape1FromConnects;
+			IEnumerable<Visio1.Shape> shapes2asie = (IEnumerable<Visio1.Shape>)shape2FromConnects;
+			var shapes = shapes1asie.Intersect(shapes2asie);
+			if (shapes.Count() > 0) 
+			{ 
+				return true; 
+			}
+			else 
+			{ 
+				return false; 
+			}
+		}
+	}
 }

@@ -1,9 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using VisioDiagramCreator.Visio;
 using Visio1 = Microsoft.Office.Interop.Visio;
 
 namespace VisioDiagramCreator.Visio

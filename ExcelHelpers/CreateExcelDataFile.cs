@@ -1,9 +1,7 @@
 ﻿using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using Excel = Microsoft.Office.Interop.Excel;
-using System.Runtime.InteropServices;
-using Microsoft.Office.Interop.Excel;
-using IronXL;
 
 ///
 /// helper URL http://csharp.net-informations.com/excel/csharp-format-excel.htm

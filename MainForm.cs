@@ -3,11 +3,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
+using VisioDiagramCreator.ExcelHelpers;
+using VisioDiagramCreator.Extensions;
 using VisioDiagramCreator.Models;
 using VisioDiagramCreator.Visio;
-using VisioDiagramCreator.Extensions;
-using VisioDiagramCreator.Visio.Models;
-using VisioDiagramCreator.ExcelHelpers;
 
 namespace VisioDiagramCreator
 {
@@ -28,7 +27,7 @@ namespace VisioDiagramCreator
 			InitializeComponent();
 
 			diagramData = new DiagramData();
-			//diagramData.TemplateFilePath = @"C:\Omnicell_Diagram_Creator\data\Templates\OC_ArchitectDiagramTemplate.vstx";
+			//diagramData.visioTemplateFilePath = @"C:\Omnicell_Diagram_Creator\data\Templates\OC_ArchitectDiagramTemplate.vstx";
 			//diagramData.StencilFilePath = @"C:\Omnicell_Diagram_Creator\data\Stencils\OC_ArchitectStencils.vssx";
 		}
 
@@ -67,7 +66,7 @@ namespace VisioDiagramCreator
 				if (_bBuildVisioFromExcelDataFile)
 				{
 					// build visio file form data file
-					Console.WriteLine(String.Format("MainForm - Build Visio file from an excel data file:{0}", tb_excelDataFile.Text));
+					ConsoleOut.writeLine(String.Format("MainForm - Build Visio file from an excel data file:{0}", tb_excelDataFile.Text));
 					diagramData = new ProcessExcelDataFile().ParseData(tb_excelDataFile.Text.Trim(), diagramData);
 					if (diagramData == null)
 					{
@@ -76,17 +75,17 @@ namespace VisioDiagramCreator
 						this.Close();
 					}
 
-					visHlp.DrawAllShapes(diagramData, VisioVariables.ShowDiagram.Show);
+					if (!visHlp.DrawAllShapes(diagramData, VisioVariables.ShowDiagram.Show))
+					{
+						// build the shape connection map to be used to establish connections between shapes on the diagrams
+						diagramData.ShapeConnectionsMap = new ProcessVisioShapeConnections().BuildShapeConnections(diagramData);
 
-					// build the shape connection map to be used to establish connections between shapes on the diagrams
-					diagramData.ShapeConnectionsMap = new ProcessVisioShapeConnections().BuildShapeConnections(diagramData);
+						// Lets make the connections 
+						bool bAns = visHlp.ConnectShapes(diagramData);
 
-					// Lets make the connections 
-					bool bAns = visHlp.ConnectShapes(diagramData);
-
-					// we need to close everything
-//					visHlp.VisioForceCloseAll();
-
+						// we need to close everything
+						//visHlp.VisioForceCloseAll();
+					}
 				}
 				else
 				{
@@ -94,14 +93,14 @@ namespace VisioDiagramCreator
 					//visHlp.ListDocumentStencils(diagramData, VisioVariables.ShowDiagram.Show);
 
 					// buid data file from existing Visio file
-					Console.WriteLine("build excel data file from a Visio file");
+					ConsoleOut.writeLine("build excel data file from a Visio file");
+
 					Dictionary<int, ShapeInformation> shapeMap = new ProcessVisioDiagramShapes().GetAllShapesProperties(tb_buildVisioFilePath.Text.Trim(), VisioVariables.ShowDiagram.Show);
-					Console.WriteLine("\n");
 					foreach (var allShp in shapeMap)
 					{
 						int nKey = allShp.Key;
 						ShapeInformation shpInf = allShp.Value;
-						Console.WriteLine(string.Format("MainForm - ID:{0}; UniqueKey:{1}; Image:{2}, ConnectToID:{3}; ConnectTo:{4}; ConnectFromID:{5}; ConnectFrom:{6}", shpInf.ID, shpInf.UniqueKey, shpInf.StencilImage, shpInf.ConnectToID, shpInf.ConnectTo, shpInf.ConnectFromID, shpInf.ConnectFrom));
+						ConsoleOut.writeLine(string.Format("MainForm - ID:{0}; UniqueKey:{1}; Image:{2}, ConnectToID:{3}; ConnectTo:{4}; ConnectFromID:{5}; ConnectFrom:{6}", shpInf.ID, shpInf.UniqueKey, shpInf.StencilImage, shpInf.ConnectToID, shpInf.ConnectTo, shpInf.ConnectFromID, shpInf.ConnectFrom));
 					}
 
 					// we are dont so we can close the visio document(s)
@@ -174,7 +173,7 @@ namespace VisioDiagramCreator
 			if (string.IsNullOrEmpty(folder))
 			{
 				// Cancel was pressed.  filePath will be empty
-				Console.WriteLine("Cancel button pressed.  No folder selected");
+				ConsoleOut.writeLine("Cancel button pressed.  No folder selected");
 			}
 			else
 			{
@@ -201,7 +200,7 @@ namespace VisioDiagramCreator
 			if (string.IsNullOrEmpty(filePath))
 			{
 				// Cancel was pressed.  filePath will be empty
-				Console.WriteLine("Cancel button pressed.  No file was selected");
+				ConsoleOut.writeLine("Cancel button pressed.  No file was selected");
 			}
 			else
 			{
@@ -226,7 +225,7 @@ namespace VisioDiagramCreator
 			if (string.IsNullOrEmpty(filePath))
 			{
 				// Cancel was pressed.  filePath will be empty
-				Console.WriteLine("Cancel button pressed.  No file was selected");
+				ConsoleOut.writeLine("Cancel button pressed.  No file was selected");
 			}
 			else
 			{

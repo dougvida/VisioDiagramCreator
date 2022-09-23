@@ -1,9 +1,7 @@
-﻿
+﻿using System.Windows.Forms;
 
 namespace VisioDiagramCreator.Extensions
 {
-	using System;
-	using System.Windows.Forms;
 
 	public static class FileExtension
 	{
