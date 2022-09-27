@@ -67,7 +67,7 @@
 			this.groupBox2.Controls.Add(this.tb_excelDataFile);
 			this.groupBox2.Controls.Add(this.btn_readExcelfile);
 			this.groupBox2.Controls.Add(this.label6);
-			this.groupBox2.Location = new System.Drawing.Point(70, 289);
+			this.groupBox2.Location = new System.Drawing.Point(70, 146);
 			this.groupBox2.Name = "groupBox2";
 			this.groupBox2.Size = new System.Drawing.Size(686, 89);
 			this.groupBox2.TabIndex = 22;
@@ -111,7 +111,7 @@
 			this.groupBox1.Controls.Add(this.tb_buildExcelFileName);
 			this.groupBox1.Controls.Add(this.label2);
 			this.groupBox1.Controls.Add(this.label1);
-			this.groupBox1.Location = new System.Drawing.Point(70, 137);
+			this.groupBox1.Location = new System.Drawing.Point(70, 247);
 			this.groupBox1.Name = "groupBox1";
 			this.groupBox1.Size = new System.Drawing.Size(686, 146);
 			this.groupBox1.TabIndex = 23;
@@ -227,7 +227,7 @@
 			// 
 			// btn_Submit
 			// 
-			this.btn_Submit.Location = new System.Drawing.Point(570, 392);
+			this.btn_Submit.Location = new System.Drawing.Point(570, 410);
 			this.btn_Submit.Name = "btn_Submit";
 			this.btn_Submit.Size = new System.Drawing.Size(75, 23);
 			this.btn_Submit.TabIndex = 2;
@@ -237,7 +237,7 @@
 			// 
 			// btn_Quit
 			// 
-			this.btn_Quit.Location = new System.Drawing.Point(680, 392);
+			this.btn_Quit.Location = new System.Drawing.Point(680, 410);
 			this.btn_Quit.Name = "btn_Quit";
 			this.btn_Quit.Size = new System.Drawing.Size(75, 23);
 			this.btn_Quit.TabIndex = 3;
@@ -249,7 +249,7 @@
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-			this.ClientSize = new System.Drawing.Size(800, 445);
+			this.ClientSize = new System.Drawing.Size(800, 455);
 			this.Controls.Add(this.groupBox3);
 			this.Controls.Add(this.groupBox1);
 			this.Controls.Add(this.groupBox2);

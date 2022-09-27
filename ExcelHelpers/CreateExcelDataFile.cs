@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
+using VisioDiagramCreator.Visio;
 using Excel = Microsoft.Office.Interop.Excel;
 
 ///
@@ -61,6 +62,17 @@ namespace VisioDiagramCreator.ExcelHelpers
 		public CreateExcelDataFile()
 		{
 		}
+
+		public bool PopulateExcelDataFile(Dictionary<int, ShapeInformation>shapesMap, string namePath )
+		{
+			if (openFile( namePath ))
+			{
+				// error
+				return true;
+			}
+			return false;
+		}
+
 
 		private bool openFile(string fileNamePath)
 		{

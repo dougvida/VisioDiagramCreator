@@ -78,7 +78,6 @@
     <Compile Include="ExcelHelpers\ProcessExcelDataFile.cs" />
     <Compile Include="Extensions\FileExtension.cs" />
     <Compile Include="Models\ConsoleOut.cs" />
-    <Compile Include="Visio\Models\ConnectShpExcelData.cs" />
     <Compile Include="Visio\Models\ShapeConnection.cs" />
     <Compile Include="Visio\Helper\ColorRGB.cs" />
     <Compile Include="Visio\Processing\ProcessVisioDiagramShapes.cs" />

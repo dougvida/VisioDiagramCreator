@@ -35,12 +35,17 @@ namespace VisioDiagramCreator
 		{
 			///////////////////////////////////////////////////////////////////////
 			// this section is for Building the excel data file from a Visio file
-			tb_buildExcelFileName.Text = "NewExcelData.xlxs";
+			// use todays date as part of the file name
+			tb_buildExcelFileName.Text = String.Format("ExcelDataFile_{0}.xlxs", DateTime.Now.ToString("MMddyyyy"));
 			tb_buildExcelPath.Text = excelDataPath;
 			//////////////////////////////////////////////////////////////////////
 
 			_bBuildVisioFromExcelDataFile = true;
+			rb_buildExcelFileFromVisio.Enabled = false;		// underconstruction so don't enable this option
 
+#if DEBUG
+			rb_buildExcelFileFromVisio.Enabled = true;
+#endif
 			btn_Submit.Enabled = false;
 
 			btn_SetExcelPath.Enabled = false;
@@ -84,7 +89,9 @@ namespace VisioDiagramCreator
 						bool bAns = visHlp.ConnectShapes(diagramData);
 
 						// we need to close everything
-						//visHlp.VisioForceCloseAll();
+#if !DEBUG
+						visHlp.VisioForceCloseAll();
+#endif
 					}
 				}
 				else
@@ -95,14 +102,22 @@ namespace VisioDiagramCreator
 					// buid data file from existing Visio file
 					ConsoleOut.writeLine("build excel data file from a Visio file");
 
-					Dictionary<int, ShapeInformation> shapeMap = new ProcessVisioDiagramShapes().GetAllShapesProperties(tb_buildVisioFilePath.Text.Trim(), VisioVariables.ShowDiagram.Show);
-					foreach (var allShp in shapeMap)
+					Dictionary<int, ShapeInformation> shapesMap = new ProcessVisioDiagramShapes().GetAllShapesProperties(tb_buildVisioFilePath.Text.Trim(), VisioVariables.ShowDiagram.Show);
+					foreach (var allShp in shapesMap)
 					{
 						int nKey = allShp.Key;
 						ShapeInformation shpInf = allShp.Value;
-						ConsoleOut.writeLine(string.Format("MainForm - ID:{0}; UniqueKey:{1}; Image:{2}, ConnectToID:{3}; ConnectTo:{4}; ConnectFromID:{5}; ConnectFrom:{6}", shpInf.ID, shpInf.UniqueKey, shpInf.StencilImage, shpInf.ConnectToID, shpInf.ConnectTo, shpInf.ConnectFromID, shpInf.ConnectFrom));
+						ConsoleOut.writeLine(string.Format("MainForm - ID:{0}; UniqueKey:{1}; Image:{2}, ConnectToID:{3}; ConnectTo:{4}; ToLabel:{5}; ConnectFromID:{6}; ConnectFrom:{7}; FromLabel:{8}", shpInf.ID, shpInf.UniqueKey, shpInf.StencilImage, shpInf.ConnectToID, shpInf.ConnectTo, shpInf.ToLineLabel, shpInf.ConnectFromID, shpInf.ConnectFrom, shpInf.FromLineLabel));
 					}
+					if (shapesMap != null)
+					{
+						CreateExcelDataFile createExcelDataFile = new CreateExcelDataFile();
+						if (createExcelDataFile.PopulateExcelDataFile(shapesMap, this.tb_excelDataFile.Text))
+						{
+							MessageBox.Show(String.Format("Error::MainForm - Creating excel data file:{0}", this.tb_excelDataFile.Text));
+						}
 
+					}
 					// we are dont so we can close the visio document(s)
 					visHlp.VisioForceCloseAll();
 				}
