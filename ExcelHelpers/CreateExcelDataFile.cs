@@ -15,7 +15,7 @@ namespace VisioDiagramCreator.ExcelHelpers
 		private Excel.Application _xlApp = null;
 		private Excel.Workbook _xlWorkbook = null;
 		private Excel.Worksheet _xlWorksheet = null;
-		Excel.Sheets _worksheets = null;		// _xlWorkbook.Worksheets; 
+		//Excel.Sheets _worksheets = null;		// _xlWorkbook.Worksheets; 
 		
 		object misValue = System.Reflection.Missing.Value;
 
@@ -65,10 +65,22 @@ namespace VisioDiagramCreator.ExcelHelpers
 
 		public bool PopulateExcelDataFile(Dictionary<int, ShapeInformation>shapesMap, string namePath )
 		{
+			// if file already exists display a message box asking the user
+			// if the file can be overwritten or needs to be saved off
+			// or just backup the file and move on
 			if (openFile( namePath ))
 			{
 				// error
 				return true;
+			}
+
+			if (_xlWorksheet != null)
+			{
+				// write data to the excel file
+
+
+				// save and close the excel file
+				saveFile(namePath);
 			}
 			return false;
 		}
@@ -87,8 +99,12 @@ namespace VisioDiagramCreator.ExcelHelpers
 				return true;	// error
 			}
 
-			// open a file
-			_xlWorkbook = _xlApp.Workbooks.Open(fileNamePath);
+			// open new excel file
+			_xlWorkbook = _xlApp.Workbooks.Add(misValue);
+			_xlWorksheet = (Excel.Worksheet)_xlWorkbook.Worksheets.get_Item(1);
+
+			// open existing excel file
+			//_xlWorkbook = _xlApp.Workbooks.Open(fileNamePath);
 
 			return false;
 		}
@@ -100,7 +116,7 @@ namespace VisioDiagramCreator.ExcelHelpers
 		{
 			if (_xlWorkbook != null)
 			{
-				_xlWorksheet.SaveAs("your-file-name.xls");
+				//_xlWorksheet.SaveAs("your-file-name.xls");
 				_xlWorkbook.SaveAs(fileNamePath, Excel.XlFileFormat.xlWorkbookNormal, misValue, misValue, misValue, misValue, 
 															Excel.XlSaveAsAccessMode.xlExclusive, misValue, misValue, misValue, misValue, misValue);
 			}

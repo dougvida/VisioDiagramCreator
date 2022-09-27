@@ -29,11 +29,11 @@
 		private void InitializeComponent()
 		{
 			this.label4 = new System.Windows.Forms.Label();
-			this.groupBox2 = new System.Windows.Forms.GroupBox();
+			this.gb_BuildFromExceldata = new System.Windows.Forms.GroupBox();
 			this.tb_excelDataFile = new System.Windows.Forms.TextBox();
 			this.btn_readExcelfile = new System.Windows.Forms.Button();
 			this.label6 = new System.Windows.Forms.Label();
-			this.groupBox1 = new System.Windows.Forms.GroupBox();
+			this.gb_BuildDataFile = new System.Windows.Forms.GroupBox();
 			this.tb_buildVisioFilePath = new System.Windows.Forms.TextBox();
 			this.tb_buildExcelPath = new System.Windows.Forms.TextBox();
 			this.btn_VisioFileToRead = new System.Windows.Forms.Button();
@@ -47,8 +47,8 @@
 			this.rb_buildFromExcelFile = new System.Windows.Forms.RadioButton();
 			this.btn_Submit = new System.Windows.Forms.Button();
 			this.btn_Quit = new System.Windows.Forms.Button();
-			this.groupBox2.SuspendLayout();
-			this.groupBox1.SuspendLayout();
+			this.gb_BuildFromExceldata.SuspendLayout();
+			this.gb_BuildDataFile.SuspendLayout();
 			this.groupBox3.SuspendLayout();
 			this.SuspendLayout();
 			// 
@@ -62,17 +62,17 @@
 			this.label4.TabIndex = 20;
 			this.label4.Text = "Build a new Visio Diagram or Build Excel Data file";
 			// 
-			// groupBox2
+			// gb_BuildFromExceldata
 			// 
-			this.groupBox2.Controls.Add(this.tb_excelDataFile);
-			this.groupBox2.Controls.Add(this.btn_readExcelfile);
-			this.groupBox2.Controls.Add(this.label6);
-			this.groupBox2.Location = new System.Drawing.Point(70, 146);
-			this.groupBox2.Name = "groupBox2";
-			this.groupBox2.Size = new System.Drawing.Size(686, 89);
-			this.groupBox2.TabIndex = 22;
-			this.groupBox2.TabStop = false;
-			this.groupBox2.Text = "Build Visio Diagram from an Excel Data file";
+			this.gb_BuildFromExceldata.Controls.Add(this.tb_excelDataFile);
+			this.gb_BuildFromExceldata.Controls.Add(this.btn_readExcelfile);
+			this.gb_BuildFromExceldata.Controls.Add(this.label6);
+			this.gb_BuildFromExceldata.Location = new System.Drawing.Point(70, 146);
+			this.gb_BuildFromExceldata.Name = "gb_BuildFromExceldata";
+			this.gb_BuildFromExceldata.Size = new System.Drawing.Size(686, 89);
+			this.gb_BuildFromExceldata.TabIndex = 22;
+			this.gb_BuildFromExceldata.TabStop = false;
+			this.gb_BuildFromExceldata.Text = "Build Visio Diagram from an Excel Data file";
 			// 
 			// tb_excelDataFile
 			// 
@@ -101,22 +101,22 @@
 			this.label6.TabIndex = 29;
 			this.label6.Text = "Select Excel Data File";
 			// 
-			// groupBox1
+			// gb_BuildDataFile
 			// 
-			this.groupBox1.Controls.Add(this.tb_buildVisioFilePath);
-			this.groupBox1.Controls.Add(this.tb_buildExcelPath);
-			this.groupBox1.Controls.Add(this.btn_VisioFileToRead);
-			this.groupBox1.Controls.Add(this.btn_SetExcelPath);
-			this.groupBox1.Controls.Add(this.label3);
-			this.groupBox1.Controls.Add(this.tb_buildExcelFileName);
-			this.groupBox1.Controls.Add(this.label2);
-			this.groupBox1.Controls.Add(this.label1);
-			this.groupBox1.Location = new System.Drawing.Point(70, 247);
-			this.groupBox1.Name = "groupBox1";
-			this.groupBox1.Size = new System.Drawing.Size(686, 146);
-			this.groupBox1.TabIndex = 23;
-			this.groupBox1.TabStop = false;
-			this.groupBox1.Text = "Build Data file from a Visio diagram";
+			this.gb_BuildDataFile.Controls.Add(this.tb_buildVisioFilePath);
+			this.gb_BuildDataFile.Controls.Add(this.tb_buildExcelPath);
+			this.gb_BuildDataFile.Controls.Add(this.btn_VisioFileToRead);
+			this.gb_BuildDataFile.Controls.Add(this.btn_SetExcelPath);
+			this.gb_BuildDataFile.Controls.Add(this.label3);
+			this.gb_BuildDataFile.Controls.Add(this.tb_buildExcelFileName);
+			this.gb_BuildDataFile.Controls.Add(this.label2);
+			this.gb_BuildDataFile.Controls.Add(this.label1);
+			this.gb_BuildDataFile.Location = new System.Drawing.Point(70, 247);
+			this.gb_BuildDataFile.Name = "gb_BuildDataFile";
+			this.gb_BuildDataFile.Size = new System.Drawing.Size(686, 146);
+			this.gb_BuildDataFile.TabIndex = 23;
+			this.gb_BuildDataFile.TabStop = false;
+			this.gb_BuildDataFile.Text = "Build Data file from a Visio diagram";
 			// 
 			// tb_buildVisioFilePath
 			// 
@@ -251,18 +251,18 @@
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(800, 455);
 			this.Controls.Add(this.groupBox3);
-			this.Controls.Add(this.groupBox1);
-			this.Controls.Add(this.groupBox2);
+			this.Controls.Add(this.gb_BuildDataFile);
+			this.Controls.Add(this.gb_BuildFromExceldata);
 			this.Controls.Add(this.label4);
 			this.Controls.Add(this.btn_Quit);
 			this.Controls.Add(this.btn_Submit);
 			this.Name = "MainForm";
-			this.Text = "Visio Diagram Creator";
+			this.Text = "Omnicell Diagram Creator";
 			this.Load += new System.EventHandler(this.MainForm_Load);
-			this.groupBox2.ResumeLayout(false);
-			this.groupBox2.PerformLayout();
-			this.groupBox1.ResumeLayout(false);
-			this.groupBox1.PerformLayout();
+			this.gb_BuildFromExceldata.ResumeLayout(false);
+			this.gb_BuildFromExceldata.PerformLayout();
+			this.gb_BuildDataFile.ResumeLayout(false);
+			this.gb_BuildDataFile.PerformLayout();
 			this.groupBox3.ResumeLayout(false);
 			this.groupBox3.PerformLayout();
 			this.ResumeLayout(false);
@@ -272,9 +272,9 @@
 
 		#endregion
 		private System.Windows.Forms.Label label4;
-		private System.Windows.Forms.GroupBox groupBox2;
+		private System.Windows.Forms.GroupBox gb_BuildFromExceldata;
 		private System.Windows.Forms.Label label6;
-		private System.Windows.Forms.GroupBox groupBox1;
+		private System.Windows.Forms.GroupBox gb_BuildDataFile;
 		private System.Windows.Forms.Label label1;
 		private System.Windows.Forms.TextBox tb_buildExcelFileName;
 		private System.Windows.Forms.Label label2;

@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Windows.Forms;
 using VisioDiagramCreator.Models;
 using Visio1 = Microsoft.Office.Interop.Visio;
@@ -10,6 +11,11 @@ namespace VisioDiagramCreator.Visio
 {
 	public class ProcessVisioDiagramShapes
 	{
+		Visio1.Application appVisio = null;
+		Visio1.Document vDocument = null;
+		Visio1.Page vPage = null;
+		VisioHelper visHlpr = null;
+
 		/// <summary>
 		/// GetAllShapesProperties
 		/// Get all the shape properties for each shape contained within the document
@@ -19,18 +25,36 @@ namespace VisioDiagramCreator.Visio
 		public Dictionary<int, ShapeInformation> GetAllShapesProperties(string diagamFilePathName, VisioVariables.ShowDiagram dspMode)
 		{
 			// Open up one of Visio's sample drawings.
-			Visio1.Application appVisio = new Visio1.Application();
-			new VisioHelper().ShowVisioDiagram(appVisio, dspMode);              // don't show the diagram
+			appVisio = new Visio1.Application();
+			visHlpr = new VisioHelper();
+			visHlpr.ShowVisioDiagram(appVisio, dspMode);              // don't show the diagram
 
-			Visio1.Document vDocuments = appVisio.Documents.Open(diagamFilePathName);
+			this.vDocument = appVisio.Documents.Open(diagamFilePathName);
 			// The new document will have one page, get the a reference to it.
-			Visio1.Page page = vDocuments.Pages[1];
+			vPage = this.vDocument.Pages[1];
 
-			new VisioHelper().ShowVisioDiagram(appVisio, VisioVariables.ShowDiagram.Show);
+			visHlpr.ShowVisioDiagram(appVisio, VisioVariables.ShowDiagram.Show);
 			ConsoleOut.writeLine(string.Format("Active Document:{0}: Master in document:{1}", appVisio.ActiveDocument, appVisio.ActiveDocument.Masters));
 
 			// get the connectors for each shape in the diagram 
-			return getShapeConnections(vDocuments);
+			Dictionary<int, ShapeInformation> shpConn = getShapeConnections(this.vDocument);
+
+			try
+			{
+				if (this.vDocument != null)
+				{
+					this.vDocument.Application.ActiveDocument.Close();
+				}
+				if (appVisio != null)
+				{
+					appVisio.Quit();
+				}
+			}
+			catch (System.Runtime.InteropServices.COMException ex)
+			{
+				ConsoleOut.writeLine(string.Format("This exception is OK because the user closed the Visio document before exiting the application:  {0}", ex.Message));
+			}
+			return shpConn;
 		}
 
 		/// <summary>
@@ -47,22 +71,17 @@ namespace VisioDiagramCreator.Visio
 
 			Dictionary<int, ShapeInformation> allPageShapesMap = null;
 			Dictionary<int, string> connectors = null;
-
 			Dictionary<string, string> connectMap = null;
-
 			ShapeInformation shpInfo = null;
+
 			try
 			{
 				connectMap = new Dictionary<string, string>();
 				allPageShapesMap = new Dictionary<int, ShapeInformation>();
 
-				bool bFound = false;
-
 				connectors = new Dictionary<int, string>();
 				foreach (Visio1.Shape shape in page.Shapes)
 				{
-					bFound = false;
-
 					// Use this index to look at each row in the properties section.
 					shpInfo = new ShapeInformation();
 
@@ -183,7 +202,7 @@ namespace VisioDiagramCreator.Visio
 						continue;
 					}
 
-					ConsoleOut.writeLine(string.Format("shape ID:{0}-{1}",shpInfo.ID, shpInfo.UniqueKey));
+					ConsoleOut.writeLine(string.Format("Found shape ID:{0}-{1} in the diagram",shpInfo.ID, shpInfo.UniqueKey));
 
 					// get connections To
 					var shpConnection = shape.ConnectedShapes(VisConnectedShapesFlags.visConnectedShapesOutgoingNodes, "");
@@ -215,7 +234,6 @@ namespace VisioDiagramCreator.Visio
 								shpInfo.ToLineColor = "BLACK";
 								shpInfo.ToLinePattern = VisioVariables.LINE_PATTERN_SOLID;
 								connectMap.Add(sKey, sKey2);
-								bFound = true;
 							}
 						}
 						catch (Exception exp)
@@ -254,7 +272,6 @@ namespace VisioDiagramCreator.Visio
 								shpInfo.FromLineColor = "BLACK";
 								shpInfo.FromLinePattern = VisioVariables.LINE_PATTERN_SOLID;
 								connectMap.Add(sKey, sKey2);
-								bFound = true;
 							}
 						}
 						catch (Exception exp)
@@ -262,14 +279,9 @@ namespace VisioDiagramCreator.Visio
 							MessageBox.Show(String.Format("getShapeConnections - Connection:{0} - {1}", shpInfo.ConnectFrom, exp.Message));
 						}
 					}
-
-					// we only want to save the shape object once for all the connections
-					if (bFound)
+					if (!allPageShapesMap.ContainsKey(shape.ID)) // && !allPageShapesMap.ContainsKey(sKey2)) // cnnShape.ID
 					{
-						if (!allPageShapesMap.ContainsKey(shape.ID)) // && !allPageShapesMap.ContainsKey(sKey2)) // cnnShape.ID
-						{
-							allPageShapesMap.Add(shape.ID, shpInfo);   // shape.ID
-						}
+						allPageShapesMap.Add(shape.ID, shpInfo);   // shape.ID
 					}
 				}
 			}

@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.2.32630.192
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VisioDiagramCreator", "VisioDiagramCreator.csproj", "{AE4F3493-7F39-45F4-8197-5723734553BA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OmnicellBlueprintingTool", "OmnicellBlueprintingTool.csproj", "{AE4F3493-7F39-45F4-8197-5723734553BA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

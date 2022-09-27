@@ -17,7 +17,7 @@ namespace VisioDiagramCreator
 
 		VisioHelper visHlp = new VisioHelper();
 
-		static string baseWorkingDir = @"C:\Omnicell_Diagram_Creator";
+		static string baseWorkingDir = @"C:\Omnicell_Blueprinting_tool";
 		static string excelDataPath = baseWorkingDir + @"\ExcelData\";
 		static string scriptDataPath = baseWorkingDir + @"\data\ScriptData\";
 		static string visioFilesPath = baseWorkingDir + @"\VisioFiles\";
@@ -25,10 +25,11 @@ namespace VisioDiagramCreator
 		public MainForm()
 		{
 			InitializeComponent();
+			this.Text = "Omnicell Blueprinting Tool";
 
 			diagramData = new DiagramData();
-			//diagramData.visioTemplateFilePath = @"C:\Omnicell_Diagram_Creator\data\Templates\OC_ArchitectDiagramTemplate.vstx";
-			//diagramData.StencilFilePath = @"C:\Omnicell_Diagram_Creator\data\Stencils\OC_ArchitectStencils.vssx";
+			//diagramData.visioTemplateFilePath = @"C:\Omnicell_Diagram_Creator\data\Templates\OC_BlueprintingTemplate.vstx";
+			//diagramData.StencilFilePath = @"C:\Omnicell_Diagram_Creator\data\Stencils\OC_BlueprintingStencils.vssx";
 		}
 
 		private void MainForm_Load(object sender, EventArgs e)
@@ -41,17 +42,35 @@ namespace VisioDiagramCreator
 			//////////////////////////////////////////////////////////////////////
 
 			_bBuildVisioFromExcelDataFile = true;
-			rb_buildExcelFileFromVisio.Enabled = false;		// underconstruction so don't enable this option
+			rb_buildFromExcelFile.Checked = true;
 
-#if DEBUG
-			rb_buildExcelFileFromVisio.Enabled = true;
-#endif
+			rb_buildExcelFileFromVisio.Visible = false;     // underconstruction so don't enable this option
+			rb_buildExcelFileFromVisio.Enabled = false;     // underconstruction so don't enable this option
+
 			btn_Submit.Enabled = false;
 
+			// turn all this off.   Under construction at this time
+			gb_BuildDataFile.Visible = false;
+			btn_SetExcelPath.Visible = false;
+			btn_VisioFileToRead.Visible = false;
+			tb_buildExcelFileName.Visible = false;
+			tb_buildExcelPath.Visible = false;
+			tb_buildVisioFilePath.Visible = false;
+#if DEBUG
+			// debug mode lets turn on this additional stuff for testing
+			rb_buildExcelFileFromVisio.Visible = true;
+			rb_buildExcelFileFromVisio.Enabled = true;
+
+			gb_BuildDataFile.Visible = true; 
+			btn_SetExcelPath.Visible = true;
+			btn_VisioFileToRead.Visible = true;
+			tb_buildExcelFileName.Visible = true;
+			tb_buildExcelPath.Visible = true;
+			tb_buildVisioFilePath.Visible = true;
+#endif
 			btn_SetExcelPath.Enabled = false;
 			btn_VisioFileToRead.Enabled = false;
 
-			rb_buildFromExcelFile.Checked = true;
 			tb_buildExcelFileName.Enabled = false;
 			tb_buildExcelPath.Enabled = false;
 			tb_buildVisioFilePath.Enabled = false;
@@ -101,8 +120,8 @@ namespace VisioDiagramCreator
 
 					// buid data file from existing Visio file
 					ConsoleOut.writeLine("build excel data file from a Visio file");
-
 					Dictionary<int, ShapeInformation> shapesMap = new ProcessVisioDiagramShapes().GetAllShapesProperties(tb_buildVisioFilePath.Text.Trim(), VisioVariables.ShowDiagram.Show);
+
 					foreach (var allShp in shapesMap)
 					{
 						int nKey = allShp.Key;
@@ -112,14 +131,16 @@ namespace VisioDiagramCreator
 					if (shapesMap != null)
 					{
 						CreateExcelDataFile createExcelDataFile = new CreateExcelDataFile();
-						if (createExcelDataFile.PopulateExcelDataFile(shapesMap, this.tb_excelDataFile.Text))
+						string sPath = string.Format(@"{0}{1}",tb_buildExcelPath.Text.Trim(), tb_buildExcelFileName.Text.Trim());
+						if (createExcelDataFile.PopulateExcelDataFile(shapesMap, sPath))
 						{
-							MessageBox.Show(String.Format("Error::MainForm - Creating excel data file:{0}", this.tb_excelDataFile.Text));
+							MessageBox.Show(String.Format("Error::MainForm - Creating excel data file:{0}", sPath));
 						}
-
+						else
+						{
+							MessageBox.Show(string.Format("the new excel data file has been created:{0}", sPath));
+						}
 					}
-					// we are dont so we can close the visio document(s)
-					visHlp.VisioForceCloseAll();
 				}
 				diagramData.Reset();
 			}
