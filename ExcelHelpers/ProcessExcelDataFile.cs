@@ -1,13 +1,19 @@
-﻿using System;
+﻿using Microsoft.Office.Interop.Excel;
+using Microsoft.Office.Interop.Visio;
+using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
-using IronXL;
-using Excel = Microsoft.Office.Interop.Excel;
+using System.Runtime.InteropServices;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
 using VisioDiagramCreator.Models;
 using VisioDiagramCreator.Visio;
-using System.Runtime.InteropServices;
-using System.Windows.Forms;
+using Excel = Microsoft.Office.Interop.Excel;       //microsoft Excel 14 object in references-> COM tab
+
 
 // https://ironsoftware.com/csharp/excel/tutorials/how-to-read-excel-file-csharp/#get-cell-range
 
@@ -20,7 +26,7 @@ namespace VisioDiagramCreator.ExcelHelpers
 		{
 			// NOTE ****
 			// the order of this enum must match the column order in the Excel file
-			VisioPage = 0,			// Page indicator to place this shape
+			VisioPage = 1,			// Page indicator to place this shape
 			ShapeType,				// key
 			StencilKey,				// device unique Key used for connecting visio shapes
 			StencilImage,			// device visio image name
@@ -56,7 +62,7 @@ namespace VisioDiagramCreator.ExcelHelpers
 		}
 
 		/// <summary>
-		/// ParseData
+		/// parseExcelFile
 		/// Parse the Excel data into a DiagramData class.
 		/// this class will hold all the excel data that will be used to transfer into Visio diagram data
 		/// </summary>
@@ -65,12 +71,12 @@ namespace VisioDiagramCreator.ExcelHelpers
 		/// <returns>DiagramData</returns>
 		/// <exception cref="ArgumentNullException"></exception>
 		/// <exception cref="Exception"></exception>
-		public DiagramData ParseData( string file, DiagramData diagData )
+		public DiagramData parseExcelFile(string file, DiagramData diagData)
 		{
 			if (string.IsNullOrEmpty(file))
 			{
 				// Error file is empty
-				MessageBox.Show(string.Format("Exception:ParseData(File is missing: {0})",nameof(file)));
+				MessageBox.Show(string.Format("Exception:parseExcelFile(File is missing: {0})", nameof(file)));
 				return null;
 			}
 
@@ -78,66 +84,89 @@ namespace VisioDiagramCreator.ExcelHelpers
 			Device device = null;
 			diagData.visioStencilFilePaths = new List<string>();
 
-			WorkBook workbook = WorkBook.Load(file);
-			WorkSheet sheet = workbook.WorkSheets.First();
-			string[] saTmp1 = sheet.RangeAddressAsString.Split(':');
-			int nIdx1 = saTmp1[1].IndexOfAny("0123456789".ToCharArray());	// if a digit is found get the index
-			string endColumn = saTmp1[1].Substring(0, nIdx1);
+			//Create COM Objects. Create a COM object for everything that is referenced
+			Excel.Application xlApp = new Excel.Application();
+			//Excel.Workbook xlWorkbook = xlApp.Workbooks.Open(file);
+			//Excel._Worksheet xlWorksheet = xlWorkbook.Sheets[1];
+			Excel.Workbook xlWorkbook = xlApp.Workbooks.Open(file, 0, true, 5, "", "", true, Microsoft.Office.Interop.Excel.XlPlatform.xlWindows, "\t", false, false, 0, true, 1, 0);
+			Excel._Worksheet xlWorksheet = (Excel.Worksheet)xlWorkbook.Worksheets.get_Item(1);
+
+			Excel.Range xlRange = xlWorksheet.UsedRange;
+
+			int rowCount = xlRange.Rows.Count;
+			int colCount = xlRange.Columns.Count;
+
+			xlApp = new Excel.Application();
+			xlWorkbook = xlApp.Workbooks.Open(file, 0, true, 5, "", "", true, Microsoft.Office.Interop.Excel.XlPlatform.xlWindows, "\t", false, false, 0, true, 1, 0);
+			xlWorksheet = (Excel.Worksheet)xlWorkbook.Worksheets.get_Item(1);
+
+			System.Array myArray = (System.Array)xlRange.Cells.Value2;
 			try
 			{
-				for (var row = 2; row <= sheet.RowCount; row++)
+				for (int row = 2; row <= xlRange.Rows.Count; row++)
 				{
-					var cells = sheet[$"A{row}:{endColumn}{row}"].ToList();
-					if (!cells[0].ToString().StartsWith(";")) // first row is a header so skip
+					// we only need to get the first few columns to determine what to do
+					var data = myArray.GetValue(row, (int)_cellIndex.VisioPage);
+					if (data == null) // value is null skip this column
 					{
-						if (cells[(int)_cellIndex.VisioPage].IntValue > diagData.MaxVisioPages)
+						continue;	// should not happen
+					}
+					if (data.ToString().StartsWith(";"))   // first row is a header so skip
+					{
+						continue;
+					}
+					if ((Convert.ToInt32(data) > diagData.MaxVisioPages))
+					{
+						diagData.MaxVisioPages = Convert.ToInt32(data);
+					}
+
+					data = myArray.GetValue(row, (int)_cellIndex.ShapeType);
+					if (data != null)
+					{
+						switch ((string)data.ToString().Trim().ToUpper())
 						{
-							diagData.MaxVisioPages = cells[(int)_cellIndex.VisioPage].IntValue;
-						}
-						switch (cells[(int)_cellIndex.ShapeType].ToString().Trim().ToUpper())
-						{
-							case "TEMPLATE":				// Open a template.  This may be used with existing stencils already in the document
-								diagData.visioTemplateFilePath = cells[(int)_cellIndex.StencilKey].ToString().Trim().Substring(0, cells[(int)_cellIndex.StencilKey].ToString().Trim().Length);
+							case "TEMPLATE":           // Open a template.  This may be used with existing stencils already in the document
+								data = myArray.GetValue(row, (int)_cellIndex.StencilKey);
+								if (data != null)
+								{ 
+									diagData.visioTemplateFilePath = (string)data.ToString().Trim();
+								}
 								break;
 
-							case "BLANK DOCUMENT":		// create a new blank Visio document.  No existing stencils attached.  Not using a Template
+							case "BLANK DOCUMENT":     // create a new blank Visio document.  No existing stencils attached.  Not using a Template
 								diagData.visioTemplateFilePath = "";
 								break;
 
-							case "STENCIL":				// stencils to add
-								string stencilFile = cells[(int)_cellIndex.StencilKey].ToString().Trim().Substring(0, cells[(int)_cellIndex.StencilKey].ToString().Trim().Length);
-								if(!string.IsNullOrEmpty(stencilFile))
+							case "STENCIL":            // stencils to add
+								data = myArray.GetValue(row, (int)_cellIndex.StencilKey);
+								string stencilFile = data.ToString();// but we only want the first part of the key
+								if (!string.IsNullOrEmpty(stencilFile))
 								{
 									diagData.visioStencilFilePaths.Add(stencilFile);
 								}
 								break;
 
-							case "SHAPE":					// stencils to create on the document
-								device = _parseExcelData(cells);
+							case "SHAPE":              // stencils to create on the document
+								// pass myArray object, row # and column count
+								device = _parseExcelData(myArray, row);
+								//device = _parseExcelData(data);
 								devices.Add(device);
 								diagData.AllShapesMap.Add(device.ShapeInfo.UniqueKey, device);
 								break;
 
 							default:
-								if (diagData != null)
-								{
-									diagData.Devices = devices;
-								}
-								if (workbook != null)
-								{
-									workbook.Close();
-								}
-								MessageBox.Show(string.Format("Exception::ParseData - Unknown label:{0} in CSV file:{1})", cells[(int)_cellIndex.StencilImage].ToString().Trim(), file));
+								// the finally will be called to clean / close up everything
+								MessageBox.Show(String.Format("ERROR::parseExcelFile\n\nInvalid value for the field 'ShapeType'\nFound:({0}) at Row:{1}\n\nPlease resolve this issue in the Excel Data file", data, row));
 								return null;
 						}
-						ConsoleOut.writeLine(string.Format("ParseData - ShapeType:{0}, Row{1}", cells[(int)_cellIndex.StencilImage].ToString().Trim(), row));
 					}
+					//ConsoleOut.writeLine(string.Format("parseExcelFile - ShapeType:{0}, Row{1}", cells[(int)_cellIndex.StencilImage].ToString().Trim(), row));
 				}
 			}
 			catch (Exception ex)
 			{
 				ConsoleOut.writeLine(ex.Message + " - " + ex.StackTrace);
-				MessageBox.Show(String.Format("Exception::ParseData - Duplicate key:({0}) found.\nPlease resolve this issue in the Excel Data file\n{1}", device.ShapeInfo.UniqueKey, ex.Message)); //, ex.StackTrace.ToString);
+				MessageBox.Show(String.Format("Exception::parseExcelFile - Duplicate key:({0}) found.\nPlease resolve this issue in the Excel Data file\n{1}", device.ShapeInfo.UniqueKey, ex.Message)); //, ex.StackTrace.ToString);
 				return null;
 			}
 			finally
@@ -146,32 +175,64 @@ namespace VisioDiagramCreator.ExcelHelpers
 				{
 					diagData.Devices = devices;
 				}
-				if (workbook != null)
-				{
-					workbook.Close();
-				}
+
+				//quit and release
+				xlWorkbook.Close();
+				xlApp.Quit();
+
+				//release com objects to fully kill excel process from running in the background
+				Marshal.ReleaseComObject(xlRange);
+				Marshal.ReleaseComObject(xlWorksheet);
+				Marshal.ReleaseComObject(xlWorkbook);
+				Marshal.ReleaseComObject(xlApp);
 			}
+
 			return diagData;
 		}
 
-
 		/// <summary>
 		/// _parseExcelData
-		/// parse the Excel data into a Device object
+		/// this will parse the data from the excel file
+		/// 
 		/// </summary>
-		/// <param name="data">List<cell></param>
+		/// <param name="myArray">excel data</param>
+		/// <param name="row">array row to index on</param>
 		/// <returns>Device</returns>
-		private Device _parseExcelData(List<Cell> data)
+		private Device _parseExcelData(System.Array myArray, int row)
 		{
 			Device device = new Device();
 			ShapeInformation visioInfo = new ShapeInformation();
 			try
 			{
-				visioInfo.VisioPage = data[(int)_cellIndex.VisioPage].IntValue;
-				visioInfo.UniqueKey = data[(int)_cellIndex.StencilKey].ToString().Trim();      // unique key for this shape
-				visioInfo.StencilImage = data[(int)_cellIndex.StencilImage].ToString().Trim(); // must match exactly the name in the visio stencil
-				visioInfo.StencilLabel = data[(int)_cellIndex.StencilLabel].ToString().Trim(); // text to add to the stencil image
-				visioInfo.StencilLabelFontSize = data[(int)_cellIndex.StencilFontSize].ToString().Trim(); // stencil fontsize to use.  If blank use stencil text size
+				var data = myArray.GetValue(row, (int)_cellIndex.VisioPage);
+				if (data != null)
+				{
+					visioInfo.VisioPage = Convert.ToInt32(data);
+				}
+
+				data = myArray.GetValue(row, (int)_cellIndex.StencilKey);
+				if (data != null)
+				{
+					visioInfo.UniqueKey = data.ToString().Trim();   // unique key for this shape
+				}
+
+				data = myArray.GetValue(row, (int)_cellIndex.StencilImage);
+				if (data != null)
+				{
+					visioInfo.StencilImage = data.ToString().Trim(); // must match exactly the name in the visio stencil
+				}
+
+				data = myArray.GetValue(row, (int)_cellIndex.StencilLabel);
+				if (data != null)
+				{
+					visioInfo.StencilLabel = data.ToString().Trim(); // text to add to the stencil image
+				}
+
+				data = myArray.GetValue(row, (int)_cellIndex.StencilFontSize);
+				if (data != null)
+				{
+					visioInfo.StencilLabelFontSize = data.ToString().Trim(); // stencil fontsize to use.  If blank use stencil text size
+				}
 				// decode font size if needed
 				if (!string.IsNullOrEmpty(visioInfo.StencilLabelFontSize))
 				{
@@ -182,7 +243,7 @@ namespace VisioDiagramCreator.ExcelHelpers
 					// use regex to separate
 					string[] saTmp = visioInfo.StencilLabelFontSize.Split(':');
 					visioInfo.StencilLabelFontSize = saTmp[0].Trim();
-					if ( Int32.Parse(visioInfo.StencilLabelFontSize) > 14 || Int32.Parse(visioInfo.StencilLabelFontSize) < 6)
+					if (Int32.Parse(visioInfo.StencilLabelFontSize) > 14 || Int32.Parse(visioInfo.StencilLabelFontSize) < 6)
 					{
 						visioInfo.StencilLabelFontSize = String.Empty;  // too small or too large so default to stencil size
 						visioInfo.isStencilLabelFontBold = false;       // also change to narmal weight
@@ -199,60 +260,136 @@ namespace VisioDiagramCreator.ExcelHelpers
 						}
 					}
 				}
-				device.MachineName = data[(int)_cellIndex.Mach_name ].ToString().Trim();
-				device.MachineId = data[(int)_cellIndex.Mach_id].ToString().Trim();
-				device.SiteId = data[(int)_cellIndex.Site_id].ToString().Trim();
-				device.SiteName = data[(int)_cellIndex.Site_name].ToString().Trim();
-				device.SiteAddress = data[(int)_cellIndex.Site_address].ToString().Trim();
-				device.OmniName = data[(int)_cellIndex.Omnis_name].ToString().Trim();
-				device.OmniId = data[(int)_cellIndex.Omnis_id].ToString().Trim();
-				device.SiteId_OmniId = data[(int)_cellIndex.SiteIdOmniId].ToString().Trim();
-				device.OmniIP = data[(int)_cellIndex.IP].ToString().Trim();
-				device.OmniPorts = data[(int)_cellIndex.Ports].ToString().Trim();
 
-				if (!string.IsNullOrEmpty(data[(int)_cellIndex.PosX].ToString().Trim()))         // position X to place the stencil image
+				data = myArray.GetValue(row, (int)_cellIndex.Mach_name);
+				if (data != null)
 				{
-					visioInfo.Pos_x = double.Parse(data[(int)_cellIndex.PosX].ToString().Trim(), System.Globalization.CultureInfo.InvariantCulture);
+					device.MachineName = data.ToString().Trim();
 				}
-				if (!string.IsNullOrEmpty(data[(int)_cellIndex.PosY].ToString().Trim()))         // position Y to place the stencil image
+
+				data = myArray.GetValue(row, (int)_cellIndex.Mach_id);
+				if (data != null)
 				{
-					visioInfo.Pos_y = double.Parse(data[(int)_cellIndex.PosY].ToString().Trim(), System.Globalization.CultureInfo.InvariantCulture);
+					device.MachineId = data.ToString().Trim();
 				}
-				if (!string.IsNullOrEmpty(data[(int)_cellIndex.Width].ToString().Trim()))        // Width of the stencil image
+
+				data = myArray.GetValue(row, (int)_cellIndex.Site_id);
+				if (data != null)
 				{
-					visioInfo.Width = double.Parse(data[(int)_cellIndex.Width].ToString().Trim(), System.Globalization.CultureInfo.InvariantCulture);
+					device.SiteId = data.ToString().Trim();
 				}
-				if (!string.IsNullOrEmpty(data[(int)_cellIndex.Height].ToString().Trim()))       // Height of the stencil image
+
+				data = myArray.GetValue(row, (int)_cellIndex.Site_name);
+				if (data != null)
 				{
-					visioInfo.Height = double.Parse(data[(int)_cellIndex.Height].ToString().Trim(), System.Globalization.CultureInfo.InvariantCulture);
+					device.SiteName = data.ToString().Trim();
 				}
-				if (!string.IsNullOrEmpty(data[(int)_cellIndex.DevicesCount].ToString()))        // number of cabinets/Devices for this object.   If (empty/null) don't append to the stencil text
+
+				data = myArray.GetValue(row, (int)_cellIndex.Site_address);
+				if (data != null)
 				{
-					visioInfo.StencilLabel += " / " + data[(int)_cellIndex.DevicesCount].ToString().Trim();
+					device.SiteAddress = data.ToString().Trim();
 				}
-				if(!string.IsNullOrEmpty(data[(int)_cellIndex.FillColor].ToString()))
+
+				data = myArray.GetValue(row, (int)_cellIndex.Omnis_name);
+				if (data != null)
+				{
+					device.OmniName = data.ToString().Trim();
+				}
+
+				data = myArray.GetValue(row, (int)_cellIndex.Omnis_id);
+				if (data != null)
+				{
+					device.OmniId = data.ToString().Trim();
+				}
+
+				data = myArray.GetValue(row, (int)_cellIndex.SiteIdOmniId);
+				if (data != null)
+				{
+					device.SiteId_OmniId = data.ToString().Trim();
+				}
+
+				data = myArray.GetValue(row, (int)_cellIndex.IP);
+				if (data != null)
+				{
+					device.OmniIP = data.ToString().Trim();
+				}
+
+				data = myArray.GetValue(row, (int)_cellIndex.Ports);
+				if (data != null)
+				{
+					device.OmniPorts = data.ToString().Trim();
+				}
+
+				data = myArray.GetValue(row, (int)_cellIndex.PosX);
+				if (data != null)
+				{
+					visioInfo.Pos_x = Convert.ToDouble(data);
+				}
+
+				data = myArray.GetValue(row, (int)_cellIndex.PosY);
+				if (data != null)
+				{
+					visioInfo.Pos_y = Convert.ToDouble(data);
+				}
+
+				data = myArray.GetValue(row, (int)_cellIndex.Width);
+				if (data != null)
+				{
+					visioInfo.Width = Convert.ToDouble(data);
+				}
+
+				data = myArray.GetValue(row, (int)_cellIndex.Height);
+				if (data != null)
+				{
+						visioInfo.Height = Convert.ToDouble(data);
+				}
+
+				data = myArray.GetValue(row, (int)_cellIndex.DevicesCount);
+				if (data != null)
+				{
+						visioInfo.StencilLabel += " / " + data.ToString().Trim();
+				}
+
+				data = myArray.GetValue(row, (int)_cellIndex.FillColor);
+				if (data != null)
 				{
 					// should be a string like
-					visioInfo.FillColor = data[(int)_cellIndex.FillColor].ToString().Trim();
+					visioInfo.FillColor = data.ToString().Trim();
 				}
 
 				// Get the ShpFromObj section
-				if (!string.IsNullOrEmpty(data[(int)_cellIndex.ConnectFrom].ToString().Trim()))  // unique key for the To shape identifier - will match another shape object field 2 or empty for no connection
+				data = myArray.GetValue(row, (int)_cellIndex.ConnectFrom);
+				if (data != null)
 				{
-					visioInfo.ConnectFrom = data[(int)_cellIndex.ConnectFrom].ToString().Trim();
+					visioInfo.ConnectFrom = data.ToString().Trim();
 				}
-				visioInfo.FromLineLabel = data[(int)_cellIndex.FromLineLabel].ToString().Trim();
+
+				data = myArray.GetValue(row, (int)_cellIndex.FromLineLabel);
+				if (data != null)
+				{
+					visioInfo.FromLineLabel = data.ToString().Trim();
+				}
 
 				// Arrow type to use if enabled
-				visioInfo.FromLinePattern = data[(int)_cellIndex.FromLinePattern].IntValue;
+				data = myArray.GetValue(row, (int)_cellIndex.FromLinePattern);
+				if (data != null)
+				{
+					visioInfo.FromLinePattern = Convert.ToInt32(data);
+				}
 				if (visioInfo.FromLinePattern <= 0)
 				{
 					visioInfo.FromLinePattern = (int)VisioVariables.LINE_PATTERN_SOLID;
 				}
 
 				// set the ShpFromObj ArrowType
-				string sTmp = data[(int)_cellIndex.FromArrowType].ToString().Trim().ToUpper();
-				switch ( sTmp )
+				string sTmp = string.Empty;
+				data = myArray.GetValue(row, (int)_cellIndex.FromArrowType);
+				if (data != null)
+				{
+					sTmp = data.ToString().Trim().ToUpper();
+				}
+				switch (sTmp)
 				{
 					case VisioVariables.sARROW_START:
 						visioInfo.FromArrowType = VisioVariables.sARROW_START;
@@ -268,29 +405,50 @@ namespace VisioDiagramCreator.ExcelHelpers
 						break;
 				}
 
-				visioInfo.FromLineColor = data[(int)_cellIndex.FromLineColor].ToString().Trim();
+				data = myArray.GetValue(row, (int)_cellIndex.FromLineColor);
+				if (data != null)
+				{
+					visioInfo.FromLineColor = data.ToString().Trim();
+				}
 				if (string.IsNullOrEmpty(visioInfo.FromLineColor))
 				{
 					visioInfo.FromLineColor = VisioVariables.COLOR_BLACK;
 				}
 
 				// Get the To section
-				if (!string.IsNullOrEmpty(data[(int)_cellIndex.ConnectTo].ToString().Trim()))    // unique key for the To shape identifier - will match another shape object field 2 or empty for no connection
+				data = myArray.GetValue(row, (int)_cellIndex.ConnectTo);
+				if (data != null)
 				{
-					visioInfo.ConnectTo = data[(int)_cellIndex.ConnectTo].ToString().Trim();
+					if (!string.IsNullOrEmpty(data.ToString().Trim()))    // unique key for the To shape identifier - will match another shape object field 2 or empty for no connection
+					{
+						visioInfo.ConnectTo = data.ToString().Trim();
+					}
 				}
-				visioInfo.ToLineLabel = data[(int)_cellIndex.ToLineLabel].ToString().Trim();
+
+				data = myArray.GetValue(row, (int)_cellIndex.ToLineLabel);
+				if (data != null)
+				{
+					visioInfo.ToLineLabel = data.ToString().Trim();
+				}
 
 				// Arrow type to use if enabled
-				visioInfo.ToLinePattern = data[(int)_cellIndex.ToLinePattern].DoubleValue;
-				if(visioInfo.ToLinePattern <= 0)
+				data = myArray.GetValue(row, (int)_cellIndex.ToLinePattern);
+				if (data != null)
+				{
+					visioInfo.ToLinePattern = Convert.ToDouble(data);
+				}
+				if (visioInfo.ToLinePattern <= 0)
 				{
 					visioInfo.ToLinePattern = VisioVariables.LINE_PATTERN_SOLID;
 				}
 
 				// do we want to have a start arrow
-				// set the ShpFromObj ArrowType
-				sTmp = data[(int)_cellIndex.ToArrowType].ToString().Trim().ToUpper();
+				sTmp = string.Empty;
+				data = myArray.GetValue(row, (int)_cellIndex.ToArrowType);
+				if (data != null)
+				{
+					sTmp = data.ToString().Trim().ToUpper();
+				}
 				switch (sTmp)
 				{
 					case VisioVariables.sARROW_START:
@@ -307,7 +465,11 @@ namespace VisioDiagramCreator.ExcelHelpers
 						break;
 				}
 
-				visioInfo.ToLineColor = data[(int)_cellIndex.ToLineColor].ToString().Trim();
+				data = myArray.GetValue(row, (int)_cellIndex.ToLineColor);
+				if (data != null)
+				{
+					visioInfo.ToLineColor = data.ToString().Trim();
+				}
 				if (string.IsNullOrEmpty(visioInfo.ToLineColor))
 				{
 					visioInfo.ToLineColor = VisioVariables.COLOR_BLACK;
@@ -316,12 +478,13 @@ namespace VisioDiagramCreator.ExcelHelpers
 			}
 			catch (Exception exp)
 			{
-				ConsoleOut.writeLine(exp.Message+" - "+exp.StackTrace);
+				ConsoleOut.writeLine(exp.Message + " - " + exp.StackTrace);
 				return null;
 			}
 			//ConsoleOut.writeLine("adding stencil:{0}",visioInfo.UniqueKey);
 			return device;
 		}
+
 
 		private bool openExcelFile(string file)
 		{

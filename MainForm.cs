@@ -26,6 +26,7 @@ namespace VisioDiagramCreator
 		{
 			InitializeComponent();
 			this.Text = "Omnicell Blueprinting Tool";
+			this.Text += String.Format(" - v{0}", ProductVersion);
 
 			diagramData = new DiagramData();
 			//diagramData.visioTemplateFilePath = @"C:\Omnicell_Diagram_Creator\data\Templates\OC_BlueprintingTemplate.vstx";
@@ -89,32 +90,47 @@ namespace VisioDiagramCreator
 			{
 				if (_bBuildVisioFromExcelDataFile)
 				{
+					// Set cursor as hourglass
+					Cursor.Current = Cursors.WaitCursor;
+					//this.UseWaitCursor = true;
+
 					// build visio file form data file
 					ConsoleOut.writeLine(String.Format("MainForm - Build Visio file from an excel data file:{0}", tb_excelDataFile.Text));
-					diagramData = new ProcessExcelDataFile().ParseData(tb_excelDataFile.Text.Trim(), diagramData);
+					diagramData = new ProcessExcelDataFile().parseExcelFile(tb_excelDataFile.Text.Trim(), diagramData);
 					if (diagramData == null)
 					{
-						MessageBox.Show("MainForm - ERROR: _parseData returned null");
+						// MessageBox.Show("MainForm - ERROR: parseExcelFile returned null\nNo shapes will be drawn");
 						visHlp.VisioForceCloseAll();
 						this.Close();
 					}
 
-					if (!visHlp.DrawAllShapes(diagramData, VisioVariables.ShowDiagram.Show))
+					// Set cursor as default arrow
+					Cursor.Current = Cursors.Default;
+					//this.UseWaitCursor = false;
+
+					if (diagramData != null)
 					{
-						// build the shape connection map to be used to establish connections between shapes on the diagrams
-						diagramData.ShapeConnectionsMap = new ProcessVisioShapeConnections().BuildShapeConnections(diagramData);
+						if (!visHlp.DrawAllShapes(diagramData, VisioVariables.ShowDiagram.Show))
+						{
+							// build the shape connection map to be used to establish connections between shapes on the diagrams
+							diagramData.ShapeConnectionsMap = new ProcessVisioShapeConnections().BuildShapeConnections(diagramData);
 
-						// Lets make the connections 
-						bool bAns = visHlp.ConnectShapes(diagramData);
+							// Lets make the connections 
+							bool bAns = visHlp.ConnectShapes(diagramData);
 
-						// we need to close everything
+							// we need to close everything
 #if !DEBUG
 						visHlp.VisioForceCloseAll();
 #endif
+						}
 					}
 				}
 				else
 				{
+					// Set cursor as hourglass
+					Cursor.Current = Cursors.WaitCursor;
+					//this.UseWaitCursor = true;
+
 					// for testing to view all the stencils in the document
 					//visHlp.ListDocumentStencils(diagramData, VisioVariables.ShowDiagram.Show);
 
@@ -142,7 +158,14 @@ namespace VisioDiagramCreator
 						}
 					}
 				}
-				diagramData.Reset();
+				// Set cursor as default arrow
+				Cursor.Current = Cursors.Default;
+				//this.UseWaitCursor = false;
+
+				if (diagramData != null)
+				{
+					diagramData.Reset();
+				}
 			}
 			catch( IOException ioe)
 			{
@@ -151,6 +174,12 @@ namespace VisioDiagramCreator
 			catch (Exception ex)
 			{
 				MessageBox.Show(string.Format("Exception::MainForm - {0}\n{1}", ex.Message,ex.StackTrace), "Exception");
+			}
+			finally
+			{
+				// Set cursor as default arrow
+				Cursor.Current = Cursors.Default;
+				//this.UseWaitCursor = false;
 			}
 		}
 

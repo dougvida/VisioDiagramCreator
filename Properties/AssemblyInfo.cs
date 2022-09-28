@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("VisioDiagramCreator")]
-[assembly: AssemblyDescription("Omnicell Visio Diagraming tool")]
+[assembly: AssemblyTitle("Omnicell Blueprinting Tool")]
+[assembly: AssemblyDescription("Omnicell Blueprinting Visio Diagraming tool")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Omnicell, Inc.")]
-[assembly: AssemblyProduct("VisioDiagramCreator")]
+[assembly: AssemblyProduct("Omnicell Blueprinting Tool")]
 [assembly: AssemblyCopyright("Copyright © Omnicell, Inc. 2022")]
 [assembly: AssemblyTrademark("Omnicell")]
 [assembly: AssemblyCulture("")]
@@ -32,5 +32,5 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Build and Revision Numbers
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("1.0.1.1")]
-[assembly: AssemblyFileVersion("1.0.1.1")]
+[assembly: AssemblyVersion("1.0.2.0")]
+[assembly: AssemblyFileVersion("1.0.2.0")]
