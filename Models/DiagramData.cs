@@ -18,7 +18,7 @@ namespace VisioDiagramCreator.Models
 		public string visioTemplateFilePath { get; set; }
 		public List<string> visioStencilFilePaths { get; set; }
 
-		public int MaxVisioPages { get; set; } = 1;		// default is 1 page visio document
+		public int MaxVisioPages { get; set; } = 1;     // default is 1 page visio document
 
 		public List<Device> Devices { get; set; }
 
@@ -34,7 +34,7 @@ namespace VisioDiagramCreator.Models
 			{
 				ShapeConnectionsMap.Clear();
 
-			}			
+			}
 			if (Devices != null)
 			{
 				Devices.Clear();

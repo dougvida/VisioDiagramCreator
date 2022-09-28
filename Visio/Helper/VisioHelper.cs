@@ -129,7 +129,7 @@ namespace VisioDiagramCreator.Visio
 			catch (Exception ex1)
 			{
 				sErr = "Error with the Template file";
-				MessageBox.Show(string.Format("Exception::setupVisioDiagram - {0}\n{1}",sErr, ex1));
+				MessageBox.Show(string.Format("Exception::setupVisioDiagram - {0}\n{1}", sErr, ex1));
 				return null;
 			}
 			try
@@ -143,7 +143,7 @@ namespace VisioDiagramCreator.Visio
 				// lets add stencils to the template if they don't alredy exist using the Excel Data File
 				foreach (var stencil in diagramData.visioStencilFilePaths)
 				{
-					if (this.vDocuments != null)	// do we have any stencils attached to this template?
+					if (this.vDocuments != null)  // do we have any stencils attached to this template?
 					{
 						var vPage = vDocument.Application.ActivePage;
 
@@ -164,7 +164,7 @@ namespace VisioDiagramCreator.Visio
 			catch (Exception ex2)
 			{
 				sErr = "Error with the stencil file.  Possible issue is the stencil file name changed\nDoes not match what the Template file is using";
-				MessageBox.Show(string.Format("Exception::setupVisioDiagram - {0}\n{1}",sErr, ex2));
+				MessageBox.Show(string.Format("Exception::setupVisioDiagram - {0}\n{1}", sErr, ex2));
 				return null;
 			}
 
@@ -192,7 +192,7 @@ namespace VisioDiagramCreator.Visio
 			int cnt = this.vDocuments.Count;
 			// this section is if we want to add more than one page to the document
 			// At this point page-1 has already been created
-			for (int i = 0; i < diagramData.MaxVisioPages-1; i++)
+			for (int i = 0; i < diagramData.MaxVisioPages - 1; i++)
 			{
 				Visio1.Page page = vDocument.Pages.Add();
 				// Name the pages. This is what is shown in the page tabs.
@@ -242,12 +242,12 @@ namespace VisioDiagramCreator.Visio
 				stnObj = stencil.Masters[device.ShapeInfo.StencilImage];
 				if (stnObj != null)
 				{
-					break;	// found get out of the loop
+					break;   // found get out of the loop
 				}
 			}
 			if (stnObj == null)
 			{
-				string sTmp = string.Format("ERROR::_drawShape - Can't find master stencil:{0}",device.ShapeInfo.StencilImage);
+				string sTmp = string.Format("ERROR::_drawShape - Can't find master stencil:{0}", device.ShapeInfo.StencilImage);
 				MessageBox.Show(sTmp);
 				Console.WriteLine(sTmp);
 				return null;
@@ -351,7 +351,7 @@ namespace VisioDiagramCreator.Visio
 
 				shpObj.get_Cells("LineColor").Formula = rgb;
 			}
-			
+
 			// we want to keep the shape outline color Black for this Stencil
 			if (device.ShapeInfo.UniqueKey.ToUpper().StartsWith("TABLECELL"))
 			{
@@ -416,11 +416,11 @@ namespace VisioDiagramCreator.Visio
 		{
 			if (show == VisioVariables.ShowDiagram.Show)
 			{
-				appV.Visible = true;	// show the diagram
+				appV.Visible = true; // show the diagram
 			}
 			else
 			{
-				appV.Visible = false;	// dont show the diagram
+				appV.Visible = false;   // dont show the diagram
 			}
 		}
 
@@ -446,7 +446,7 @@ namespace VisioDiagramCreator.Visio
 			}
 			catch (System.Runtime.InteropServices.COMException ex)
 			{
-				ConsoleOut.writeLine(string.Format("This exception is OK because the user closed the Visio document before exiting the application:  {0}",ex.Message));
+				ConsoleOut.writeLine(string.Format("This exception is OK because the user closed the Visio document before exiting the application:  {0}", ex.Message));
 			}
 		}
 
@@ -485,7 +485,7 @@ namespace VisioDiagramCreator.Visio
 				}
 				catch (Exception ex)
 				{
-					MessageBox.Show(string.Format("Exception::setupVisioDiagram - Stencil Name:{0} not found\n{1}",device.ShapeInfo.UniqueKey,ex.Message));
+					MessageBox.Show(string.Format("Exception::setupVisioDiagram - Stencil Name:{0} not found\n{1}", device.ShapeInfo.UniqueKey, ex.Message));
 					Console.WriteLine(string.Format("Exception::setupVisioDiagram - Stencil Name:{0} not found\n{1}", device.ShapeInfo.UniqueKey, ex.Message));
 					return true;
 				}
@@ -626,7 +626,7 @@ namespace VisioDiagramCreator.Visio
 					}
 				}
 			}
-			catch(Exception ex)
+			catch (Exception ex)
 			{
 				throw new Exception(string.Format("Exception::ConnectShapes - {0}", ex.Message));
 			}
@@ -659,7 +659,7 @@ namespace VisioDiagramCreator.Visio
 			{
 				// Document stencil figures
 				masterArray_0.Add(master.NameU);   // THIS WILL CONTAIN DIAGRAM FIGURES
-				Console.WriteLine(string.Format("ListDocumentStencils - Master0 - ID:{0} Name:{1} NameU:{2}",master.ID, master.Name, master.NameU));
+				Console.WriteLine(string.Format("ListDocumentStencils - Master0 - ID:{0} Name:{1} NameU:{2}", master.ID, master.Name, master.NameU));
 			}
 			this.VisioForceCloseAll();
 

@@ -3,10 +3,10 @@
 	public class VisioVariables
 	{
 
-//lngRed = RGB(255, 0, 0);
-//lngBlack = RGB(0, 0, 0);
-//lngYellow = RGB(255, 255, 0);
-//lngWhite = RGB(255, 255, 255);
+		//lngRed = RGB(255, 0, 0);
+		//lngBlack = RGB(0, 0, 0);
+		//lngYellow = RGB(255, 255, 0);
+		//lngWhite = RGB(255, 255, 255);
 
 		public const double BEGIN_ARROW = 4;      // Filled arrow
 		public const double END_ARROW = 4;        // Filled arrow
@@ -20,7 +20,7 @@
 		public const string COLOR_BLACK = "RGB(0,0,0)";
 		public const string COLOR_RED = "RGB(247,28,8)";
 		public const string COLOR_GRAY = "RGB(128,128,128)";
-		
+
 		public const string COLOR_GREEN = "RGB(0,176,80)";
 		//public const string COLOR_GREEN_SERVER = "RGB(146,208,80)";
 		public const string COLOR_GREEN_LIGHT = "RGB(198,224,180)";

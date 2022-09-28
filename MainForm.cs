@@ -120,7 +120,7 @@ namespace VisioDiagramCreator
 
 							// we need to close everything
 #if !DEBUG
-						visHlp.VisioForceCloseAll();
+							visHlp.VisioForceCloseAll();
 #endif
 						}
 					}
@@ -147,7 +147,7 @@ namespace VisioDiagramCreator
 					if (shapesMap != null)
 					{
 						CreateExcelDataFile createExcelDataFile = new CreateExcelDataFile();
-						string sPath = string.Format(@"{0}{1}",tb_buildExcelPath.Text.Trim(), tb_buildExcelFileName.Text.Trim());
+						string sPath = string.Format(@"{0}{1}", tb_buildExcelPath.Text.Trim(), tb_buildExcelFileName.Text.Trim());
 						if (createExcelDataFile.PopulateExcelDataFile(shapesMap, sPath))
 						{
 							MessageBox.Show(String.Format("Error::MainForm - Creating excel data file:{0}", sPath));
@@ -167,13 +167,13 @@ namespace VisioDiagramCreator
 					diagramData.Reset();
 				}
 			}
-			catch( IOException ioe)
+			catch (IOException ioe)
 			{
-				MessageBox.Show(string.Format("Exception::MainForm - {0}",ioe.Message), "Warning File Access Exception", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+				MessageBox.Show(string.Format("Exception::MainForm - {0}", ioe.Message), "Warning File Access Exception", MessageBoxButtons.OK, MessageBoxIcon.Warning);
 			}
 			catch (Exception ex)
 			{
-				MessageBox.Show(string.Format("Exception::MainForm - {0}\n{1}", ex.Message,ex.StackTrace), "Exception");
+				MessageBox.Show(string.Format("Exception::MainForm - {0}\n{1}", ex.Message, ex.StackTrace), "Exception");
 			}
 			finally
 			{
@@ -185,7 +185,7 @@ namespace VisioDiagramCreator
 
 		private void rb_buildFromDataFile_CheckedChanged(object sender, EventArgs e)
 		{
-			if(rb_buildFromExcelFile.Checked)
+			if (rb_buildFromExcelFile.Checked)
 			{
 				_bBuildVisioFromExcelDataFile = true;
 				tb_excelDataFile.Enabled = true;
@@ -208,7 +208,7 @@ namespace VisioDiagramCreator
 
 				tb_buildExcelFileName.Enabled = true;
 
-				tb_excelDataFile.Enabled = false; 
+				tb_excelDataFile.Enabled = false;
 				rb_buildFromExcelFile.Checked = false;
 
 				btn_SetExcelPath.Enabled = true;
@@ -342,7 +342,7 @@ namespace VisioDiagramCreator
 				if (string.IsNullOrEmpty(tb_buildVisioFilePath.Text))
 				{
 					return false;
-				}			
+				}
 			}
 			return true;
 		}
@@ -356,9 +356,9 @@ namespace VisioDiagramCreator
 		bool IsValidFileName(string testName)
 		{
 			Regex containsABadCharacter = new Regex("[" + Regex.Escape(new string(System.IO.Path.GetInvalidPathChars())) + "]");
-			if (containsABadCharacter.IsMatch(testName)) 
-			{ 
-				return false; 
+			if (containsABadCharacter.IsMatch(testName))
+			{
+				return false;
 			}
 			// other checks for UNC, drive-path format, etc
 

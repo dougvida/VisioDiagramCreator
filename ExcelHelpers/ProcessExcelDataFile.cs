@@ -1,14 +1,6 @@
-﻿using Microsoft.Office.Interop.Excel;
-using Microsoft.Office.Interop.Visio;
-using System;
-using System.Collections;
+﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.IO;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using VisioDiagramCreator.Models;
 using VisioDiagramCreator.Visio;
@@ -26,39 +18,39 @@ namespace VisioDiagramCreator.ExcelHelpers
 		{
 			// NOTE ****
 			// the order of this enum must match the column order in the Excel file
-			VisioPage = 1,			// Page indicator to place this shape
-			ShapeType,				// key
-			StencilKey,				// device unique Key used for connecting visio shapes
-			StencilImage,			// device visio image name
-			StencilLabel,			// device label
-			StencilFontSize,		// default is what the stencil font size is   (use 12:B for 12 pt. Bold or 12 for 12 pt)
-			Mach_name,				// device machine Name
-			Mach_id,					// device machine Id
-			Site_id,					// device site Id
-			Site_name,				// deivce site name
-			Site_address,			// device site address
-			Omnis_name,				// device name
+			VisioPage = 1,       // Page indicator to place this shape
+			ShapeType,           // key
+			StencilKey,          // device unique Key used for connecting visio shapes
+			StencilImage,        // device visio image name
+			StencilLabel,        // device label
+			StencilFontSize,     // default is what the stencil font size is   (use 12:B for 12 pt. Bold or 12 for 12 pt)
+			Mach_name,           // device machine Name
+			Mach_id,             // device machine Id
+			Site_id,             // device site Id
+			Site_name,           // deivce site name
+			Site_address,        // device site address
+			Omnis_name,          // device name
 			Omnis_id,            // device Id
-			SiteIdOmniId,			// site_id+omni_id
-			IP,						// device IP address
+			SiteIdOmniId,        // site_id+omni_id
+			IP,                  // device IP address
 			Ports,               // device Ports
 			DevicesCount,        // number of Devices for this type (part of a group)
 
-			PosX,						// Shape position X
-			PosY,						// shape position Y
-			Width,					// shape width
-			Height,					// shape height
-			FillColor,				// color to fill stincel
+			PosX,                // Shape position X
+			PosY,                // shape position Y
+			Width,               // shape width
+			Height,              // shape height
+			FillColor,           // color to fill stincel
 			ConnectFrom,         // used to link this visio shape to another visio shape
-			FromLineLabel,			// Arrow Text
-			FromLinePattern,		// Line pattern solid = 1
-			FromArrowType,			// Can contain one of these [None, Start, End, Both]
-			FromLineColor,			// Arrow Color
+			FromLineLabel,       // Arrow Text
+			FromLinePattern,     // Line pattern solid = 1
+			FromArrowType,       // Can contain one of these [None, Start, End, Both]
+			FromLineColor,       // Arrow Color
 			ConnectTo,           // used to link this visio shape to another visio shape
-			ToLineLabel,			// Arrow Text
+			ToLineLabel,         // Arrow Text
 			ToLinePattern,       // Line pattern solid = 1
-			ToArrowType,			// Can contain one of these [None, Start, End, Both]
-			ToLineColor,			// Arrow Color
+			ToArrowType,         // Can contain one of these [None, Start, End, Both]
+			ToLineColor,         // Arrow Color
 		}
 
 		/// <summary>
@@ -86,8 +78,6 @@ namespace VisioDiagramCreator.ExcelHelpers
 
 			//Create COM Objects. Create a COM object for everything that is referenced
 			Excel.Application xlApp = new Excel.Application();
-			//Excel.Workbook xlWorkbook = xlApp.Workbooks.Open(file);
-			//Excel._Worksheet xlWorksheet = xlWorkbook.Sheets[1];
 			Excel.Workbook xlWorkbook = xlApp.Workbooks.Open(file, 0, true, 5, "", "", true, Microsoft.Office.Interop.Excel.XlPlatform.xlWindows, "\t", false, false, 0, true, 1, 0);
 			Excel._Worksheet xlWorksheet = (Excel.Worksheet)xlWorkbook.Worksheets.get_Item(1);
 
@@ -109,7 +99,7 @@ namespace VisioDiagramCreator.ExcelHelpers
 					var data = myArray.GetValue(row, (int)_cellIndex.VisioPage);
 					if (data == null) // value is null skip this column
 					{
-						continue;	// should not happen
+						continue;   // should not happen
 					}
 					if (data.ToString().StartsWith(";"))   // first row is a header so skip
 					{
@@ -128,7 +118,7 @@ namespace VisioDiagramCreator.ExcelHelpers
 							case "TEMPLATE":           // Open a template.  This may be used with existing stencils already in the document
 								data = myArray.GetValue(row, (int)_cellIndex.StencilKey);
 								if (data != null)
-								{ 
+								{
 									diagData.visioTemplateFilePath = (string)data.ToString().Trim();
 								}
 								break;
@@ -147,7 +137,7 @@ namespace VisioDiagramCreator.ExcelHelpers
 								break;
 
 							case "SHAPE":              // stencils to create on the document
-								// pass myArray object, row # and column count
+													   // pass myArray object, row # and column count
 								device = _parseExcelData(myArray, row);
 								//device = _parseExcelData(data);
 								devices.Add(device);
@@ -186,7 +176,6 @@ namespace VisioDiagramCreator.ExcelHelpers
 				Marshal.ReleaseComObject(xlWorkbook);
 				Marshal.ReleaseComObject(xlApp);
 			}
-
 			return diagData;
 		}
 
@@ -342,13 +331,13 @@ namespace VisioDiagramCreator.ExcelHelpers
 				data = myArray.GetValue(row, (int)_cellIndex.Height);
 				if (data != null)
 				{
-						visioInfo.Height = Convert.ToDouble(data);
+					visioInfo.Height = Convert.ToDouble(data);
 				}
 
 				data = myArray.GetValue(row, (int)_cellIndex.DevicesCount);
 				if (data != null)
 				{
-						visioInfo.StencilLabel += " / " + data.ToString().Trim();
+					visioInfo.StencilLabel += " / " + data.ToString().Trim();
 				}
 
 				data = myArray.GetValue(row, (int)_cellIndex.FillColor);
@@ -522,9 +511,9 @@ namespace VisioDiagramCreator.ExcelHelpers
 					wkbk = wkbks.Add(Type.Missing);
 				}
 				//Release the temp if in use
-				if (null != tApp) 
-				{ 
-					Marshal.FinalReleaseComObject(tApp); 
+				if (null != tApp)
+				{
+					Marshal.FinalReleaseComObject(tApp);
 				}
 				tApp = null;
 			}

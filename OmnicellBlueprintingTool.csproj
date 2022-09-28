@@ -12,6 +12,7 @@
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
     <PublishUrl>publish\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Disk</InstallFrom>
@@ -24,7 +25,6 @@
     <MapFileExtensions>true</MapFileExtensions>
     <ApplicationRevision>1</ApplicationRevision>
     <ApplicationVersion>1.0.1.%2a</ApplicationVersion>
-    <IsWebBootstrapper>false</IsWebBootstrapper>
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
   </PropertyGroup>
@@ -79,7 +79,6 @@
     <Compile Include="Visio\Helper\ColorRGB.cs" />
     <Compile Include="Visio\Processing\ProcessVisioDiagramShapes.cs" />
     <Compile Include="Visio\Processing\ProcessVisioShapeConnections.cs" />
-    <Compile Include="Visio\Shapes\ShapeHelper.cs" />
     <Compile Include="Visio\Helper\VisioHelper.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>

@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.WebSockets;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms.VisualStyles;
+﻿using System.Collections.Generic;
 //using Visio1 = Microsoft.Office.Interop.Visio;
 using VisioDiagramCreator.Models;
 
@@ -65,10 +59,10 @@ namespace VisioDiagramCreator.Visio
 								vsConnect.LineColor = device.ShapeInfo.FromLineColor;
 
 								vsConnect.UniqueFromKey = lookUpDevice.ShapeInfo.UniqueKey;
-								vsConnect.ShpFromObj = lookUpDevice.ShapeInfo.ShpObj;			// lookUpDevice shape Object (ConnectFrom)
+								vsConnect.ShpFromObj = lookUpDevice.ShapeInfo.ShpObj;       // lookUpDevice shape Object (ConnectFrom)
 
 								vsConnect.UniqueToKey = device.ShapeInfo.UniqueKey;
-								vsConnect.ShpToObj = device.ShapeInfo.ShpObj;					// current shape Object
+								vsConnect.ShpToObj = device.ShapeInfo.ShpObj;               // current shape Object
 								vsConnect.device = device;
 								vConnectMap.Add(nCnt++, vsConnect);
 							}

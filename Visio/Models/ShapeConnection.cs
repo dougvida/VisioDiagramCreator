@@ -9,7 +9,7 @@ namespace VisioDiagramCreator.Visio
 		public Visio1.Shape ShpFromObj { get; set; }
 		public string UniqueToKey { get; set; }
 		public Visio1.Shape ShpToObj { get; set; }
-		
+
 		public Device device { get; set; }
 
 		// this section is specific arrow settings for establishing shape connections

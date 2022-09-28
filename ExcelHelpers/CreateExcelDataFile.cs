@@ -16,7 +16,7 @@ namespace VisioDiagramCreator.ExcelHelpers
 		private Excel.Workbook _xlWorkbook = null;
 		private Excel.Worksheet _xlWorksheet = null;
 		//Excel.Sheets _worksheets = null;		// _xlWorkbook.Worksheets; 
-		
+
 		object misValue = System.Reflection.Missing.Value;
 
 		Dictionary<int, string> excelHeaderNames = new Dictionary<int, string>{
@@ -63,12 +63,12 @@ namespace VisioDiagramCreator.ExcelHelpers
 		{
 		}
 
-		public bool PopulateExcelDataFile(Dictionary<int, ShapeInformation>shapesMap, string namePath )
+		public bool PopulateExcelDataFile(Dictionary<int, ShapeInformation> shapesMap, string namePath)
 		{
 			// if file already exists display a message box asking the user
 			// if the file can be overwritten or needs to be saved off
 			// or just backup the file and move on
-			if (openFile( namePath ))
+			if (openFile(namePath))
 			{
 				// error
 				return true;
@@ -96,7 +96,7 @@ namespace VisioDiagramCreator.ExcelHelpers
 			if (_xlApp == null)
 			{
 				MessageBox.Show("Excel is not properly installed!!");
-				return true;	// error
+				return true;   // error
 			}
 
 			// open new excel file
@@ -117,7 +117,7 @@ namespace VisioDiagramCreator.ExcelHelpers
 			if (_xlWorkbook != null)
 			{
 				//_xlWorksheet.SaveAs("your-file-name.xls");
-				_xlWorkbook.SaveAs(fileNamePath, Excel.XlFileFormat.xlWorkbookNormal, misValue, misValue, misValue, misValue, 
+				_xlWorkbook.SaveAs(fileNamePath, Excel.XlFileFormat.xlWorkbookNormal, misValue, misValue, misValue, misValue,
 															Excel.XlSaveAsAccessMode.xlExclusive, misValue, misValue, misValue, misValue, misValue);
 			}
 			closeExcel();
@@ -149,13 +149,13 @@ namespace VisioDiagramCreator.ExcelHelpers
 			//xlNewSheet.Name = sheetName;
 			//xlNewSheet.Cells[1, 1] = "New sheet content";
 		}
-		
+
 		private void selectWorkSheet(string sheetName)
 		{
-			int nIdx = 1;	// should be the first sheet
+			int nIdx = 1;  // should be the first sheet
 
 			// get the sheet index for the given name to make this correct
-			
+
 			selectworkSheet(nIdx);
 		}
 		private void selectworkSheet(int nIdx)
