@@ -1,4 +1,6 @@
-﻿namespace VisioDiagramCreator.Models
+﻿using System;
+
+namespace VisioDiagramCreator.Models
 {
 	public static class ConsoleOut
 	{

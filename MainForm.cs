@@ -14,12 +14,16 @@ namespace VisioDiagramCreator
 	{
 		DiagramData diagramData = null;
 		Boolean _bBuildVisioFromExcelDataFile = true;
-
 		VisioHelper visHlp = new VisioHelper();
 
+#if DEBUG
 		static string baseWorkingDir = @"C:\Omnicell_Blueprinting_tool";
-		static string excelDataPath = baseWorkingDir + @"\ExcelData\";
+#else
+		static string baseWorkingDir = Application.StartupPath;	// System.IO.Directory.GetCurrentDirectory();
+#endif
+
 		static string scriptDataPath = baseWorkingDir + @"\data\ScriptData\";
+		static string excelDataPath = baseWorkingDir + @"\ExcelData\";
 		static string visioFilesPath = baseWorkingDir + @"\VisioFiles\";
 
 		public MainForm()

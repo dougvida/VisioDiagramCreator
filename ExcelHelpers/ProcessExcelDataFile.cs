@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using VisioDiagramCreator.Models;
@@ -76,6 +77,8 @@ namespace VisioDiagramCreator.ExcelHelpers
 			Device device = null;
 			diagData.visioStencilFilePaths = new List<string>();
 
+			Process[] excelProcsOld = Process.GetProcessesByName("EXCEL");       
+			
 			//Create COM Objects. Create a COM object for everything that is referenced
 			Excel.Application xlApp = new Excel.Application();
 			Excel.Workbook xlWorkbook = xlApp.Workbooks.Open(file, 0, true, 5, "", "", true, Microsoft.Office.Interop.Excel.XlPlatform.xlWindows, "\t", false, false, 0, true, 1, 0);
@@ -85,10 +88,6 @@ namespace VisioDiagramCreator.ExcelHelpers
 
 			int rowCount = xlRange.Rows.Count;
 			int colCount = xlRange.Columns.Count;
-
-			xlApp = new Excel.Application();
-			xlWorkbook = xlApp.Workbooks.Open(file, 0, true, 5, "", "", true, Microsoft.Office.Interop.Excel.XlPlatform.xlWindows, "\t", false, false, 0, true, 1, 0);
-			xlWorksheet = (Excel.Worksheet)xlWorkbook.Worksheets.get_Item(1);
 
 			System.Array myArray = (System.Array)xlRange.Cells.Value2;
 			try
@@ -136,10 +135,8 @@ namespace VisioDiagramCreator.ExcelHelpers
 								}
 								break;
 
-							case "SHAPE":              // stencils to create on the document
-													   // pass myArray object, row # and column count
+							case "SHAPE":             // stencils to create on the document.  pass myArray object, row # and column count
 								device = _parseExcelData(myArray, row);
-								//device = _parseExcelData(data);
 								devices.Add(device);
 								diagData.AllShapesMap.Add(device.ShapeInfo.UniqueKey, device);
 								break;
@@ -166,15 +163,19 @@ namespace VisioDiagramCreator.ExcelHelpers
 					diagData.Devices = devices;
 				}
 
-				//quit and release
-				xlWorkbook.Close();
-				xlApp.Quit();
+				System.Runtime.InteropServices.Marshal.ReleaseComObject(xlRange);
+				System.Runtime.InteropServices.Marshal.ReleaseComObject(xlWorksheet);
 
+				//quit and release
+				xlWorkbook.Close(0);
+				
 				//release com objects to fully kill excel process from running in the background
-				Marshal.ReleaseComObject(xlRange);
-				Marshal.ReleaseComObject(xlWorksheet);
-				Marshal.ReleaseComObject(xlWorkbook);
-				Marshal.ReleaseComObject(xlApp);
+				System.Runtime.InteropServices.Marshal.ReleaseComObject(xlWorkbook);
+
+				xlApp.Quit();
+				System.Runtime.InteropServices.Marshal.ReleaseComObject(xlApp);
+
+				killExcelProcesses(excelProcsOld);
 			}
 			return diagData;
 		}
@@ -474,6 +475,32 @@ namespace VisioDiagramCreator.ExcelHelpers
 			return device;
 		}
 
+		/// <summary>
+		/// killExcelProcesses
+		/// kill all the excell processes to ensure everything is released
+		/// Keep any existing Excel processes already opened before this app has started
+		/// </summary>
+		/// <param name="excelProcsOld"></param>
+		private void killExcelProcesses(Process[] excelProcsOld)
+		{
+			//Compare the EXCEL ID and Kill it 
+			Process[] excelProcsNew = Process.GetProcessesByName("EXCEL");
+			foreach (Process procNew in excelProcsNew)
+			{
+				int exist = 0;
+				foreach (Process procOld in excelProcsOld)
+				{
+					if (procNew.Id == procOld.Id)
+					{
+						exist++;
+					}
+				}
+				if (exist == 0)
+				{
+					procNew.Kill();
+				}
+			}
+		}
 
 		private bool openExcelFile(string file)
 		{
