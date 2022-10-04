@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
 //using Visio1 = Microsoft.Office.Interop.Visio;
-using VisioDiagramCreator.Models;
+using OmnicellBlueprintingTool.Models;
 
-namespace VisioDiagramCreator.Visio
+namespace OmnicellBlueprintingTool.Visio
 {
 	public class ProcessVisioShapeConnections
 	{

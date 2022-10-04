@@ -3,10 +3,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
-using VisioDiagramCreator.Models;
+using OmnicellBlueprintingTool.Models;
 using Visio1 = Microsoft.Office.Interop.Visio;
 
-namespace VisioDiagramCreator.Visio
+namespace OmnicellBlueprintingTool.Visio
 {
 	public class ProcessVisioDiagramShapes
 	{

@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace VisioDiagramCreator.Properties
+namespace OmnicellBlueprintingTool.Properties
 {
 
 
@@ -44,7 +44,7 @@ namespace VisioDiagramCreator.Properties
 			{
 				if ((resourceMan == null))
 				{
-					global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("VisioDiagramCreator.Properties.Resources", typeof(Resources).Assembly);
+					global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("OmnicellBlueprintingTool.Properties.Resources", typeof(Resources).Assembly);
 					resourceMan = temp;
 				}
 				return resourceMan;

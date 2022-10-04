@@ -1,14 +1,14 @@
 ﻿using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
-using VisioDiagramCreator.Visio;
+using OmnicellBlueprintingTool.Visio;
 using Excel = Microsoft.Office.Interop.Excel;
 
 ///
 /// helper URL http://csharp.net-informations.com/excel/csharp-format-excel.htm
 /// 
 
-namespace VisioDiagramCreator.ExcelHelpers
+namespace OmnicellBlueprintingTool.ExcelHelpers
 {
 	public class CreateExcelDataFile
 	{
@@ -47,16 +47,16 @@ namespace VisioDiagramCreator.ExcelHelpers
 			{ 21, "Fill Color"},          // color to fill stincel
 
 			{ 22, "Connect From"},        // used to link this visio shape to another visio shape
-			{ 23, "From LineLabel"},      // Arrow Text
-			{ 24, "From LinePattern"},    // Line pattern solid = 1
-			{ 25, "From ArrowType"},      // Can contain one of these [None, Start, End, Both]
-			{ 26, "From LineColor"},      // Arrow Color
+			{ 23, "From Line Label"},      // Arrow Text
+			{ 24, "From Line Pattern"},    // Line pattern solid = 1, 2 = dashed
+			{ 25, "From Arrow Type"},      // Can contain one of these [None, Start, End, Both]
+			{ 26, "From Line Color"},      // Arrow Color
 
 			{ 27, "Connect To"},          // used to link this visio shape to another visio shape
-			{ 28, "To LineLabel"},        // Arrow Text
-			{ 29, "To LinePattern"},      // Line pattern solid = 1
-			{ 30, "To ArrowType"},        // Can contain one of these [None, Start, End, Both]
-			{ 31, "To LineColor"}			// Arrow Color
+			{ 28, "To Line Label"},        // Arrow Text
+			{ 29, "To Line Pattern"},      // Line pattern solid = 1
+			{ 30, "To Arrow Type"},        // Can contain one of these [None, Start, End, Both]
+			{ 31, "To Line Color"}			// Arrow Color
 		};
 
 		public CreateExcelDataFile()

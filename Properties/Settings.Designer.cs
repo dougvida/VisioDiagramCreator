@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace VisioDiagramCreator.Properties
+namespace OmnicellBlueprintingTool.Properties
 {
 
 

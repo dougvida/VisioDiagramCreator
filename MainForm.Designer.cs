@@ -1,4 +1,4 @@
-﻿namespace VisioDiagramCreator
+﻿namespace OmnicellBlueprintingTool
 {
 	partial class MainForm
 	{

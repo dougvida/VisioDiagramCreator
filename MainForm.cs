@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
-using VisioDiagramCreator.ExcelHelpers;
-using VisioDiagramCreator.Extensions;
-using VisioDiagramCreator.Models;
-using VisioDiagramCreator.Visio;
+using OmnicellBlueprintingTool.ExcelHelpers;
+using OmnicellBlueprintingTool.Extensions;
+using OmnicellBlueprintingTool.Models;
+using OmnicellBlueprintingTool.Visio;
 
-namespace VisioDiagramCreator
+namespace OmnicellBlueprintingTool
 {
 	public partial class MainForm : Form
 	{
@@ -31,10 +31,6 @@ namespace VisioDiagramCreator
 			InitializeComponent();
 			this.Text = "Omnicell Blueprinting Tool";
 			this.Text += String.Format(" - v{0}", ProductVersion);
-
-			diagramData = new DiagramData();
-			//diagramData.visioTemplateFilePath = @"C:\Omnicell_Diagram_Creator\data\Templates\OC_BlueprintingTemplate.vstx";
-			//diagramData.StencilFilePath = @"C:\Omnicell_Diagram_Creator\data\Stencils\OC_BlueprintingStencils.vssx";
 		}
 
 		private void MainForm_Load(object sender, EventArgs e)
@@ -90,13 +86,13 @@ namespace VisioDiagramCreator
 		private void btn_Submit_Click(object sender, EventArgs e)
 		{
 			// parse the data file and draw the visio diagram
+			diagramData = new DiagramData();
 			try
 			{
 				if (_bBuildVisioFromExcelDataFile)
 				{
 					// Set cursor as hourglass
 					Cursor.Current = Cursors.WaitCursor;
-					//this.UseWaitCursor = true;
 
 					// build visio file form data file
 					ConsoleOut.writeLine(String.Format("MainForm - Build Visio file from an excel data file:{0}", tb_excelDataFile.Text));
@@ -110,7 +106,6 @@ namespace VisioDiagramCreator
 
 					// Set cursor as default arrow
 					Cursor.Current = Cursors.Default;
-					//this.UseWaitCursor = false;
 
 					if (diagramData != null)
 					{
@@ -122,10 +117,8 @@ namespace VisioDiagramCreator
 							// Lets make the connections 
 							bool bAns = visHlp.ConnectShapes(diagramData);
 
-							// we need to close everything
-#if !DEBUG
+							// this must be performed is running the application again without shutting down
 							visHlp.VisioForceCloseAll();
-#endif
 						}
 					}
 				}
@@ -133,7 +126,6 @@ namespace VisioDiagramCreator
 				{
 					// Set cursor as hourglass
 					Cursor.Current = Cursors.WaitCursor;
-					//this.UseWaitCursor = true;
 
 					// for testing to view all the stencils in the document
 					//visHlp.ListDocumentStencils(diagramData, VisioVariables.ShowDiagram.Show);
@@ -164,11 +156,11 @@ namespace VisioDiagramCreator
 				}
 				// Set cursor as default arrow
 				Cursor.Current = Cursors.Default;
-				//this.UseWaitCursor = false;
 
 				if (diagramData != null)
 				{
 					diagramData.Reset();
+					diagramData = null;
 				}
 			}
 			catch (IOException ioe)
@@ -183,7 +175,6 @@ namespace VisioDiagramCreator
 			{
 				// Set cursor as default arrow
 				Cursor.Current = Cursors.Default;
-				//this.UseWaitCursor = false;
 			}
 		}
 

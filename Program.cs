@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Windows.Forms;
 
-namespace VisioDiagramCreator
+namespace OmnicellBlueprintingTool
 {
 
 	internal static class Program

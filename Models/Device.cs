@@ -1,6 +1,6 @@
-﻿using VisioDiagramCreator.Visio;
+﻿using OmnicellBlueprintingTool.Visio;
 
-namespace VisioDiagramCreator.Models
+namespace OmnicellBlueprintingTool.Models
 {
 	public class Device
 	{

@@ -3,10 +3,10 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Windows.Forms;
-using VisioDiagramCreator.Models;
+using OmnicellBlueprintingTool.Models;
 using Visio1 = Microsoft.Office.Interop.Visio;
 
-namespace VisioDiagramCreator.Visio
+namespace OmnicellBlueprintingTool.Visio
 {
 	public class VisioHelper
 	{
@@ -237,7 +237,7 @@ namespace VisioDiagramCreator.Visio
 			Visio1.Shape shpObj = null;
 			Visio1.Master stnObj = null;
 
-			foreach (Visio1.Document stencil in stencils)
+			foreach (Visio1.Document stencil in this.stencils)
 			{
 				stnObj = stencil.Masters[device.ShapeInfo.StencilImage];
 				if (stnObj != null)
@@ -432,17 +432,29 @@ namespace VisioDiagramCreator.Visio
 		{
 			try
 			{
+				if (this.stencils != null)
+				{
+					// must clear this list otherwise an Exception will occur dealing with RPS miss leading error when app is ran again without closing
+					stencils.Clear();
+				}
+
 				if (this.vDocuments != null)
 				{
 					while (this.vDocuments.Count > 0)
 					{
 						this.vDocuments.Application.ActiveDocument.Close();
 					}
+					this.vDocuments = null;
 				}
 				if (this.appVisio != null)
 				{
 					this.appVisio.Quit();
+					this.appVisio = null;
 				}
+				GC.Collect();
+				GC.WaitForPendingFinalizers();
+				GC.Collect();
+				GC.WaitForPendingFinalizers();
 			}
 			catch (System.Runtime.InteropServices.COMException ex)
 			{
@@ -485,8 +497,8 @@ namespace VisioDiagramCreator.Visio
 				}
 				catch (Exception ex)
 				{
-					MessageBox.Show(string.Format("Exception::setupVisioDiagram - Stencil Name:{0} not found\n{1}", device.ShapeInfo.UniqueKey, ex.Message));
-					Console.WriteLine(string.Format("Exception::setupVisioDiagram - Stencil Name:{0} not found\n{1}", device.ShapeInfo.UniqueKey, ex.Message));
+					MessageBox.Show(string.Format("Exception::setupVisioDiagram - Stencil Imagde:{0} not found.  Shape Key:{1}\n{2}", device.ShapeInfo.StencilImage, device.ShapeInfo.UniqueKey, ex.Message));
+					Console.WriteLine(string.Format("Exception::setupVisioDiagram - Stencil Imagde:{0} not found.  Shape Key:{1}\n{2}", device.ShapeInfo.StencilImage, device.ShapeInfo.UniqueKey, ex.Message));
 					return true;
 				}
 			}

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Globalization;
 
-namespace VisioDiagramCreator.Visio
+namespace OmnicellBlueprintingTool.Visio
 {
 	public struct ColorRGB
 	{

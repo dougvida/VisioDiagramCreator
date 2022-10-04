@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
-using VisioDiagramCreator.Visio;
+using OmnicellBlueprintingTool.Visio;
 
-namespace VisioDiagramCreator.Models
+namespace OmnicellBlueprintingTool.Models
 {
 	public class DiagramData
 	{
@@ -29,15 +29,17 @@ namespace VisioDiagramCreator.Models
 			if (AllShapesMap != null)
 			{
 				AllShapesMap.Clear();
+				AllShapesMap = null;
 			}
 			if (ShapeConnectionsMap != null)
 			{
 				ShapeConnectionsMap.Clear();
-
+				ShapeConnectionsMap = null;
 			}
 			if (Devices != null)
 			{
 				Devices.Clear();
+				Devices = null;
 			}
 		}
 	}

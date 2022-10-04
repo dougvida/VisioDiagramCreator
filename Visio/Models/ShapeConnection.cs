@@ -1,7 +1,7 @@
-﻿using VisioDiagramCreator.Models;
+﻿using OmnicellBlueprintingTool.Models;
 using Visio1 = Microsoft.Office.Interop.Visio;
 
-namespace VisioDiagramCreator.Visio
+namespace OmnicellBlueprintingTool.Visio
 {
 	public class ShapeConnection
 	{

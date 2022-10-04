@@ -1,7 +1,7 @@
 ﻿using System;
 using Visio1 = Microsoft.Office.Interop.Visio;
 
-namespace VisioDiagramCreator.Visio
+namespace OmnicellBlueprintingTool.Visio
 {
 	public class ShapeInformation
 	{

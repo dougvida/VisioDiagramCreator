@@ -1,6 +1,6 @@
 ﻿using System.Windows.Forms;
 
-namespace VisioDiagramCreator.Extensions
+namespace OmnicellBlueprintingTool.Extensions
 {
 
 	public static class FileExtension

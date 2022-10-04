@@ -1,17 +1,14 @@
-﻿using System;
+﻿using OmnicellBlueprintingTool.Models;
+using OmnicellBlueprintingTool.Visio;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
-using VisioDiagramCreator.Models;
-using VisioDiagramCreator.Visio;
 using Excel = Microsoft.Office.Interop.Excel;       //microsoft Excel 14 object in references-> COM tab
 
 
-// https://ironsoftware.com/csharp/excel/tutorials/how-to-read-excel-file-csharp/#get-cell-range
-
-
-namespace VisioDiagramCreator.ExcelHelpers
+namespace OmnicellBlueprintingTool.ExcelHelpers
 {
 	public class ProcessExcelDataFile
 	{
@@ -66,6 +63,8 @@ namespace VisioDiagramCreator.ExcelHelpers
 		/// <exception cref="Exception"></exception>
 		public DiagramData parseExcelFile(string file, DiagramData diagData)
 		{
+			object misValue = System.Reflection.Missing.Value; 
+			
 			if (string.IsNullOrEmpty(file))
 			{
 				// Error file is empty
@@ -137,8 +136,11 @@ namespace VisioDiagramCreator.ExcelHelpers
 
 							case "SHAPE":             // stencils to create on the document.  pass myArray object, row # and column count
 								device = _parseExcelData(myArray, row);
-								devices.Add(device);
-								diagData.AllShapesMap.Add(device.ShapeInfo.UniqueKey, device);
+								if (device != null)
+								{
+									devices.Add(device);
+									diagData.AllShapesMap.Add(device.ShapeInfo.UniqueKey, device);
+								}
 								break;
 
 							default:
@@ -163,17 +165,15 @@ namespace VisioDiagramCreator.ExcelHelpers
 					diagData.Devices = devices;
 				}
 
-				System.Runtime.InteropServices.Marshal.ReleaseComObject(xlRange);
-				System.Runtime.InteropServices.Marshal.ReleaseComObject(xlWorksheet);
-
 				//quit and release
-				xlWorkbook.Close(0);
-				
-				//release com objects to fully kill excel process from running in the background
-				System.Runtime.InteropServices.Marshal.ReleaseComObject(xlWorkbook);
-
+				xlWorkbook.Close(true, misValue, misValue);
 				xlApp.Quit();
-				System.Runtime.InteropServices.Marshal.ReleaseComObject(xlApp);
+
+				//release com objects to fully kill excel process from running in the background
+				releaseObject(xlApp);
+				releaseObject(xlWorkbook);
+				releaseObject(xlWorksheet);
+				releaseObject(xlRange);
 
 				killExcelProcesses(excelProcsOld);
 			}
@@ -362,18 +362,37 @@ namespace VisioDiagramCreator.ExcelHelpers
 				}
 
 				// Arrow type to use if enabled
+				string sTmp = string.Empty;
 				data = myArray.GetValue(row, (int)_cellIndex.FromLinePattern);
 				if (data != null)
 				{
-					visioInfo.FromLinePattern = Convert.ToInt32(data);
+					sTmp = data.ToString().Trim().ToUpper();
 				}
-				if (visioInfo.FromLinePattern <= 0)
+				switch (sTmp)
 				{
-					visioInfo.FromLinePattern = (int)VisioVariables.LINE_PATTERN_SOLID;
+					case "SOLID":
+						visioInfo.FromLinePattern = (double)VisioVariables.LINE_PATTERN_SOLID;
+						break;
+
+					case "DASH":
+						visioInfo.FromLinePattern = VisioVariables.LINE_PATTERN_DASH;
+						break;
+
+					case "DOTTED":
+						visioInfo.FromLinePattern = VisioVariables.LINE_PATTERN_DOTTED;
+						break;
+
+					case "DASH_DOT":
+						visioInfo.FromLinePattern = VisioVariables.LINE_PATTERN_DASHDOT;
+						break;
+
+					default:
+						visioInfo.FromLinePattern = VisioVariables.LINE_PATTERN_SOLID;
+						break;
 				}
 
 				// set the ShpFromObj ArrowType
-				string sTmp = string.Empty;
+				sTmp = string.Empty;
 				data = myArray.GetValue(row, (int)_cellIndex.FromArrowType);
 				if (data != null)
 				{
@@ -422,14 +441,33 @@ namespace VisioDiagramCreator.ExcelHelpers
 				}
 
 				// Arrow type to use if enabled
+				sTmp = string.Empty;
 				data = myArray.GetValue(row, (int)_cellIndex.ToLinePattern);
 				if (data != null)
 				{
-					visioInfo.ToLinePattern = Convert.ToDouble(data);
+					sTmp = data.ToString().Trim().ToUpper();
 				}
-				if (visioInfo.ToLinePattern <= 0)
+				switch (sTmp)
 				{
-					visioInfo.ToLinePattern = VisioVariables.LINE_PATTERN_SOLID;
+					case "SOLID":
+						visioInfo.ToLinePattern = (double)VisioVariables.LINE_PATTERN_SOLID;
+						break;
+
+					case "DASH":
+						visioInfo.ToLinePattern = VisioVariables.LINE_PATTERN_DASH;
+						break;
+
+					case "DOTTED":
+						visioInfo.ToLinePattern = VisioVariables.LINE_PATTERN_DOTTED;
+						break;
+
+					case "DASH_DOT":
+						visioInfo.ToLinePattern = VisioVariables.LINE_PATTERN_DASHDOT;
+						break;
+
+					default:
+						visioInfo.ToLinePattern = VisioVariables.LINE_PATTERN_SOLID;
+						break;
 				}
 
 				// do we want to have a start arrow
@@ -473,6 +511,24 @@ namespace VisioDiagramCreator.ExcelHelpers
 			}
 			//ConsoleOut.writeLine("adding stencil:{0}",visioInfo.UniqueKey);
 			return device;
+		}
+
+		private void releaseObject(object obj)
+		{
+			try
+			{
+				System.Runtime.InteropServices.Marshal.ReleaseComObject(obj);
+				obj = null;
+			}
+			catch (Exception ex)
+			{
+				obj = null;
+				MessageBox.Show("Unable to release the Object " + ex.ToString());
+			}
+			finally
+			{
+				GC.Collect();
+			}
 		}
 
 		/// <summary>

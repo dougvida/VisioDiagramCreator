@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace VisioDiagramCreator.Models
+namespace OmnicellBlueprintingTool.Models
 {
 	public static class ConsoleOut
 	{
