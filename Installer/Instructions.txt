@@ -1,0 +1,11 @@
+Rename to .zip
+extract the zip file to the following folder
+c:\Omnicell_Blueprinting_Tool
+
+in the Docs folder is the user guide
+Under the Data folder
+     ScriptDate folder contains an example excel template file to use 
+	 Stencils folder contains a the master stencil file with the stencils described in the user guide
+	 Templates folder contains a Visio template file that included the master stencils
+	 
+Root filder contains the application to run
