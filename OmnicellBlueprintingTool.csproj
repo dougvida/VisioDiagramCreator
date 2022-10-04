@@ -111,6 +111,7 @@
     <None Include="Data\Templates\OC_ArchitectDiagramTemplate.vstx" />
     <None Include="Data\Templates\OC_ArchitectDiagramTemplateNoStencil.vstx" />
     <None Include="Data\Templates\Template_ArchitectDataFile.xlsx" />
+    <None Include="Installer\OC_BlueprintingTool_Installer.zip" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
