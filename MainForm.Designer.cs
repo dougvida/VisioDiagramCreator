@@ -42,14 +42,14 @@
 			this.tb_buildExcelFileName = new System.Windows.Forms.TextBox();
 			this.label2 = new System.Windows.Forms.Label();
 			this.label1 = new System.Windows.Forms.Label();
-			this.groupBox3 = new System.Windows.Forms.GroupBox();
+			this.gb_SelectOperation = new System.Windows.Forms.GroupBox();
 			this.rb_buildExcelFileFromVisio = new System.Windows.Forms.RadioButton();
 			this.rb_buildFromExcelFile = new System.Windows.Forms.RadioButton();
 			this.btn_Submit = new System.Windows.Forms.Button();
 			this.btn_Quit = new System.Windows.Forms.Button();
 			this.gb_BuildFromExceldata.SuspendLayout();
 			this.gb_BuildDataFile.SuspendLayout();
-			this.groupBox3.SuspendLayout();
+			this.gb_SelectOperation.SuspendLayout();
 			this.SuspendLayout();
 			// 
 			// label4
@@ -190,16 +190,16 @@
 			this.label1.TabIndex = 2;
 			this.label1.Text = "Excel file Path";
 			// 
-			// groupBox3
+			// gb_SelectOperation
 			// 
-			this.groupBox3.Controls.Add(this.rb_buildExcelFileFromVisio);
-			this.groupBox3.Controls.Add(this.rb_buildFromExcelFile);
-			this.groupBox3.Location = new System.Drawing.Point(70, 59);
-			this.groupBox3.Name = "groupBox3";
-			this.groupBox3.Size = new System.Drawing.Size(686, 72);
-			this.groupBox3.TabIndex = 24;
-			this.groupBox3.TabStop = false;
-			this.groupBox3.Text = "Select desired operation";
+			this.gb_SelectOperation.Controls.Add(this.rb_buildExcelFileFromVisio);
+			this.gb_SelectOperation.Controls.Add(this.rb_buildFromExcelFile);
+			this.gb_SelectOperation.Location = new System.Drawing.Point(70, 59);
+			this.gb_SelectOperation.Name = "gb_SelectOperation";
+			this.gb_SelectOperation.Size = new System.Drawing.Size(686, 72);
+			this.gb_SelectOperation.TabIndex = 24;
+			this.gb_SelectOperation.TabStop = false;
+			this.gb_SelectOperation.Text = "Select desired operation";
 			// 
 			// rb_buildExcelFileFromVisio
 			// 
@@ -250,7 +250,7 @@
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(800, 455);
-			this.Controls.Add(this.groupBox3);
+			this.Controls.Add(this.gb_SelectOperation);
 			this.Controls.Add(this.gb_BuildDataFile);
 			this.Controls.Add(this.gb_BuildFromExceldata);
 			this.Controls.Add(this.label4);
@@ -263,8 +263,8 @@
 			this.gb_BuildFromExceldata.PerformLayout();
 			this.gb_BuildDataFile.ResumeLayout(false);
 			this.gb_BuildDataFile.PerformLayout();
-			this.groupBox3.ResumeLayout(false);
-			this.groupBox3.PerformLayout();
+			this.gb_SelectOperation.ResumeLayout(false);
+			this.gb_SelectOperation.PerformLayout();
 			this.ResumeLayout(false);
 			this.PerformLayout();
 
@@ -279,7 +279,7 @@
 		private System.Windows.Forms.TextBox tb_buildExcelFileName;
 		private System.Windows.Forms.Label label2;
 		private System.Windows.Forms.Label label3;
-		private System.Windows.Forms.GroupBox groupBox3;
+		private System.Windows.Forms.GroupBox gb_SelectOperation;
 		private System.Windows.Forms.RadioButton rb_buildExcelFileFromVisio;
 		private System.Windows.Forms.RadioButton rb_buildFromExcelFile;
 		private System.Windows.Forms.Button btn_VisioFileToRead;

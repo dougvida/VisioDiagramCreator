@@ -52,6 +52,7 @@ namespace OmnicellBlueprintingTool
 
 			// turn all this off.   Under construction at this time
 			gb_BuildDataFile.Visible = false;
+			gb_SelectOperation.Visible = false;
 			btn_SetExcelPath.Visible = false;
 			btn_VisioFileToRead.Visible = false;
 			tb_buildExcelFileName.Visible = false;
@@ -62,7 +63,8 @@ namespace OmnicellBlueprintingTool
 			rb_buildExcelFileFromVisio.Visible = true;
 			rb_buildExcelFileFromVisio.Enabled = true;
 
-			gb_BuildDataFile.Visible = true; 
+			gb_BuildDataFile.Visible = true;
+			gb_SelectOperation.Visible = true;
 			btn_SetExcelPath.Visible = true;
 			btn_VisioFileToRead.Visible = true;
 			tb_buildExcelFileName.Visible = true;
@@ -117,8 +119,12 @@ namespace OmnicellBlueprintingTool
 							// Lets make the connections 
 							bool bAns = visHlp.ConnectShapes(diagramData);
 
+#if !DEBUG
 							// this must be performed is running the application again without shutting down
 							visHlp.VisioForceCloseAll();
+#else
+							visHlp.ClearStencilList();
+#endif
 						}
 					}
 				}
@@ -256,7 +262,7 @@ namespace OmnicellBlueprintingTool
 		private void btn_VisioFileToRead_Click(object sender, EventArgs e)
 		{
 			string filePath = string.Empty;
-			filePath = FileExtension.getFilePath(visioFilesPath, "vsdx files (*.vsdx)|*.vsdx", "Select a Visio file to process into an Excel data file");
+			filePath = FileExtension.getFilePath(visioFilesPath, "Visio files (*.vsdx)|*.vsdx", "Select a Visio file to process into an Excel data file");
 			if (string.IsNullOrEmpty(filePath))
 			{
 				// Cancel was pressed.  filePath will be empty
@@ -281,7 +287,7 @@ namespace OmnicellBlueprintingTool
 		private void btn_readExcelfile_Click(object sender, EventArgs e)
 		{
 			string filePath = string.Empty;
-			filePath = FileExtension.getFilePath(scriptDataPath, "vsdx files (*.xls)|*.xlsx", "Select the Excel data file to build a Visio diagram");
+			filePath = FileExtension.getFilePath(scriptDataPath, "Excel(*.xls;*.xlsm)|*.xlsx;*.xlsm;", "Select the Excel data file to build a Visio diagram");
 			if (string.IsNullOrEmpty(filePath))
 			{
 				// Cancel was pressed.  filePath will be empty

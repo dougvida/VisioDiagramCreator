@@ -424,19 +424,29 @@ namespace OmnicellBlueprintingTool.Visio
 			}
 		}
 
+
+		/// <summary>
+		/// ClearStencilList
+		/// this will clear the stencils list for reuse
+		/// </summary>
+		public void ClearStencilList()
+		{
+			if (this.stencils != null)
+			{
+				// must clear this list otherwise an Exception will occur dealing with RPS miss leading error when app is ran again without closing
+				stencils.Clear();
+			}
+		}
 		/// <summary>
 		/// VisioForceCloseAll
 		/// Close all the Visio documents
+		/// This will display the Save file dialog
 		/// </summary>
 		public void VisioForceCloseAll()
 		{
 			try
 			{
-				if (this.stencils != null)
-				{
-					// must clear this list otherwise an Exception will occur dealing with RPS miss leading error when app is ran again without closing
-					stencils.Clear();
-				}
+				ClearStencilList();
 
 				if (this.vDocuments != null)
 				{
