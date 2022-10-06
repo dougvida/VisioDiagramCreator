@@ -95,7 +95,7 @@ namespace OmnicellBlueprintingTool
 				{
 					// Set cursor as hourglass
 					Cursor.Current = Cursors.WaitCursor;
-
+					
 					// build visio file form data file
 					ConsoleOut.writeLine(String.Format("MainForm - Build Visio file from an excel data file:{0}", tb_excelDataFile.Text));
 					diagramData = new ProcessExcelDataFile().parseExcelFile(tb_excelDataFile.Text.Trim(), diagramData);
@@ -108,6 +108,9 @@ namespace OmnicellBlueprintingTool
 
 					// Set cursor as default arrow
 					Cursor.Current = Cursors.Default;
+
+					// for testing to view all the stencils in the document
+					// visHlp.ListDocumentStencils(diagramData, VisioVariables.ShowDiagram.Show);
 
 					if (diagramData != null)
 					{

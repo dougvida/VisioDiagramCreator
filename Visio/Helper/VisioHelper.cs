@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Windows.Forms;
 using OmnicellBlueprintingTool.Models;
 using Visio1 = Microsoft.Office.Interop.Visio;
+using System.Xml.Linq;
 
 namespace OmnicellBlueprintingTool.Visio
 {
@@ -237,17 +238,50 @@ namespace OmnicellBlueprintingTool.Visio
 			Visio1.Shape shpObj = null;
 			Visio1.Master stnObj = null;
 
-			foreach (Visio1.Document stencil in this.stencils)
+			// lets look if the stencil is part of the Document Stencil master
+			// this is the issue.  the count will go up with each stincel added to the diagram so this logic is messed up
+
+			try
 			{
-				stnObj = stencil.Masters[device.ShapeInfo.StencilImage];
-				if (stnObj != null)
+				if (vDocument.Masters.get_ItemU(device.ShapeInfo.StencilImage) != null)
 				{
-					break;   // found get out of the loop
+					// it part of the Document Stencil
+					stnObj = vDocument.Masters[device.ShapeInfo.StencilImage];
+				}
+			}
+			catch (System.Runtime.InteropServices.COMException com)
+			{
+				// if we get this exception the item was not found
+				// stencil not found here so lets try looking if any other stencil files have been added
+			}
+
+			if (stnObj == null)
+			{
+				// else look to see if the Stencil is part of the added stincel files
+				if (this.stencils.Count > 0)
+				{
+					foreach (Visio1.Document stencil in this.stencils)
+					{
+						try
+						{
+							stnObj = stencil.Masters[device.ShapeInfo.StencilImage];
+						}
+						catch(System.Runtime.InteropServices.COMException com)
+						{
+							// if we get this exception the item was not found so lets try searching the next stencil
+							//Console.WriteLine(string.Format("failed to locate this Stencil:{0} for this stencil file:{1}", device.ShapeInfo.StencilImage, stencil.Template));
+							continue;
+						}
+						if (stnObj != null)
+						{
+							break;   // found get out of the loop
+						}
+					}
 				}
 			}
 			if (stnObj == null)
 			{
-				string sTmp = string.Format("ERROR::_drawShape - Can't find master stencil:{0}", device.ShapeInfo.StencilImage);
+				string sTmp = string.Format("ERROR::_drawShape - Can't find Stencil:{0}", device.ShapeInfo.StencilImage);
 				MessageBox.Show(sTmp);
 				Console.WriteLine(sTmp);
 				return null;
@@ -489,8 +523,9 @@ namespace OmnicellBlueprintingTool.Visio
 				return true;
 			}
 
-			Visio1.Shape shpObj = null;
+			int count = vDocument.Masters.Count;
 
+			Visio1.Shape shpObj = null;
 			foreach (Device device in diagramData.Devices)
 			{
 				try
@@ -507,8 +542,8 @@ namespace OmnicellBlueprintingTool.Visio
 				}
 				catch (Exception ex)
 				{
-					MessageBox.Show(string.Format("Exception::setupVisioDiagram - Stencil Imagde:{0} not found.  Shape Key:{1}\n{2}", device.ShapeInfo.StencilImage, device.ShapeInfo.UniqueKey, ex.Message));
-					Console.WriteLine(string.Format("Exception::setupVisioDiagram - Stencil Imagde:{0} not found.  Shape Key:{1}\n{2}", device.ShapeInfo.StencilImage, device.ShapeInfo.UniqueKey, ex.Message));
+					MessageBox.Show(string.Format("Exception::setupVisioDiagram - Stencil Image:{0} not found.  Shape Key:{1}\n{2}", device.ShapeInfo.StencilImage, device.ShapeInfo.UniqueKey, ex.Message));
+					Console.WriteLine(string.Format("Exception::setupVisioDiagram - Stencil Image:{0} not found.  Shape Key:{1}\n{2}", device.ShapeInfo.StencilImage, device.ShapeInfo.UniqueKey, ex.Message));
 					return true;
 				}
 			}
@@ -672,7 +707,6 @@ namespace OmnicellBlueprintingTool.Visio
 			}
 
 			ArrayList masterArray_0 = new ArrayList();
-			ArrayList masterArray_1 = new ArrayList();
 			Visio1.Document doc_0 = vDocuments[1];    // Document stencil figures
 			Visio1.Document doc_1 = vDocuments[2];    // Stencil figures
 			Visio1.Masters masters_0 = doc_0.Masters;
@@ -682,6 +716,13 @@ namespace OmnicellBlueprintingTool.Visio
 				// Document stencil figures
 				masterArray_0.Add(master.NameU);   // THIS WILL CONTAIN DIAGRAM FIGURES
 				Console.WriteLine(string.Format("ListDocumentStencils - Master0 - ID:{0} Name:{1} NameU:{2}", master.ID, master.Name, master.NameU));
+			}
+			Console.WriteLine("\n\n");
+			foreach (Visio1.Master master in masters_1)
+			{
+				// Document stencil figures
+				masterArray_0.Add(master.NameU);   // THIS WILL CONTAIN DIAGRAM FIGURES
+				Console.WriteLine(string.Format("ListDocumentStencils - Master1 - ID:{0} Name:{1} NameU:{2}", master.ID, master.Name, master.NameU));
 			}
 			this.VisioForceCloseAll();
 

@@ -6,8 +6,8 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{AE4F3493-7F39-45F4-8197-5723734553BA}</ProjectGuid>
     <OutputType>WinExe</OutputType>
-    <RootNamespace>VisioDiagramCreator</RootNamespace>
-    <AssemblyName>VisioDiagramCreator</AssemblyName>
+    <RootNamespace>OmnicellBlueprintingTool</RootNamespace>
+    <AssemblyName>OmnicellBlueprintingTool</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -103,6 +103,7 @@
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
     </Compile>
     <None Include="Data\ScriptData\Advocate_ArchitectData.xlsx" />
     <None Include="Data\ScriptData\ArchitectShapesData.xlsx" />
