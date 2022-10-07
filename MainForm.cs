@@ -81,12 +81,21 @@ namespace OmnicellBlueprintingTool
 
 		private void btn_Quit_Click(object sender, EventArgs e)
 		{
+			// close the Visio diagram if open
 			visHlp.VisioForceCloseAll();
+
+			// close the application
 			this.Close();
 		}
 
 		private void btn_Submit_Click(object sender, EventArgs e)
 		{
+			// close the Visio diagram if open
+			// after the run will keep it open to allow the user to work on the diagram before saving
+			// if the quit button is pressed the close Visio document will be call
+			visHlp.VisioForceCloseAll();
+			visHlp.ClearStencilList();
+
 			// parse the data file and draw the visio diagram
 			diagramData = new DiagramData();
 			try
@@ -121,13 +130,6 @@ namespace OmnicellBlueprintingTool
 
 							// Lets make the connections 
 							bool bAns = visHlp.ConnectShapes(diagramData);
-
-#if !DEBUG
-							// this must be performed is running the application again without shutting down
-							visHlp.VisioForceCloseAll();
-#else
-							visHlp.ClearStencilList();
-#endif
 						}
 					}
 				}
