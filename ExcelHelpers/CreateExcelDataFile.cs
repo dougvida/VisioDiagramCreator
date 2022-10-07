@@ -48,7 +48,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 
 			{ 22, "Connect From"},        // used to link this visio shape to another visio shape
 			{ 23, "From Line Label"},      // Arrow Text
-			{ 24, "From Line Pattern"},    // Line pattern solid = 1, 2 = dashed
+			{ 24, "From Line Pattern"},    // Line pattern solid = 1, 2 = dashed, 3=Dotted, 4=Dash_Dot
 			{ 25, "From Arrow Type"},      // Can contain one of these [None, Start, End, Both]
 			{ 26, "From Line Color"},      // Arrow Color
 

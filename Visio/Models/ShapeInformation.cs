@@ -32,7 +32,7 @@ namespace OmnicellBlueprintingTool.Visio
 		public string ToLineColor { get; set; } = VisioVariables.COLOR_BLACK;
 		public string ToArrowType { get; set; } = VisioVariables.sARROW_NONE;
 
-		public string LineWeight { get; set; } = VisioVariables.LINE_WEIGHT_1;
+		public string LineWeight { get; set; } = VisioVariables.sLINE_WEIGHT_1;
 
 		public Visio1.Shape ShpObj { get; set; }     // this shape object
 	}

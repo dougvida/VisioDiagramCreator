@@ -46,7 +46,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 			FromLineColor,       // Arrow Color
 			ConnectTo,           // used to link this visio shape to another visio shape
 			ToLineLabel,         // Arrow Text
-			ToLinePattern,       // Line pattern solid = 1
+			ToLinePattern,       // Line pattern default (solid);  Solid=1, Dash=2, Dotted=3, Dash_Dot=4
 			ToArrowType,         // Can contain one of these [None, Start, End, Both]
 			ToLineColor,         // Arrow Color
 		}
@@ -245,7 +245,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 							if (saTmp[1].ToUpper() == "B")
 							{
 								visioInfo.isStencilLabelFontBold = true;
-								visioInfo.LineWeight = VisioVariables.LINE_WEIGHT_2;
+								visioInfo.LineWeight = VisioVariables.sLINE_WEIGHT_2;
 							}
 						}
 					}
@@ -299,48 +299,56 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 					device.SiteId_OmniId = data.ToString().Trim();
 				}
 
+				// shape IP address value
 				data = myArray.GetValue(row, (int)_cellIndex.IP);
 				if (data != null)
 				{
 					device.OmniIP = data.ToString().Trim();
 				}
 
+				// shape Port value
 				data = myArray.GetValue(row, (int)_cellIndex.Ports);
 				if (data != null)
 				{
 					device.OmniPorts = data.ToString().Trim();
 				}
 
+				// shape position X
 				data = myArray.GetValue(row, (int)_cellIndex.PosX);
 				if (data != null)
 				{
 					visioInfo.Pos_x = Convert.ToDouble(data);
 				}
 
+				// shape position Y
 				data = myArray.GetValue(row, (int)_cellIndex.PosY);
 				if (data != null)
 				{
 					visioInfo.Pos_y = Convert.ToDouble(data);
 				}
 
+				// shape width
 				data = myArray.GetValue(row, (int)_cellIndex.Width);
 				if (data != null)
 				{
 					visioInfo.Width = Convert.ToDouble(data);
 				}
 
+				// shape height
 				data = myArray.GetValue(row, (int)_cellIndex.Height);
 				if (data != null)
 				{
 					visioInfo.Height = Convert.ToDouble(data);
 				}
 
+				// shape label
 				data = myArray.GetValue(row, (int)_cellIndex.DevicesCount);
 				if (data != null)
 				{
 					visioInfo.StencilLabel += " / " + data.ToString().Trim();
 				}
 
+				// shape fill color
 				data = myArray.GetValue(row, (int)_cellIndex.FillColor);
 				if (data != null)
 				{
@@ -348,20 +356,21 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 					visioInfo.FillColor = data.ToString().Trim();
 				}
 
-				// Get the ShpFromObj section
+				// connector from shape
 				data = myArray.GetValue(row, (int)_cellIndex.ConnectFrom);
 				if (data != null)
 				{
 					visioInfo.ConnectFrom = data.ToString().Trim();
 				}
 
+				// connector label
 				data = myArray.GetValue(row, (int)_cellIndex.FromLineLabel);
 				if (data != null)
 				{
 					visioInfo.FromLineLabel = data.ToString().Trim();
 				}
 
-				// Arrow type to use if enabled
+				// connector Line pattern
 				string sTmp = string.Empty;
 				data = myArray.GetValue(row, (int)_cellIndex.FromLinePattern);
 				if (data != null)
@@ -370,28 +379,26 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				}
 				switch (sTmp)
 				{
-					case "SOLID":
-						visioInfo.FromLinePattern = (double)VisioVariables.LINE_PATTERN_SOLID;
-						break;
-
-					case "DASH":
+					case VisioVariables.sLINE_PATTERN_DASHED:
 						visioInfo.FromLinePattern = VisioVariables.LINE_PATTERN_DASH;
 						break;
 
-					case "DOTTED":
+					case VisioVariables.sLINE_PATTERN_DOTTED:
+						visioInfo.LineWeight = VisioVariables.sLINE_WEIGHT_2;
 						visioInfo.FromLinePattern = VisioVariables.LINE_PATTERN_DOTTED;
 						break;
 
-					case "DASH_DOT":
+					case VisioVariables.sLINE_PATTERN_DASHDOT:
 						visioInfo.FromLinePattern = VisioVariables.LINE_PATTERN_DASHDOT;
 						break;
 
 					default:
+						case VisioVariables.sLINE_PATTERN_SOLID:	
 						visioInfo.FromLinePattern = VisioVariables.LINE_PATTERN_SOLID;
 						break;
 				}
 
-				// set the ShpFromObj ArrowType
+				// connector Arrow type
 				sTmp = string.Empty;
 				data = myArray.GetValue(row, (int)_cellIndex.FromArrowType);
 				if (data != null)
@@ -414,6 +421,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 						break;
 				}
 
+				// connector line color
 				data = myArray.GetValue(row, (int)_cellIndex.FromLineColor);
 				if (data != null)
 				{
@@ -424,7 +432,11 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 					visioInfo.FromLineColor = VisioVariables.COLOR_BLACK;
 				}
 
+				//
 				// Get the To section
+				//
+
+				// connect to shape
 				data = myArray.GetValue(row, (int)_cellIndex.ConnectTo);
 				if (data != null)
 				{
@@ -434,13 +446,14 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 					}
 				}
 
+				// connector label
 				data = myArray.GetValue(row, (int)_cellIndex.ToLineLabel);
 				if (data != null)
 				{
 					visioInfo.ToLineLabel = data.ToString().Trim();
 				}
 
-				// Arrow type to use if enabled
+				// connector line pattern
 				sTmp = string.Empty;
 				data = myArray.GetValue(row, (int)_cellIndex.ToLinePattern);
 				if (data != null)
@@ -449,28 +462,26 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				}
 				switch (sTmp)
 				{
-					case "SOLID":
-						visioInfo.ToLinePattern = (double)VisioVariables.LINE_PATTERN_SOLID;
-						break;
-
-					case "DASH":
+					case VisioVariables.sLINE_PATTERN_DASHED:
 						visioInfo.ToLinePattern = VisioVariables.LINE_PATTERN_DASH;
 						break;
 
-					case "DOTTED":
+					case VisioVariables.sLINE_PATTERN_DOTTED:
+						visioInfo.LineWeight = VisioVariables.sLINE_WEIGHT_2;
 						visioInfo.ToLinePattern = VisioVariables.LINE_PATTERN_DOTTED;
 						break;
 
-					case "DASH_DOT":
+					case VisioVariables.sLINE_PATTERN_DASHDOT:
 						visioInfo.ToLinePattern = VisioVariables.LINE_PATTERN_DASHDOT;
 						break;
 
 					default:
+					case VisioVariables.sLINE_PATTERN_SOLID:
 						visioInfo.ToLinePattern = VisioVariables.LINE_PATTERN_SOLID;
 						break;
 				}
 
-				// do we want to have a start arrow
+				// connector Arrow type
 				sTmp = string.Empty;
 				data = myArray.GetValue(row, (int)_cellIndex.ToArrowType);
 				if (data != null)
@@ -493,6 +504,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 						break;
 				}
 
+				// connector line color
 				data = myArray.GetValue(row, (int)_cellIndex.ToLineColor);
 				if (data != null)
 				{

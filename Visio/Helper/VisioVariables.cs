@@ -46,17 +46,23 @@
 		public const string sARROW_BOTH = "BOTH";
 
 		// connector weight (default is LINE_WEIGHT_1
-		public const string LINE_WEIGHT_1 = "1.0 pt";
-		public const string LINE_WEIGHT_2 = "2 pt";
+		public const string sLINE_WEIGHT_1 = "1.0 pt";
+		public const string sLINE_WEIGHT_1_5 = "1.5 pt";
+		public const string sLINE_WEIGHT_2 = "2 pt";
 
 		// connector corner 
 		public const double ROUNDING = 0.0625;
 
 		// connector line pattern
-		public const double SHDW_PATTERN = 0;				// None
-		public const double LINE_PATTERN_SOLID = 1;		// ______ solid line
-		public const double LINE_PATTERN_DASH = 2;		// _ _ _ _ dashed lined
-		public const double LINE_PATTERN_DOTTED = 3;		// . . . . dotted line
+		public const double SHDW_PATTERN = 0;           // None
+
+		public const string sLINE_PATTERN_SOLID = "SOLID";
+		public const double LINE_PATTERN_SOLID = 1;     // ______ solid line
+		public const string sLINE_PATTERN_DASHED = "DASHED";
+		public const double LINE_PATTERN_DASH = 2;      // _ _ _ _ dashed lined
+		public const string sLINE_PATTERN_DOTTED = "DOTTED";
+		public const double LINE_PATTERN_DOTTED = 3;    // . . . . dotted line
+		public const string sLINE_PATTERN_DASHDOT = "DASH_DOT";
 		public const double LINE_PATTERN_DASHDOT = 4;   // _ . _ . _ dash/dot-(t)ed line
 
 		//public const string CATEGORY_PREFIX = "CAT_";

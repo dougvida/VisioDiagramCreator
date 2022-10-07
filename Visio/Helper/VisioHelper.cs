@@ -590,9 +590,9 @@ namespace OmnicellBlueprintingTool.Visio
 						shpConn.get_CellsU("LineColor").FormulaU = VisioVariables.COLOR_BLACK;
 						shpConn.get_CellsU("Rounding").ResultIU = VisioVariables.ROUNDING;
 						shpConn.get_CellsU("LinePattern").ResultIU = VisioVariables.LINE_PATTERN_SOLID;
-						shpConn.get_CellsU("LineWeight").FormulaU = VisioVariables.LINE_WEIGHT_1;
+						shpConn.get_CellsU("LineWeight").FormulaU = VisioVariables.sLINE_WEIGHT_1;
 
-						if (lookupShapeConnection.device.ShapeInfo.LineWeight != VisioVariables.LINE_WEIGHT_1)
+						if (lookupShapeConnection.device.ShapeInfo.LineWeight != VisioVariables.sLINE_WEIGHT_1)
 						{
 							shpConn.get_CellsU("LineWeight").FormulaU = lookupShapeConnection.device.ShapeInfo.LineWeight;
 						}
