@@ -6,6 +6,7 @@ using System.Windows.Forms;
 using OmnicellBlueprintingTool.Models;
 using Visio1 = Microsoft.Office.Interop.Visio;
 using System.Xml.Linq;
+using static OmnicellBlueprintingTool.Visio.VisioVariables;
 
 namespace OmnicellBlueprintingTool.Visio
 {
@@ -29,50 +30,50 @@ namespace OmnicellBlueprintingTool.Visio
 		/// <param name="orientation"><options>"Portrait" or "Landscape"</options></param>
 		/// <param name="size"><options>"Letter", "Tabloid", "Ledger", "Legal", "A3", "A4"</options></param>
 		/// <return>bool<options>true error or false success</options></return>
-		private bool SetupDiagramPage(Visio1.Page currentPage, string orientation, string size)
+		private bool SetupDiagramPage(Visio1.Page currentPage, VisioPageOrientation orientation, VisioPageSize size)
 		{
 			Visio1.Shape sheet = currentPage.PageSheet;
 			string width = string.Empty;
 			string height = string.Empty;
 
-			if (currentPage == null || string.IsNullOrEmpty(orientation) || string.IsNullOrEmpty(size))
+			if (currentPage == null)
 			{
 				MessageBox.Show(string.Format("Error one of the following is null or empty: Page{0}, Orientation:{1}, Size:{3}", currentPage, orientation, size));
 				return true;
 			}
 
-			switch (size.ToUpper())
+			switch (size)
 			{
-				case "TABLOID":
-					width = "8.5 in";
+				case VisioVariables.VisioPageSize.Tabloid:
+					width = "11 in";
+					height = "17 in";
+					break;
+				case VisioVariables.VisioPageSize.Ledger:
+					width = "17 in";
 					height = "11 in";
 					break;
-				case "LEDGER":
+				case VisioVariables.VisioPageSize.Legal:
 					width = "8.5 in";
-					height = "11 in";
+					height = "14 in";
 					break;
-				case "LEGAL":
-					width = "8.5 in";
-					height = "11 in";
+				case VisioVariables.VisioPageSize.A3:
+					width = "11.69 in";
+					height = "16.54 in";
 					break;
-				case "A3":
-					width = "8.5 in";
-					height = "11 in";
+				case VisioVariables.VisioPageSize.A4:
+					width = "8.27 in";
+					height = "11.60 in";
 					break;
-				case "A4":
-					width = "8.5 in";
-					height = "11 in";
-					break;
-				case "LETTER":
+				case VisioVariables.VisioPageSize.Letter:
 				default:
 					width = "8.5 in";
 					height = "11 in";
 					break;
 			}
 
-			switch (orientation.ToUpper())
+			switch (orientation)
 			{
-				case "LANDSCAPE":
+				case VisioVariables.VisioPageOrientation.Landscape:
 					currentPage.PageSheet.Cells["PageWidth"].FormulaU = height;
 					currentPage.PageSheet.Cells["PageHeight"].FormulaU = width;
 					currentPage.PageSheet.Cells["PrintPageOrientation"].FormulaU = "2";
@@ -81,7 +82,8 @@ namespace OmnicellBlueprintingTool.Visio
 					//currentPage.PageSheet.get_CellsSRC((short)Visio1.VisSectionIndices.visSectionObject, (short)Visio1.VisRowIndices.visRowPrintProperties, (short)Visio1.VisCellIndices.visPageHeight).FormulaU = width;
 					//currentPage.PageSheet.get_CellsSRC((short)Visio1.VisSectionIndices.visSectionObject, (short)Visio1.VisRowIndices.visRowPrintProperties, (short)Visio1.VisCellIndices.visPageDrawSizeType).FormulaU = "3";
 					break;
-				case "PORTRAIT":
+
+				case VisioVariables.VisioPageOrientation.Portrait:
 				default:
 					currentPage.PageSheet.Cells["PageWidth"].FormulaU = width;
 					currentPage.PageSheet.Cells["PageHeight"].FormulaU = height;

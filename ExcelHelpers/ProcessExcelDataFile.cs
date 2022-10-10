@@ -113,6 +113,35 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 					{
 						switch ((string)data.ToString().Trim().ToUpper())
 						{
+							case "PAGE SETUP":           // Visio Page setup/Size
+								data = myArray.GetValue(row, (int)_cellIndex.StencilKey);
+								if (data != null)
+								{
+									// need to split up the string  orientation:size
+									data = (string)data.ToString().Trim();
+									if (data != null)
+									{
+										string[] saTmp = data.ToString().Split(':');
+										if (saTmp.Length <= 0)
+										{
+											diagData.VisioPageOrientation = VisioVariables.VisioPageOrientation.Portrait;
+											diagData.VisioPageSize = VisioVariables.VisioPageSize.Letter;
+										}
+										else
+										{
+											if (!string.IsNullOrEmpty(saTmp[0]))
+											{
+												diagData.VisioPageOrientation = VisioVariables.GetVisioPageOrientation(saTmp[0].Trim());
+											}
+											if (!string.IsNullOrEmpty(saTmp[1]))
+											{
+												diagData.VisioPageSize = VisioVariables.GetVisioPageSize(saTmp[1].Trim());
+											}
+										}
+									}
+								}
+								break;
+
 							case "TEMPLATE":           // Open a template.  This may be used with existing stencils already in the document
 								data = myArray.GetValue(row, (int)_cellIndex.StencilKey);
 								if (data != null)

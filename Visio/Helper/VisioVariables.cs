@@ -87,10 +87,58 @@
 			Show = 1
 		}
 
-		public enum PageLayout
+		public enum VisioPageOrientation
 		{
 			Landscape,
 			Portrait
 		}
+
+		public enum VisioPageSize
+		{
+			Letter,
+			Tabloid,
+			Ledger,
+			Legal,
+			A3, 
+			A4
+		}
+
+
+		public static VisioPageOrientation GetVisioPageOrientation(string pgOr)
+		{
+			switch (pgOr.Trim().ToUpper())
+			{
+				case "Portrait":
+					return VisioPageOrientation.Landscape;
+
+				case "Landscape":
+				default:
+					return VisioPageOrientation.Portrait;
+					break;
+			}
+		}
+
+		public static VisioPageSize GetVisioPageSize(string pgSz)
+		{
+			switch (pgSz.Trim().ToUpper())
+			{
+				case "TABLOID":
+					return VisioPageSize.Tabloid;
+				case "LEDGER":
+					return VisioPageSize.Ledger;
+				case "LEGAL":
+					return VisioPageSize.Legal;
+				case "A3":
+					return VisioPageSize.A3;
+				case "A4":
+					return VisioPageSize.A4;
+
+				case "LETTER":
+				default:
+					return VisioPageSize.Letter;
+					break;
+			}
+		}
+
 	}
 }

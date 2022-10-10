@@ -5,8 +5,8 @@ namespace OmnicellBlueprintingTool.Models
 {
 	public class DiagramData
 	{
-		public string VisioPageOrientation { get; set; } = "Portrait";
-		public string VisioPageSize { get; set; } = "Letter";
+		public VisioVariables.VisioPageOrientation VisioPageOrientation { get; set; } = VisioVariables.VisioPageOrientation.Portrait;
+		public VisioVariables.VisioPageSize VisioPageSize { get; set; } = VisioVariables.VisioPageSize.Letter;
 
 		// This map contains all the shapes from the Excel Data file
 		// it will be used to build up the connections with other shapes if needed
@@ -19,7 +19,6 @@ namespace OmnicellBlueprintingTool.Models
 		public List<string> visioStencilFilePaths { get; set; }
 
 		public int MaxVisioPages { get; set; } = 1;     // default is 1 page visio document
-
 		public List<Device> Devices { get; set; }
 
 		public void Reset()
