@@ -135,6 +135,7 @@ namespace OmnicellBlueprintingTool.Visio
 				MessageBox.Show(string.Format("Exception::setupVisioDiagram - {0}\n{1}", sErr, ex1));
 				return null;
 			}
+			string sStencil = string.Empty;
 			try
 			{
 				// this gives a count of all the stencils on the status bar
@@ -151,6 +152,7 @@ namespace OmnicellBlueprintingTool.Visio
 						var vPage = vDocument.Application.ActivePage;
 
 						// Load the stencil we want
+						sStencil = stencil.ToString();
 						Visio1.Document nStencil = vDocuments.OpenEx(stencil, (short)Visio1.VisOpenSaveArgs.visOpenDocked);
 						stencils.Add(nStencil);
 
@@ -166,7 +168,7 @@ namespace OmnicellBlueprintingTool.Visio
 			}
 			catch (Exception ex2)
 			{
-				sErr = "Error with the stencil file.  Possible issue is the stencil file name changed\nDoes not match what the Template file is using";
+				sErr = String.Format("Error load Stencil file:({0})\nMost likely the wrong stencil file name or path location\n", sStencil);
 				MessageBox.Show(string.Format("Exception::setupVisioDiagram - {0}\n{1}", sErr, ex2));
 				return null;
 			}
@@ -361,6 +363,10 @@ namespace OmnicellBlueprintingTool.Visio
 					break;
 				case "LIGHT ORANGE":
 					rgb = VisioVariables.COLOR_ORANGE_SERVER;
+					break;
+
+				case "WHITE":
+					rgb = VisioVariables.COLOR_WHITE;
 					break;
 				default:
 					// no fill
