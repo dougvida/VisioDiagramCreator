@@ -1,8 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using OmnicellBlueprintingTool.Visio;
 using Excel = Microsoft.Office.Interop.Excel;
+
 
 ///
 /// helper URL http://csharp.net-informations.com/excel/csharp-format-excel.htm
@@ -17,47 +19,8 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 		private Excel.Worksheet _xlWorksheet = null;
 		//Excel.Sheets _worksheets = null;		// _xlWorkbook.Worksheets; 
 
-		object misValue = System.Reflection.Missing.Value;
+		//object misValue = System.Reflection.Missing.Value;
 
-		Dictionary<int, string> excelHeaderNames = new Dictionary<int, string>{
-
-			// Excel data file header.  Must be in this sequence
-			{ 0, "Visio Page"},		      // Page indicator to place this shape
-			{ 1, "Shape Type"},           // key
-			{ 2, "Stencil Key"},          // device unique Key used for connecting visio shapes
-			{ 3, "Stencil Image"},        // device visio image name
-			{ 4, "Stencil Label"},        // device label
-			{ 5, "Stencil Font Size"},		// default is what the stencil font size is   (use 12:B for 12 pt. Bold or 12 for 12 pt)
-			{ 6, "Mach_name"},				// device machine Name
-			{ 7, "Mach_id"},					// device machine Id
-			{ 8, "Site_id"},					// device site Id
-			{ 9, "Site_name"},				// deivce site name
-			{ 10, "Site_address"},			// device site address
-			{ 11, "Omnis_name"},				// device name
-			{ 12, "Omnis_id"},				// device Id
-			{ 13, "SiteIdOmniId"},			// site_id+omni_id
-			{ 14, "IP"},						// device IP address
-			{ 15, "Ports"},					// device Ports
-			{ 16, "DevicesCount"},			// number of Devices for this type (part of a group)
-
-			{ 17, "PosX"},						// Shape position X
-			{ 18, "PosY"},						// shape position Y
-			{ 19, "Width"},					// shape width
-			{ 20, "Height"},					// shape height
-			{ 21, "Fill Color"},          // color to fill stincel
-
-			{ 22, "Connect From"},        // used to link this visio shape to another visio shape
-			{ 23, "From Line Label"},      // Arrow Text
-			{ 24, "From Line Pattern"},    // Line pattern solid = 1, 2 = dashed, 3=Dotted, 4=Dash_Dot
-			{ 25, "From Arrow Type"},      // Can contain one of these [None, Start, End, Both]
-			{ 26, "From Line Color"},      // Arrow Color
-
-			{ 27, "Connect To"},          // used to link this visio shape to another visio shape
-			{ 28, "To Line Label"},        // Arrow Text
-			{ 29, "To Line Pattern"},      // Line pattern solid = 1
-			{ 30, "To Arrow Type"},        // Can contain one of these [None, Start, End, Both]
-			{ 31, "To Line Color"}			// Arrow Color
-		};
 
 		public CreateExcelDataFile()
 		{
@@ -76,8 +39,11 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 
 			if (_xlWorksheet != null)
 			{
-				// write data to the excel file
-
+				if (writeExcelDataSheet(_xlWorksheet, shapesMap))
+				{
+					closeExcel();
+					return true;
+				}
 
 				// save and close the excel file
 				saveFile(namePath);
@@ -100,25 +66,28 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 			}
 
 			// open new excel file
-			_xlWorkbook = _xlApp.Workbooks.Add(misValue);
-			_xlWorksheet = (Excel.Worksheet)_xlWorkbook.Worksheets.get_Item(1);
+			_xlWorkbook = _xlApp.Workbooks.Add(Type.Missing);
+			// _xlWorksheet = (Excel.Worksheet)_xlWorkbook.Worksheets.get_Item(1);
+			_xlWorksheet = (Excel.Worksheet)_xlWorkbook.ActiveSheet; 
 
 			// open existing excel file
 			//_xlWorkbook = _xlApp.Workbooks.Open(fileNamePath);
 
 			return false;
 		}
+
 		private Excel.Workbook createNewWorkbook(string sWorkbookName)
 		{
 			return _xlApp.Workbooks.Add(sWorkbookName);
 		}
+
 		private bool saveFile(string fileNamePath)
 		{
 			if (_xlWorkbook != null)
 			{
 				//_xlWorksheet.SaveAs("your-file-name.xls");
-				_xlWorkbook.SaveAs(fileNamePath, Excel.XlFileFormat.xlWorkbookNormal, misValue, misValue, misValue, misValue,
-															Excel.XlSaveAsAccessMode.xlExclusive, misValue, misValue, misValue, misValue, misValue);
+				_xlWorkbook.SaveAs(fileNamePath, Excel.XlFileFormat.xlWorkbookNormal, Type.Missing, Type.Missing, Type.Missing, Type.Missing,
+										Excel.XlSaveAsAccessMode.xlExclusive, Type.Missing, Type.Missing, Type.Missing, Type.Missing, Type.Missing);
 			}
 			closeExcel();
 
@@ -129,7 +98,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 		{
 			if (_xlWorkbook != null)
 			{
-				_xlWorkbook.Close(true, misValue, misValue);
+				_xlWorkbook.Close(true, Type.Missing, Type.Missing);
 			}
 			if (_xlApp != null)
 			{
@@ -139,6 +108,10 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 			Marshal.ReleaseComObject(_xlWorksheet);
 			Marshal.ReleaseComObject(_xlWorkbook);
 			Marshal.ReleaseComObject(_xlApp);
+
+			_xlWorksheet = null;
+			_xlWorkbook = null;
+			_xlApp = null;
 		}
 
 		private void addNexWorksheet(string sheetName)
@@ -158,6 +131,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 
 			selectworkSheet(nIdx);
 		}
+
 		private void selectworkSheet(int nIdx)
 		{
 			// check to ensure the nIdx value is withing range
@@ -173,9 +147,79 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 		/// Write to the VisioData tab (index = 1)
 		/// </summary>
 		/// <returns></returns>
-		private bool writeVisioDataSheet()
+		private bool writeExcelDataSheet(Excel.Worksheet workSheet, Dictionary<int, ShapeInformation> shapesMap)
 		{
+			//Create COM Objects. Create a COM object for everything that is referenced
+			//Excel.Application xlApp = new Excel.Application();
+			//Excel.Workbook xlWorkbook = xlApp.Workbooks.Open(file, 0, true, 5, "", "", true, Microsoft.Office.Interop.Excel.XlPlatform.xlWindows, "\t", false, false, 0, true, 1, 0);
+			//Excel._Worksheet xlWorksheet = (Excel.Worksheet)xlWorkbook.Worksheets.get_Item(1);
 
+			//Excel.Range xlRange = xlWorksheet.UsedRange;
+
+			int rowCount = 2; // skip the header
+			//int colCount = Enum.GetNames(typeof(ExcelVariables.CellIndex)).Length;
+
+			//System.Array myArray = (System.Array)xlRange.Cells.Value2;
+			try
+			{
+				// write the header
+				// write data to the excel file
+				if (writeHeader(_xlWorksheet, ExcelVariables.GetExcelHeaderNames()))
+				{
+					return true;	// error
+				}
+
+				foreach (var shape in shapesMap)
+				{
+					// break apart the object and update the excel row based on the column value from the shapesMap
+					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.VisioPage]).Value = shape.Value.VisioPage;
+					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.ShapeType]).Value = "Shape";
+					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.UniqueKey]).Value = shape.Value.UniqueKey;
+					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.StencilImage]).Value = shape.Value.StencilImage;
+					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.StencilLabel]).Value = shape.Value.StencilLabel;
+					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.StencilLabelFontSize]).Value = shape.Value.StencilLabelFontSize;
+
+					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.Mach_name]).Value = string.Empty;
+					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.Mach_id]).Value = string.Empty;
+					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.Site_id]).Value = string.Empty;
+					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.Site_name]).Value = string.Empty;
+					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.Site_address]).Value = string.Empty;
+					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.Omnis_name]).Value = string.Empty;
+					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.Omnis_id]).Value = string.Empty;
+					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.SiteIdOmniId]).Value = string.Empty;
+					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.IP]).Value = string.Empty;
+					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.Ports]).Value = string.Empty;
+					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.DevicesCount]).Value = string.Empty;
+					
+					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.PosX]).Value = shape.Value.Pos_x;
+					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.PosY]).Value = shape.Value.Pos_y;
+					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.Width]).Value = shape.Value.Width;
+					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.Height]).Value = shape.Value.Height;
+					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.FillColor]).Value = shape.Value.FillColor;
+					
+					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.ConnectFrom]).Value = shape.Value.ConnectFrom;
+					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.FromLineLabel]).Value = shape.Value.FromLineLabel;
+
+					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.FromLinePattern]).Value = shape.Value.FromLinePattern;
+					if (shape.Value.FromLinePattern <= 1)
+					{
+						((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.FromLinePattern]).Value = "";
+					}
+					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.FromArrowType]).Value = shape.Value.FromArrowType;
+					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.FromLineColor]).Value = shape.Value.FromLineColor;
+
+					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.ConnectTo]).Value = shape.Value.ConnectTo;
+					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.ToLineLabel]).Value = shape.Value.ToLineLabel;
+					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.ToLinePattern]).Value = shape.Value.ToLinePattern;
+					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.ToArrowType]).Value = shape.Value.ToArrowType;
+					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.ToLineColor]).Value = shape.Value.ToLineColor;
+					rowCount++;
+				}
+			}
+			catch(Exception ex)
+			{
+				MessageBox.Show(string.Format("Exception::writeExcelDataSheet - {0}"), ex.Message);
+			}
 			return false;
 		}
 
@@ -200,13 +244,25 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 			return false;
 		}
 
-		private bool writeHeader(Dictionary<int, string> headerNames)
+		private bool writeHeader(Excel.Worksheet workSheet, Dictionary<int, string> headerNames)
 		{
 			// check to ensure file is open
 			// if not open it.
 			// start at the first row and column
-			// write the header using the excelHeaderNames enum
-
+			// write the header using the ExcelHeaderNames enum
+			string headerName = string.Empty;
+			int row = 1;
+			// header names map starts with 0 index
+			for (int col = 0; col < headerNames.Count; col++)
+			{
+				// we only need to get the first few columns to determine what to do
+				if (!headerNames.TryGetValue(col, out headerName))
+				{
+					MessageBox.Show(string.Format("writeHeader::Error writing header.  column:{0}-Name:{1}", col, headerName));
+					return true;
+				}
+				((Excel.Range)workSheet.Cells[row, col+1]).Value = headerName;
+			}
 			return false;
 		}
 	}

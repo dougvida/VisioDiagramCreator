@@ -7,6 +7,7 @@ using OmnicellBlueprintingTool.ExcelHelpers;
 using OmnicellBlueprintingTool.Extensions;
 using OmnicellBlueprintingTool.Models;
 using OmnicellBlueprintingTool.Visio;
+using Excel = Microsoft.Office.Interop.Excel;
 
 namespace OmnicellBlueprintingTool
 {
@@ -38,7 +39,7 @@ namespace OmnicellBlueprintingTool
 			///////////////////////////////////////////////////////////////////////
 			// this section is for Building the excel data file from a Visio file
 			// use todays date as part of the file name
-			tb_buildExcelFileName.Text = String.Format("ExcelDataFile_{0}.xlxs", DateTime.Now.ToString("MMddyyyy"));
+			tb_buildExcelFileName.Text = String.Format("ExcelDataFile_{0}.xls", DateTime.Now.ToString("MMddyyyy"));
 			tb_buildExcelPath.Text = excelDataPath;
 			//////////////////////////////////////////////////////////////////////
 
@@ -130,6 +131,11 @@ namespace OmnicellBlueprintingTool
 
 							// Lets make the connections 
 							bool bAns = visHlp.ConnectShapes(diagramData);
+
+							// using true will auto size the document.
+							// sometimes this is not needed/wanted
+							// can use AutoSize:false "Page Setup" in excel data file
+							visHlp.SetAutoSizeDiagram(diagramData.AutoSizeVisioPages);
 						}
 					}
 				}
@@ -144,30 +150,32 @@ namespace OmnicellBlueprintingTool
 					// buid data file from existing Visio file
 					ConsoleOut.writeLine("build excel data file from a Visio file");
 					Dictionary<int, ShapeInformation> shapesMap = new ProcessVisioDiagramShapes().GetAllShapesProperties(tb_buildVisioFilePath.Text.Trim(), VisioVariables.ShowDiagram.Show);
-
-					foreach (var allShp in shapesMap)
+					if (shapesMap == null)
 					{
-						int nKey = allShp.Key;
-						ShapeInformation shpInf = allShp.Value;
-						ConsoleOut.writeLine(string.Format("MainForm - ID:{0}; UniqueKey:{1}; Image:{2}, ConnectToID:{3}; ConnectTo:{4}; ToLabel:{5}; ConnectFromID:{6}; ConnectFrom:{7}; FromLabel:{8}", shpInf.ID, shpInf.UniqueKey, shpInf.StencilImage, shpInf.ConnectToID, shpInf.ConnectTo, shpInf.ToLineLabel, shpInf.ConnectFromID, shpInf.ConnectFrom, shpInf.FromLineLabel));
+						MessageBox.Show("No shapes found on the Visio Diagram");
 					}
-					if (shapesMap != null)
+					else
 					{
+						foreach (var allShp in shapesMap)
+						{
+							int nKey = allShp.Key;
+							ShapeInformation shpInf = allShp.Value;
+							ConsoleOut.writeLine(string.Format("MainForm - ID:{0}; UniqueKey:{1}; Image:{2}, ConnectToID:{3}; ConnectTo:{4}; ToLabel:{5}; ConnectFromID:{6}; ConnectFrom:{7}; FromLabel:{8}", shpInf.ID, shpInf.UniqueKey, shpInf.StencilImage, shpInf.ConnectToID, shpInf.ConnectTo, shpInf.ToLineLabel, shpInf.ConnectFromID, shpInf.ConnectFrom, shpInf.FromLineLabel));
+						}
 						CreateExcelDataFile createExcelDataFile = new CreateExcelDataFile();
 						string sPath = string.Format(@"{0}{1}", tb_buildExcelPath.Text.Trim(), tb_buildExcelFileName.Text.Trim());
-						if (createExcelDataFile.PopulateExcelDataFile(shapesMap, sPath))
+						if (createExcelDataFile.PopulateExcelDataFile(shapesMap, sPath) )
 						{
-							MessageBox.Show(String.Format("Error::MainForm - Creating excel data file:{0}", sPath));
+							MessageBox.Show(String.Format("Error::MainForm - Failed to create excel data file:{0}", sPath));
 						}
 						else
 						{
-							MessageBox.Show(string.Format("the new excel data file has been created:{0}", sPath));
+							MessageBox.Show(string.Format("MainForm::Excil data file has been created: {0}", sPath));
 						}
 					}
 				}
 				// Set cursor as default arrow
 				Cursor.Current = Cursors.Default;
-
 				if (diagramData != null)
 				{
 					diagramData.Reset();
@@ -188,42 +196,32 @@ namespace OmnicellBlueprintingTool
 				Cursor.Current = Cursors.Default;
 			}
 		}
-
 		private void rb_buildFromDataFile_CheckedChanged(object sender, EventArgs e)
 		{
 			if (rb_buildFromExcelFile.Checked)
 			{
 				_bBuildVisioFromExcelDataFile = true;
 				tb_excelDataFile.Enabled = true;
-
 				rb_buildExcelFileFromVisio.Checked = false;
 				tb_buildExcelFileName.Enabled = false;
-
 				btn_readExcelfile.Enabled = true;
-
 				btn_SetExcelPath.Enabled = false;
 				btn_VisioFileToRead.Enabled = false;
 			}
 		}
-
 		private void rb_buildDataFileFromVisio_CheckedChanged(object sender, EventArgs e)
 		{
 			if (rb_buildExcelFileFromVisio.Checked)
 			{
 				_bBuildVisioFromExcelDataFile = false;
-
 				tb_buildExcelFileName.Enabled = true;
-
 				tb_excelDataFile.Enabled = false;
 				rb_buildFromExcelFile.Checked = false;
-
 				btn_SetExcelPath.Enabled = true;
 				btn_VisioFileToRead.Enabled = true;
-
 				btn_readExcelfile.Enabled = false;
 			}
 		}
-
 		private void tb_buildExcelFileName_TextChanged(object sender, EventArgs e)
 		{
 			// check if a valid file name
@@ -292,7 +290,7 @@ namespace OmnicellBlueprintingTool
 		private void btn_readExcelfile_Click(object sender, EventArgs e)
 		{
 			string filePath = string.Empty;
-			filePath = FileExtension.getFilePath(scriptDataPath, "Excel(*.xls;*.xlsm)|*.xlsx;*.xlsm;", "Select the Excel data file to build a Visio diagram");
+			filePath = FileExtension.getFilePath(scriptDataPath, "Excel(*.xls;*.xlsx;*.xlsm)|*.xls;*.xlsx;*.xlsm;", "Select the Excel data file to build a Visio diagram");
 			if (string.IsNullOrEmpty(filePath))
 			{
 				// Cancel was pressed.  filePath will be empty

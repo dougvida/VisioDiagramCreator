@@ -7,6 +7,7 @@ namespace OmnicellBlueprintingTool.Models
 	{
 		public VisioVariables.VisioPageOrientation VisioPageOrientation { get; set; } = VisioVariables.VisioPageOrientation.Portrait;
 		public VisioVariables.VisioPageSize VisioPageSize { get; set; } = VisioVariables.VisioPageSize.Letter;
+		public bool AutoSizeVisioPages { get; set; } = false;	// don't autosize the Visio pages
 
 		// This map contains all the shapes from the Excel Data file
 		// it will be used to build up the connections with other shapes if needed
@@ -24,6 +25,7 @@ namespace OmnicellBlueprintingTool.Models
 		public void Reset()
 		{
 			MaxVisioPages = 1;
+			AutoSizeVisioPages = false;
 
 			if (AllShapesMap != null)
 			{

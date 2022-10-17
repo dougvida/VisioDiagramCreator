@@ -6,50 +6,13 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using Excel = Microsoft.Office.Interop.Excel;       //microsoft Excel 14 object in references-> COM tab
-
+using OmnicellBlueprintingTool.ExcelHelpers;
+using static OmnicellBlueprintingTool.Visio.VisioVariables;
 
 namespace OmnicellBlueprintingTool.ExcelHelpers
 {
 	public class ProcessExcelDataFile
 	{
-		private enum _cellIndex
-		{
-			// NOTE ****
-			// the order of this enum must match the column order in the Excel file
-			VisioPage = 1,       // Page indicator to place this shape
-			ShapeType,           // key
-			StencilKey,          // device unique Key used for connecting visio shapes
-			StencilImage,        // device visio image name
-			StencilLabel,        // device label
-			StencilFontSize,     // default is what the stencil font size is   (use 12:B for 12 pt. Bold or 12 for 12 pt)
-			Mach_name,           // device machine Name
-			Mach_id,             // device machine Id
-			Site_id,             // device site Id
-			Site_name,           // deivce site name
-			Site_address,        // device site address
-			Omnis_name,          // device name
-			Omnis_id,            // device Id
-			SiteIdOmniId,        // site_id+omni_id
-			IP,                  // device IP address
-			Ports,               // device Ports
-			DevicesCount,        // number of Devices for this type (part of a group)
-
-			PosX,                // Shape position X
-			PosY,                // shape position Y
-			Width,               // shape width
-			Height,              // shape height
-			FillColor,           // color to fill stincel
-			ConnectFrom,         // used to link this visio shape to another visio shape
-			FromLineLabel,       // Arrow Text
-			FromLinePattern,     // Line pattern solid = 1
-			FromArrowType,       // Can contain one of these [None, Start, End, Both]
-			FromLineColor,       // Arrow Color
-			ConnectTo,           // used to link this visio shape to another visio shape
-			ToLineLabel,         // Arrow Text
-			ToLinePattern,       // Line pattern default (solid);  Solid=1, Dash=2, Dotted=3, Dash_Dot=4
-			ToArrowType,         // Can contain one of these [None, Start, End, Both]
-			ToLineColor,         // Arrow Color
-		}
 
 		/// <summary>
 		/// parseExcelFile
@@ -94,7 +57,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				for (int row = 2; row <= xlRange.Rows.Count; row++)
 				{
 					// we only need to get the first few columns to determine what to do
-					var data = myArray.GetValue(row, (int)_cellIndex.VisioPage);
+					var data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.VisioPage);
 					if (data == null) // value is null skip this column
 					{
 						continue;   // should not happen
@@ -108,13 +71,13 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 						diagData.MaxVisioPages = Convert.ToInt32(data);
 					}
 
-					data = myArray.GetValue(row, (int)_cellIndex.ShapeType);
+					data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.ShapeType);
 					if (data != null)
 					{
 						switch ((string)data.ToString().Trim().ToUpper())
 						{
 							case "PAGE SETUP":           // Visio Page setup/Size
-								data = myArray.GetValue(row, (int)_cellIndex.StencilKey);
+								data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.UniqueKey);
 								if (data != null)
 								{
 									// need to split up the string  orientation:size
@@ -122,28 +85,53 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 									if (data != null)
 									{
 										string[] saTmp = data.ToString().Split(':');
-										if (saTmp.Length <= 0)
+										switch (saTmp[0].ToUpper())
 										{
-											diagData.VisioPageOrientation = VisioVariables.VisioPageOrientation.Portrait;
-											diagData.VisioPageSize = VisioVariables.VisioPageSize.Letter;
-										}
-										else
-										{
-											if (!string.IsNullOrEmpty(saTmp[0]))
-											{
-												diagData.VisioPageOrientation = VisioVariables.GetVisioPageOrientation(saTmp[0].Trim());
-											}
-											if (!string.IsNullOrEmpty(saTmp[1]))
-											{
-												diagData.VisioPageSize = VisioVariables.GetVisioPageSize(saTmp[1].Trim());
-											}
+											case "AUTOSIZE":
+												diagData.AutoSizeVisioPages = false;
+												if (!string.IsNullOrEmpty(saTmp[1]))
+												{
+													// the string must be true anything else is default false
+													if (saTmp[1].ToUpper().Equals("TRUE"))
+													{
+														// user wants to Autosize the pages
+														diagData.AutoSizeVisioPages = true;
+													}
+												}
+												break;
+
+											case "PORTRAIT":
+												diagData.VisioPageOrientation = VisioVariables.VisioPageOrientation.Portrait;
+												diagData.VisioPageSize = VisioVariables.VisioPageSize.Letter;
+												if (!string.IsNullOrEmpty(saTmp[1]))
+												{
+													// change the page size if needed
+													diagData.VisioPageSize = VisioVariables.GetVisioPageSize(saTmp[1].Trim());
+												}
+												break;
+
+											case "LANDSCAPE":
+												diagData.VisioPageOrientation = VisioVariables.VisioPageOrientation.Landscape;
+												diagData.VisioPageSize = VisioVariables.VisioPageSize.Letter;
+												if (!string.IsNullOrEmpty(saTmp[1]))
+												{
+													// change the page size if needed
+													diagData.VisioPageSize = VisioVariables.GetVisioPageSize(saTmp[1].Trim());
+												}
+												break;
+											
+											default:
+												diagData.AutoSizeVisioPages = false;
+												diagData.VisioPageOrientation = VisioVariables.VisioPageOrientation.Portrait;
+												diagData.VisioPageSize = VisioVariables.VisioPageSize.Letter;
+												break;
 										}
 									}
 								}
 								break;
 
 							case "TEMPLATE":           // Open a template.  This may be used with existing stencils already in the document
-								data = myArray.GetValue(row, (int)_cellIndex.StencilKey);
+								data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.UniqueKey);
 								if (data != null)
 								{
 									diagData.visioTemplateFilePath = (string)data.ToString().Trim();
@@ -155,7 +143,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 								break;
 
 							case "STENCIL":            // stencils to add
-								data = myArray.GetValue(row, (int)_cellIndex.StencilKey);
+								data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.UniqueKey);
 								string stencilFile = data.ToString();// but we only want the first part of the key
 								if (!string.IsNullOrEmpty(stencilFile))
 								{
@@ -178,7 +166,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 								return null;
 						}
 					}
-					//ConsoleOut.writeLine(string.Format("parseExcelFile - ShapeType:{0}, Row{1}", cells[(int)_cellIndex.StencilImage].ToString().Trim(), row));
+					//ConsoleOut.writeLine(string.Format("parseExcelFile - ShapeType:{0}, Row{1}", cells[(int)CellIndex.StencilImage].ToString().Trim(), row));
 				}
 			}
 			catch (Exception ex)
@@ -223,31 +211,37 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 			ShapeInformation visioInfo = new ShapeInformation();
 			try
 			{
-				var data = myArray.GetValue(row, (int)_cellIndex.VisioPage);
+				var data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.VisioPage);
 				if (data != null)
 				{
 					visioInfo.VisioPage = Convert.ToInt32(data);
 				}
 
-				data = myArray.GetValue(row, (int)_cellIndex.StencilKey);
+				data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.ShapeType);
+				if (data != null)
+				{
+					visioInfo.ShapeType = data.ToString().Trim();
+				}
+
+				data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.UniqueKey);
 				if (data != null)
 				{
 					visioInfo.UniqueKey = data.ToString().Trim();   // unique key for this shape
 				}
 
-				data = myArray.GetValue(row, (int)_cellIndex.StencilImage);
+				data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.StencilImage);
 				if (data != null)
 				{
 					visioInfo.StencilImage = data.ToString().Trim(); // must match exactly the name in the visio stencil
 				}
 
-				data = myArray.GetValue(row, (int)_cellIndex.StencilLabel);
+				data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.StencilLabel);
 				if (data != null)
 				{
 					visioInfo.StencilLabel = data.ToString().Trim(); // text to add to the stencil image
 				}
 
-				data = myArray.GetValue(row, (int)_cellIndex.StencilFontSize);
+				data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.StencilLabelFontSize);
 				if (data != null)
 				{
 					visioInfo.StencilLabelFontSize = data.ToString().Trim(); // stencil fontsize to use.  If blank use stencil text size
@@ -280,105 +274,105 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 					}
 				}
 
-				data = myArray.GetValue(row, (int)_cellIndex.Mach_name);
+				data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.Mach_name);
 				if (data != null)
 				{
 					device.MachineName = data.ToString().Trim();
 				}
 
-				data = myArray.GetValue(row, (int)_cellIndex.Mach_id);
+				data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.Mach_id);
 				if (data != null)
 				{
 					device.MachineId = data.ToString().Trim();
 				}
 
-				data = myArray.GetValue(row, (int)_cellIndex.Site_id);
+				data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.Site_id);
 				if (data != null)
 				{
 					device.SiteId = data.ToString().Trim();
 				}
 
-				data = myArray.GetValue(row, (int)_cellIndex.Site_name);
+				data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.Site_name);
 				if (data != null)
 				{
 					device.SiteName = data.ToString().Trim();
 				}
 
-				data = myArray.GetValue(row, (int)_cellIndex.Site_address);
+				data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.Site_address);
 				if (data != null)
 				{
 					device.SiteAddress = data.ToString().Trim();
 				}
 
-				data = myArray.GetValue(row, (int)_cellIndex.Omnis_name);
+				data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.Omnis_name);
 				if (data != null)
 				{
 					device.OmniName = data.ToString().Trim();
 				}
 
-				data = myArray.GetValue(row, (int)_cellIndex.Omnis_id);
+				data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.Omnis_id);
 				if (data != null)
 				{
 					device.OmniId = data.ToString().Trim();
 				}
 
-				data = myArray.GetValue(row, (int)_cellIndex.SiteIdOmniId);
+				data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.SiteIdOmniId);
 				if (data != null)
 				{
 					device.SiteId_OmniId = data.ToString().Trim();
 				}
 
 				// shape IP address value
-				data = myArray.GetValue(row, (int)_cellIndex.IP);
+				data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.IP);
 				if (data != null)
 				{
 					device.OmniIP = data.ToString().Trim();
 				}
 
 				// shape Port value
-				data = myArray.GetValue(row, (int)_cellIndex.Ports);
+				data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.Ports);
 				if (data != null)
 				{
 					device.OmniPorts = data.ToString().Trim();
 				}
 
 				// shape position X
-				data = myArray.GetValue(row, (int)_cellIndex.PosX);
+				data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.PosX);
 				if (data != null)
 				{
 					visioInfo.Pos_x = Convert.ToDouble(data);
 				}
 
 				// shape position Y
-				data = myArray.GetValue(row, (int)_cellIndex.PosY);
+				data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.PosY);
 				if (data != null)
 				{
 					visioInfo.Pos_y = Convert.ToDouble(data);
 				}
 
 				// shape width
-				data = myArray.GetValue(row, (int)_cellIndex.Width);
+				data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.Width);
 				if (data != null)
 				{
 					visioInfo.Width = Convert.ToDouble(data);
 				}
 
 				// shape height
-				data = myArray.GetValue(row, (int)_cellIndex.Height);
+				data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.Height);
 				if (data != null)
 				{
 					visioInfo.Height = Convert.ToDouble(data);
 				}
 
 				// shape label
-				data = myArray.GetValue(row, (int)_cellIndex.DevicesCount);
+				data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.DevicesCount);
 				if (data != null)
 				{
 					visioInfo.StencilLabel += " / " + data.ToString().Trim();
 				}
 
 				// shape fill color
-				data = myArray.GetValue(row, (int)_cellIndex.FillColor);
+				data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.FillColor);
 				if (data != null)
 				{
 					// should be a string like
@@ -386,14 +380,14 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				}
 
 				// connector from shape
-				data = myArray.GetValue(row, (int)_cellIndex.ConnectFrom);
+				data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.ConnectFrom);
 				if (data != null)
 				{
 					visioInfo.ConnectFrom = data.ToString().Trim();
 				}
 
 				// connector label
-				data = myArray.GetValue(row, (int)_cellIndex.FromLineLabel);
+				data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.FromLineLabel);
 				if (data != null)
 				{
 					visioInfo.FromLineLabel = data.ToString().Trim();
@@ -401,7 +395,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 
 				// connector Line pattern
 				string sTmp = string.Empty;
-				data = myArray.GetValue(row, (int)_cellIndex.FromLinePattern);
+				data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.FromLinePattern);
 				if (data != null)
 				{
 					sTmp = data.ToString().Trim().ToUpper();
@@ -429,7 +423,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 
 				// connector Arrow type
 				sTmp = string.Empty;
-				data = myArray.GetValue(row, (int)_cellIndex.FromArrowType);
+				data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.FromArrowType);
 				if (data != null)
 				{
 					sTmp = data.ToString().Trim().ToUpper();
@@ -451,7 +445,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				}
 
 				// connector line color
-				data = myArray.GetValue(row, (int)_cellIndex.FromLineColor);
+				data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.FromLineColor);
 				if (data != null)
 				{
 					visioInfo.FromLineColor = data.ToString().Trim();
@@ -466,7 +460,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				//
 
 				// connect to shape
-				data = myArray.GetValue(row, (int)_cellIndex.ConnectTo);
+				data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.ConnectTo);
 				if (data != null)
 				{
 					if (!string.IsNullOrEmpty(data.ToString().Trim()))    // unique key for the To shape identifier - will match another shape object field 2 or empty for no connection
@@ -476,7 +470,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				}
 
 				// connector label
-				data = myArray.GetValue(row, (int)_cellIndex.ToLineLabel);
+				data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.ToLineLabel);
 				if (data != null)
 				{
 					visioInfo.ToLineLabel = data.ToString().Trim();
@@ -484,7 +478,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 
 				// connector line pattern
 				sTmp = string.Empty;
-				data = myArray.GetValue(row, (int)_cellIndex.ToLinePattern);
+				data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.ToLinePattern);
 				if (data != null)
 				{
 					sTmp = data.ToString().Trim().ToUpper();
@@ -512,7 +506,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 
 				// connector Arrow type
 				sTmp = string.Empty;
-				data = myArray.GetValue(row, (int)_cellIndex.ToArrowType);
+				data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.ToArrowType);
 				if (data != null)
 				{
 					sTmp = data.ToString().Trim().ToUpper();
@@ -534,7 +528,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				}
 
 				// connector line color
-				data = myArray.GetValue(row, (int)_cellIndex.ToLineColor);
+				data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.ToLineColor);
 				if (data != null)
 				{
 					visioInfo.ToLineColor = data.ToString().Trim();

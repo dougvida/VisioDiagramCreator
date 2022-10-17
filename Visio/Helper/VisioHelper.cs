@@ -23,6 +23,25 @@ namespace OmnicellBlueprintingTool.Visio
 		}
 
 		/// <summary>
+		/// SetAutoSizeDiagram
+		/// set the AutoSize parameter for each page in the Document
+		/// </summary>
+		/// <param name="bMode"><option>true - Autosize diagram</option><option>false - Dont autosize diagram (default)</option></param>
+		public void SetAutoSizeDiagram(bool bMode = false)
+		{
+			if (bMode)
+			{
+				Visio1.Pages pagesObj = appVisio.ActiveDocument.Pages;
+				foreach (Visio1.Page page in pagesObj)
+				{
+					// set the AutoSize and AutoSizeDrawing for each page in the Document
+					page.AutoSize = true;
+					page.AutoSizeDrawing();
+				}
+			}
+		}
+
+		/// <summary>
 		/// SetupPage
 		/// Set the Visio diagram page Orientation and page size
 		/// </summary>
@@ -179,7 +198,7 @@ namespace OmnicellBlueprintingTool.Visio
 			// The new document will have one page, get the a reference to it.
 			Visio1.Page page1 = vDocument.Pages[1];
 			page1.Name = "Page-1";
-			page1.AutoSize = false;
+			page1.AutoSize = true;
 			//page1.AutoSizeDrawing();
 
 			//Assuming 'No theme' is set for the page, no arrow will be shown so change theme to see connector arrow
@@ -202,7 +221,7 @@ namespace OmnicellBlueprintingTool.Visio
 				Visio1.Page page = vDocument.Pages.Add();
 				// Name the pages. This is what is shown in the page tabs.
 				page.Name = "Page-" + (i + 2);
-				page.AutoSize = true;
+				page.AutoSize = false;
 				// this.vPage.AutoSizeDrawing(); // this can make the page taller
 
 				//Assuming 'No theme' is set for the page, no arrow will be shown so change theme to see connector arrow
@@ -298,34 +317,17 @@ namespace OmnicellBlueprintingTool.Visio
 			// draw the shape on the document
 			shpObj = this.appVisio.ActivePage.Drop(stnObj, device.ShapeInfo.Pos_x, device.ShapeInfo.Pos_y);
 			shpObj.NameU = device.ShapeInfo.UniqueKey;
-			if ("NetworkPipe".Equals(device.ShapeInfo.StencilImage))
+
+			// normal stencils are normal (east-width and south-height)
+			if (device.ShapeInfo.Width > 0.0)
 			{
-				// we need to resize the stencil NetworkPipe (remember this is rotated 90deg
-				// so we need to go East for Height and South for Width
-				if (device.ShapeInfo.Width > 0.0)
-				{
-					// we need to make wider (increase south)
-					shpObj.Resize(VisResizeDirection.visResizeDirS, device.ShapeInfo.Height, VisUnitCodes.visDrawingUnits);
-				}
-				if (device.ShapeInfo.Height > 0.0)
-				{
-					// we need to make taller (increase east)
-					shpObj.Resize(VisResizeDirection.visResizeDirE, device.ShapeInfo.Width, VisUnitCodes.visDrawingUnits);
-				}
+				// we need to make wider (increase east)
+				shpObj.Resize(VisResizeDirection.visResizeDirE, device.ShapeInfo.Width, VisUnitCodes.visDrawingUnits);
 			}
-			else
+			if (device.ShapeInfo.Height > 0.0)
 			{
-				// normal stencils are normal (east-width and south-height)
-				if (device.ShapeInfo.Width > 0.0)
-				{
-					// we need to make wider (increase east)
-					shpObj.Resize(VisResizeDirection.visResizeDirE, device.ShapeInfo.Width, VisUnitCodes.visDrawingUnits);
-				}
-				if (device.ShapeInfo.Height > 0.0)
-				{
-					// we need to make taller (increase south)
-					shpObj.Resize(VisResizeDirection.visResizeDirS, device.ShapeInfo.Height, VisUnitCodes.visDrawingUnits);
-				}
+				// we need to make taller (increase south)
+				shpObj.Resize(VisResizeDirection.visResizeDirS, device.ShapeInfo.Height, VisUnitCodes.visDrawingUnits);
 			}
 
 			//var linePatternCell = shpConn.get_CellsU("LinePattern");
