@@ -107,7 +107,13 @@
       <DesignTime>True</DesignTime>
     </Compile>
     <None Include="Data\ScriptData\Advocate_ArchitectData.xlsx" />
+    <None Include="Data\ScriptData\Advocate_ArchitectDataBlueprinting.xlsx" />
     <None Include="Data\ScriptData\ArchitectShapesData.xlsx" />
+    <None Include="Data\ScriptData\CHS_ArchitechDiagram_10172022.xlsx" />
+    <None Include="Data\ScriptData\MGH_ArchitectBlueprint.xlsx" />
+    <None Include="Data\ScriptData\MGH_InterfaceFlowBlueprinting.xlsx" />
+    <None Include="Data\ScriptData\OC_BlueprintingDataFile_Template.xlsm" />
+    <None Include="Data\ScriptData\OC_BlueprintingDataFile_Template.xlsx" />
     <None Include="Data\Stencils\Advocate_CustomStencils.vssx" />
     <None Include="Data\Stencils\OC_ArchitectStencils.vssx" />
     <None Include="Data\Templates\OC_ArchitectDiagramTemplate.vstx" />
