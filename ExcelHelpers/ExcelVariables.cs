@@ -13,6 +13,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 			UniqueKey,				// device unique Key used for connecting visio shapes
 			StencilImage,			// device visio image name
 			StencilLabel,			// device label
+			StencilLabelPosition,// label position default is top.   Bottom
 			StencilLabelFontSize,// default is what the stencil font size is   (use 12:B for 12 pt. Bold or 12 for 12 pt)
 			
 			Mach_name,           // device machine Name
@@ -53,9 +54,10 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				// Excel data file header.  Must be in this sequence
 				{ 0, "Visio Page"},		      // Page indicator to place this shape
 				{ 1, "Shape Type"},           // key
-				{ 2, "Unique Key"},           // device unique Key used for connecting visio shapes
-				{ 3, "Stencil Image"},        // device visio image name
-				{ 4, "Stencil Label"},        // device label
+				{ 2, "Unique Key"},           // unique Key used for connecting visio shapes
+				{ 3, "Stencil Image"},        // stencil visio image name
+				{ 4, "Stencil Label"},        // stencil label
+				{ 4, "Stencil Label Position"}, // stencil label position
 				{ 5, "Stencil Label Font Size"}, // default is what the stencil font size is   (use 12:B for 12 pt. Bold or 12 for 12 pt)
 
 				{ 6, "Mach_name"},				// device machine Name

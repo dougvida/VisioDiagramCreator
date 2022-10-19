@@ -419,6 +419,7 @@ namespace OmnicellBlueprintingTool.Visio
 					//shpObj.Cells("Char.Size").FormulaU = device.ShapeInfo.StencilLabelFontSize + " pt";
 					//string fontSize = shpObj.get_Cells("Char.Size").Formula;
 				}
+
 				// check if we have an IP that needs to be displayed
 				if (!string.IsNullOrEmpty(device.OmniIP))
 				{
@@ -430,19 +431,54 @@ namespace OmnicellBlueprintingTool.Visio
 				}
 				int textLen = shpObj.Text.Length;
 
+				// check if we need to move the text box to the bottom of the stencil
+				if ( (!string.IsNullOrEmpty(device.ShapeInfo.StencilLabelPosition) || device.ShapeInfo.StencilLabelPosition.Equals(VisioVariables.STINCEL_LABEL_POSITION_BOTTOM)) && textLen > 0)
+				{
+					short exists = shpObj.RowExists[(short)Visio1.VisSectionIndices.visSectionObject,
+											 (short)Visio1.VisRowIndices.visRowTextXForm,
+											 (short)Visio1.VisExistsFlags.visExistsAnywhere];
+					if (exists == 0)
+					{
+						shpObj.AddRow((short)Visio1.VisSectionIndices.visSectionObject, (short)Visio1.VisRowIndices.visRowTextXForm, (short)Visio1.VisRowTags.visTagDefault);
+					}
+
+					//	Set the text transform formulas:
+					shpObj.get_CellsU("TxtHeight").FormulaForceU = "Height*0";
+					shpObj.get_CellsU("TxtPinY").FormulaForceU = "Height*0";
+
+					//	Set the paragraph alignment formula:
+					shpObj.get_CellsU("VerticalAlign").FormulaForceU = "0";
+				}
 
 				// dont resize the text for the Title and Footer stencils
-				//				if (!"Title".Equals(device.ShapeInfo.StencilImage) && !"Footer".Equals(device.ShapeInfo.StencilImage))
-				//				{
-				//					if (textLen > 25)
-				//					{
-				//						double scale = shpObj.get_CellsSRC((short)Visio1.VisSectionIndices.visSectionUser, (short)Visio1.VisRowIndices.visRowUser, (short)Visio1.VisCellIndices.visUserValue).ResultIU;
-				//						scale = 0.5;
-				//						//Then set the font, and the TextMargins(for any that are non - zero) with the following(assuming the normal font size is 12 and the left margin is 4pt.:
-				//						shpObj.get_CellsSRC((short)Visio1.VisSectionIndices.visSectionCharacter, 0, (short)Visio1.VisCellIndices.visCharacterSize).FormulaU = (scale * 12).ToString() + "pt";
-				//						shpObj.get_CellsSRC((short)Visio1.VisSectionIndices.visSectionObject, (short)Visio1.VisRowIndices.visRowText, (short)Visio1.VisCellIndices.visTxtBlkLeftMargin).FormulaU = (scale * 4).ToString() + "pt";
-				//					}
-				//				}
+				if ( device.ShapeInfo.StencilImage.IndexOf("Title") <= 0 && device.ShapeInfo.StencilImage.IndexOf("Footer") <= 0)
+				{
+					int nSize = 0;
+					string[] saTmp = device.ShapeInfo.StencilLabel.Split('\n');
+					foreach( string saTmpStr in saTmp )
+					{
+						if (saTmpStr.Length > nSize)
+						{
+							nSize = saTmpStr.Length;
+						}
+					}
+					//	Set the text transform formulas:
+					//var lHeight = Math.Truncate(shpObj.get_CellsU("TxtHeight").ResultIU * 1000) / 1000;
+					//shpObj.get_CellsU("TxtPinY").FormulaForceU = "Height*0";
+					double lWidth = Math.Truncate(shpObj.get_CellsU("TxtWidth").ResultIU * 1000) / 1000;
+					double fSize = Math.Truncate(shpObj.get_CellsU("Char.Size").ResultIU * 1000) / 1000;
+					double xx = Math.Truncate(((fSize * nSize) - lWidth) * 1000) / 1000;
+					if (xx > lWidth)
+					{
+						//	Set the paragraph alignment formula:
+						// shpObj.get_CellsU("VerticalAlign").FormulaForceU = "0";
+						//scale = shpObj.get_CellsSRC((short)Visio1.VisSectionIndices.visSectionUser, (short)Visio1.VisRowIndices.visRowUser, (short)Visio1.VisCellIndices.visUserValue).ResultIU;
+						double scale = 0.5;
+						// Then set the font, and the TextMargins(for any that are non - zero) with the following(assuming the normal font size is 12 and the left margin is 4pt.:
+						shpObj.get_CellsSRC((short)Visio1.VisSectionIndices.visSectionCharacter, 0, (short)Visio1.VisCellIndices.visCharacterSize).FormulaU = (scale * 12).ToString() + "pt";
+						shpObj.get_CellsSRC((short)Visio1.VisSectionIndices.visSectionObject, (short)Visio1.VisRowIndices.visRowText, (short)Visio1.VisCellIndices.visTxtBlkLeftMargin).FormulaU = (scale * 2).ToString() + "pt";
+					}
+				}
 			}
 			ConsoleOut.writeLine("draw Stencil: " + device.ShapeInfo.StencilImage);
 			return shpObj;
@@ -738,34 +774,39 @@ namespace OmnicellBlueprintingTool.Visio
 
 			return false;
 		}
+
+		/// <summary>
+		/// setShapeTextBottom
+		/// Adjusts the text block of selected shapes so that
+		/// the text is at the bottom of the shape. This matches
+		/// the default text position for inserted images.
+		/// </summary>
+		private void setShapeTextBottom()
+		{
+			short exists = -1;
+			Visio1.Selection sel = this.appVisio.ActiveWindow.Selection;
+			foreach (Visio1.Shape shp in sel)
+			{
+				// '// 'Add' the Text Transfomrm section, if it's not there:
+				exists = shp.RowExists[(short)Visio1.VisSectionIndices.visSectionObject,
+										 (short)Visio1.VisRowIndices.visRowTextXForm,
+										 (short)Visio1.VisExistsFlags.visExistsAnywhere];
+				if (exists == 0)
+				{
+					shp.AddRow((short)Visio1.VisSectionIndices.visSectionObject, (short)Visio1.VisRowIndices.visRowTextXForm, (short)Visio1.VisRowTags.visTagDefault);
+				}
+
+				//	Set the text transform formulas:
+				shp.get_CellsU("TxtHeight").FormulaForceU = "Height*0";
+				shp.get_CellsU("TxtPinY").FormulaForceU = "Height*0";
+
+				//	Set the paragraph alignment formula:
+				shp.get_CellsU("VerticalAlign").FormulaForceU = "0";
+			}
+		}
 	}
 }
 
-//		private void setShapeTextBottom()
-//		{
-//			Visio1.Selection sel = null;
-//			
-//			sel = Visio1.ActiveWindow.Selection;
-//
-//			foreach(Visio1.Shape shp in sel)
-//			{ 
-//				// '// 'Add' the Text Transfomrm section, if it's not there:
-//
-//				if (!shp.RowExists   ((short)Visio1.VisSectionIndices.visSectionObject,
-//										 (short)Visio1.VisRowIndices.visRowTextXForm,
-//										 (short)Visio1.VisExistsFlags.visExistsAnywhere ))
-//				{
-//					shp.AddRow((short)Visio1.VisSectionIndices.visSectionObject, (short)Visio1.VisRowIndices.visRowTextXForm, (short)Visio1.VisRowTags.visTagDefault);
-//				}
-//
-//				//	Set the text transform formulas:
-//				shp.get_CellsU("TxtHeight").FormulaForceU = "Height*0";
-//				shp.get_CellsU("TxtPinY").FormulaForceU = "Height*0";
-//
-//				//	Set the paragraph alignment formula:
-//				shp.get_CellsU("VerticalAlign").FormulaForceU = "0";
-//			}
-//		}
 
 
 // fill a shap with color

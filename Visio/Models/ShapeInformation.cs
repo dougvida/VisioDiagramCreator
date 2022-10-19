@@ -9,8 +9,9 @@ namespace OmnicellBlueprintingTool.Visio
 		public int ID { get; set; } = 0;          // shape ID
 		public string ShapeType { get; set; }     // 
 		public string UniqueKey { get; set; }     // this is used to uniquly identify each shape that has been droped in the document.   used as key for Dictionary
-		public string StencilLabel { get; set; } = String.Empty;  // Text to add to the stencil image
 		public string StencilImage { get; set; } = String.Empty;  // Must be the exact name for the stencil image in the Visio template/document
+		public string StencilLabel { get; set; } = String.Empty;  // Text to add to the stencil image
+		public string StencilLabelPosition { get; set; } = String.Empty;		// default Text box on Top
 		public string StencilLabelFontSize { get; set; } = String.Empty;  // Text size if different than default (I.E.  12:B is 12 pt. Bold else 12 is 12 pt.)
 		public bool isStencilLabelFontBold { get; set; } = false;
 		public string FillColor { get; set; } = String.Empty; // stincel fill color (default is none)	

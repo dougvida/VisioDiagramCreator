@@ -241,6 +241,15 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 					visioInfo.StencilLabel = data.ToString().Trim(); // text to add to the stencil image
 				}
 
+				data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.StencilLabelPosition);
+				if (data != null)
+				{
+					if (data.ToString().Trim().ToUpper().Equals(VisioVariables.STINCEL_LABEL_POSITION_BOTTOM))
+					{
+						visioInfo.StencilLabelPosition = VisioVariables.STINCEL_LABEL_POSITION_BOTTOM; // text to add to the stencil image
+					}
+				}
+
 				data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.StencilLabelFontSize);
 				if (data != null)
 				{

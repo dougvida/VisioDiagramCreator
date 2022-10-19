@@ -65,6 +65,9 @@
 		public const string sLINE_PATTERN_DASHDOT = "DASH_DOT";
 		public const double LINE_PATTERN_DASHDOT = 4;   // _ . _ . _ dash/dot-(t)ed line
 
+		public const string STINCEL_LABEL_POSITION_TOP = "TOP";
+		public const string STINCEL_LABEL_POSITION_BOTTOM = "BOTTOM";
+
 		//public const string CATEGORY_PREFIX = "CAT_";
 		//public const string FORMULA_PREFIX = "FOR_";
 		//public const string LIST_PREFIX = "LIS_";
