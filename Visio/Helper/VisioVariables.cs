@@ -2,6 +2,9 @@
 {
 	public class VisioVariables
 	{
+		public static string DefaultBlueprintingTemplateFile = "OC_BlueprintingTemplate.vstx";
+		public static string DefaultBlueprintingStencilFile = "OC_BlueprintingStencils.vssx";
+
 		//lngRed = RGB(255, 0, 0);
 		//lngBlack = RGB(0, 0, 0);
 		//lngYellow = RGB(255, 255, 0);

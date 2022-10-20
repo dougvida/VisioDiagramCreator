@@ -1,13 +1,12 @@
-﻿using System;
+﻿using OmnicellBlueprintingTool.ExcelHelpers;
+using OmnicellBlueprintingTool.Extensions;
+using OmnicellBlueprintingTool.Models;
+using OmnicellBlueprintingTool.Visio;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
-using OmnicellBlueprintingTool.ExcelHelpers;
-using OmnicellBlueprintingTool.Extensions;
-using OmnicellBlueprintingTool.Models;
-using OmnicellBlueprintingTool.Visio;
-using Excel = Microsoft.Office.Interop.Excel;
 
 namespace OmnicellBlueprintingTool
 {
@@ -24,6 +23,9 @@ namespace OmnicellBlueprintingTool
 #endif
 
 		static string scriptDataPath = baseWorkingDir + @"\data\ScriptData\";
+		private static string visioTemplateFilesPath = baseWorkingDir + @"\data\Templates\";
+		private static string visioStencilFilesPath = baseWorkingDir + @"\data\Stencils\";
+
 		static string excelDataPath = baseWorkingDir + @"\ExcelData\";
 		static string visioFilesPath = baseWorkingDir + @"\VisioFiles\";
 
@@ -39,7 +41,7 @@ namespace OmnicellBlueprintingTool
 			///////////////////////////////////////////////////////////////////////
 			// this section is for Building the excel data file from a Visio file
 			// use todays date as part of the file name
-			tb_buildExcelFileName.Text = String.Format("ExcelDataFile_{0}.xls", DateTime.Now.ToString("MMddyyyy"));
+			tb_buildExcelFileName.Text = string.Empty; // String.Format("ExcelDataFile_{0}.xlsx", DateTime.Now.ToString("MMddyyyy"));
 			tb_buildExcelPath.Text = excelDataPath;
 			//////////////////////////////////////////////////////////////////////
 
@@ -99,6 +101,14 @@ namespace OmnicellBlueprintingTool
 
 			// parse the data file and draw the visio diagram
 			diagramData = new DiagramData();
+
+			diagramData.BaseWorkingDir = baseWorkingDir;
+			diagramData.ScriptDataPath = scriptDataPath;
+			diagramData.VisioTemplateFilePath = visioTemplateFilesPath;
+			diagramData.VisioStencilFilePaths.Add(visioStencilFilesPath);
+			diagramData.ExcelDataPath = excelDataPath;
+			diagramData.VisioFilesPath = visioFilesPath;
+
 			try
 			{
 				if (_bBuildVisioFromExcelDataFile)
@@ -141,6 +151,8 @@ namespace OmnicellBlueprintingTool
 				}
 				else
 				{
+					MessageBox.Show("This process will build an Excel data file from a Visio file.\nIt may take some time to complete.\nWhen complete you may use this data file to build the Visio diagram\n  You may need to modify some of the stencils (PosX,PosY) Values.\n");
+
 					// Set cursor as hourglass
 					Cursor.Current = Cursors.WaitCursor;
 
@@ -164,7 +176,7 @@ namespace OmnicellBlueprintingTool
 						}
 						CreateExcelDataFile createExcelDataFile = new CreateExcelDataFile();
 						string sPath = string.Format(@"{0}{1}", tb_buildExcelPath.Text.Trim(), tb_buildExcelFileName.Text.Trim());
-						if (createExcelDataFile.PopulateExcelDataFile(shapesMap, sPath) )
+						if (createExcelDataFile.PopulateExcelDataFile(diagramData, shapesMap, sPath) )
 						{
 							MessageBox.Show(String.Format("Error::MainForm - Failed to create excel data file:{0}", sPath));
 						}
@@ -284,6 +296,18 @@ namespace OmnicellBlueprintingTool
 				{
 					btn_Submit.Enabled = false;
 				}
+
+				// need to break apart the file remove any date format and append current data
+				string sName = Path.GetFileNameWithoutExtension(filePath);
+				if (sName.Length > 8)
+				{
+					string sTmp = sName.Substring(sName.Length - 8);
+					if (Regex.IsMatch(sTmp, @"^\d+$"))
+					{
+						sName = sName.Substring(0, sName.Length - 8);
+					}
+				}
+				tb_buildExcelFileName.Text = String.Format("{0}_ExcelData_{1}.xlsx", sName, DateTime.Now.ToString("MMddyyyy"));
 			}
 		}
 

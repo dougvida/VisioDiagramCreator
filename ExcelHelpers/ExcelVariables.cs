@@ -1,9 +1,16 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace OmnicellBlueprintingTool.ExcelHelpers
 {
 	public class ExcelVariables
 	{
+
+		public static int GetHeaderCount()
+		{
+			return (Enum.GetNames(typeof(CellIndex)).Length);
+		}
+
 		public enum CellIndex
 		{
 			// NOTE ****
@@ -57,38 +64,38 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				{ 2, "Unique Key"},           // unique Key used for connecting visio shapes
 				{ 3, "Stencil Image"},        // stencil visio image name
 				{ 4, "Stencil Label"},        // stencil label
-				{ 4, "Stencil Label Position"}, // stencil label position
-				{ 5, "Stencil Label Font Size"}, // default is what the stencil font size is   (use 12:B for 12 pt. Bold or 12 for 12 pt)
+				{ 5, "Stencil Label Position"}, // stencil label position
+				{ 6, "Stencil Label Font Size"}, // default is what the stencil font size is   (use 12:B for 12 pt. Bold or 12 for 12 pt)
 
-				{ 6, "Mach_name"},				// device machine Name
-				{ 7, "Mach_id"},					// device machine Id
-				{ 8, "Site_id"},					// device site Id
-				{ 9, "Site_name"},				// deivce site name
-				{ 10, "Site_address"},			// device site address
-				{ 11, "Omnis_name"},				// device name
-				{ 12, "Omnis_id"},				// device Id
-				{ 13, "SiteId_OmniId"},			// site_id+omni_id
-				{ 14, "IP"},						// device IP address
-				{ 15, "Ports"},					// device Ports
-				{ 16, "Devices Count"},			// number of Devices for this type (part of a group)
+				{ 7, "Mach_name"},				// device machine Name
+				{ 8, "Mach_id"},					// device machine Id
+				{ 9, "Site_id"},					// device site Id
+				{ 10, "Site_name"},				// deivce site name
+				{ 11, "Site_address"},			// device site address
+				{ 12, "Omnis_name"},				// device name
+				{ 13, "Omnis_id"},				// device Id
+				{ 14, "SiteId_OmniId"},			// site_id+omni_id
+				{ 15, "IP"},						// device IP address
+				{ 16, "Ports"},					// device Ports
+				{ 17, "Devices Count"},			// number of Devices for this type (part of a group)
 
-				{ 17, "PosX"},						// Shape position X
-				{ 18, "PosY"},						// shape position Y
-				{ 19, "Width"},					// shape width
-				{ 20, "Height"},					// shape height
-				{ 21, "Fill Color"},          // color to fill stincel
+				{ 18, "PosX"},						// Shape position X
+				{ 19, "PosY"},						// shape position Y
+				{ 20, "Width"},					// shape width
+				{ 21, "Height"},					// shape height
+				{ 22, "Fill Color"},          // color to fill stincel
 
-				{ 22, "Connect From"},        // used to link this visio shape to another visio shape
-				{ 23, "From Line Label"},      // Arrow Text
-				{ 24, "From Line Pattern"},    // Line pattern solid = 1, 2 = dashed, 3=Dotted, 4=Dash_Dot
-				{ 25, "From Arrow Type"},      // Can contain one of these [None, Start, End, Both]
-				{ 26, "From Line Color"},      // Arrow Color
+				{ 23, "Connect From"},        // used to link this visio shape to another visio shape
+				{ 24, "From Line Label"},      // Arrow Text
+				{ 25, "From Line Pattern"},    // Line pattern solid = 1, 2 = dashed, 3=Dotted, 4=Dash_Dot
+				{ 26, "From Arrow Type"},      // Can contain one of these [None, Start, End, Both]
+				{ 27, "From Line Color"},      // Arrow Color
 
-				{ 27, "Connect To"},          // used to link this visio shape to another visio shape
-				{ 28, "To Line Label"},        // Arrow Text
-				{ 29, "To Line Pattern"},      // Line pattern solid = 1
-				{ 30, "To Arrow Type"},        // Can contain one of these [None, Start, End, Both]
-				{ 31, "To Line Color"}			// Arrow Color
+				{ 28, "Connect To"},          // used to link this visio shape to another visio shape
+				{ 29, "To Line Label"},        // Arrow Text
+				{ 30, "To Line Pattern"},      // Line pattern solid = 1
+				{ 31, "To Arrow Type"},        // Can contain one of these [None, Start, End, Both]
+				{ 32, "To Line Color"}			// Arrow Color
 			};
 			return excelHeaderNames;
 		}

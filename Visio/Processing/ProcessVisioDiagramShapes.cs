@@ -99,13 +99,19 @@ namespace OmnicellBlueprintingTool.Visio
 					shpInfo.StencilImage = saStr[0].Trim();
 					shpInfo.StencilLabel = shape.Text.Trim();
 
-					if (shpInfo.StencilImage.ToUpper().IndexOf("NETWORKPIPE") >= 0 || shpInfo.StencilImage.ToUpper().IndexOf("ETHERNET") >= 0)
+					if (shpInfo.StencilImage.ToUpper().IndexOf("ETHERNET") >= 0)
 					{
 						// skip this shape
 						ConsoleOut.writeLine(string.Format("Skip this ID:{0}; shapeKey:{1} - Stencil Image:{2}", shape.ID, shpInfo.UniqueKey, shpInfo.StencilImage));
 						
 						// let this go through we are not trying to make connections
 						//continue;
+					}
+
+					if (shape.Style.ToUpper().IndexOf("CONNECTOR") >= 0)
+					{
+						// skip this stencil
+						continue;
 					}
 
 #if FALSE

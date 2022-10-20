@@ -135,12 +135,12 @@ namespace OmnicellBlueprintingTool.Visio
 			this.vDocuments = appVisio.Documents;
 			try
 			{
-				if (!string.IsNullOrEmpty(diagramData.visioTemplateFilePath))
+				if (!string.IsNullOrEmpty(diagramData.VisioTemplateFilePath))
 				{
 					// we need to check if the file is a template file or not
 					// this will open a template file
 					// Create a new document. but you will need to add a master stencil
-					this.vDocument = appVisio.Documents.Add(diagramData.visioTemplateFilePath);
+					this.vDocument = appVisio.Documents.Add(diagramData.VisioTemplateFilePath);
 				}
 				else
 				{
@@ -164,7 +164,7 @@ namespace OmnicellBlueprintingTool.Visio
 				Visio1.Page currentPage = vDocument.Pages[1];
 
 				// lets add stencils to the template if they don't alredy exist using the Excel Data File
-				foreach (var stencil in diagramData.visioStencilFilePaths)
+				foreach (var stencil in diagramData.VisioStencilFilePaths)
 				{
 					if (this.vDocuments != null)  // do we have any stencils attached to this template?
 					{

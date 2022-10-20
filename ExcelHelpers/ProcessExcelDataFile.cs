@@ -37,7 +37,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 
 			List<Device> devices = new List<Device>();
 			Device device = null;
-			diagData.visioStencilFilePaths = new List<string>();
+			diagData.VisioStencilFilePaths = new List<string>();
 
 			Process[] excelProcsOld = Process.GetProcessesByName("EXCEL");       
 			
@@ -134,12 +134,12 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 								data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.UniqueKey);
 								if (data != null)
 								{
-									diagData.visioTemplateFilePath = (string)data.ToString().Trim();
+									diagData.VisioTemplateFilePath = (string)data.ToString().Trim();
 								}
 								break;
 
 							case "BLANK DOCUMENT":     // create a new blank Visio document.  No existing stencils attached.  Not using a Template
-								diagData.visioTemplateFilePath = "";
+								diagData.VisioTemplateFilePath = "";
 								break;
 
 							case "STENCIL":            // stencils to add
@@ -147,7 +147,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 								string stencilFile = data.ToString();// but we only want the first part of the key
 								if (!string.IsNullOrEmpty(stencilFile))
 								{
-									diagData.visioStencilFilePaths.Add(stencilFile);
+									diagData.VisioStencilFilePaths.Add(stencilFile);
 								}
 								break;
 
