@@ -35,6 +35,11 @@ namespace OmnicellBlueprintingTool.Models
 			MaxVisioPages = 1;
 			AutoSizeVisioPages = false;
 
+			visioTemplateFilesPath = string.Empty;
+			visioStencilFilesPath = string.Empty;
+			ExcelDataPath = string.Empty;
+			VisioFilesPath = string.Empty;
+
 			if (AllShapesMap != null)
 			{
 				AllShapesMap.Clear();

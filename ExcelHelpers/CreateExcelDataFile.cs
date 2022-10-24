@@ -12,6 +12,7 @@ using Microsoft.Office.Interop.Excel;
 
 
 
+
 ///
 /// helper URL http://csharp.net-informations.com/excel/csharp-format-excel.htm
 /// 
@@ -37,14 +38,30 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 			_xlApp = new Excel.Application();
 			if (_xlApp == null)
 			{
-				MessageBox.Show("Excel is not properly installed!!");
+				MessageBox.Show("ERROR::CreateExcelDataFile\n\nExcel is not properly installed!!", "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
 				return true;   // error
 			}
 
 			// open new excel file
 			_xlWorkbook = _xlApp.Workbooks.Add(Type.Missing);
-			// _xlWorksheet = (Excel.Worksheet)_xlWorkbook.Worksheets.get_Item(1);
-			_xlWorksheet = (Excel.Worksheet)_xlWorkbook.ActiveSheet;
+
+			addNewWorksheet("VisioData");
+			addNewWorksheet("SystemInfo");
+			addNewWorksheet("Interfaces");
+			addNewWorksheet("Tables");
+
+			// select "VisioData" sheet
+			_xlWorksheet = (Excel.Worksheet)_xlWorkbook.Worksheets.get_Item(1);
+			
+			// lets freeze the top row
+			_xlWorksheet.Activate();
+			_xlWorksheet.Application.ActiveWindow.SplitRow = 1; 
+			_xlWorksheet.Application.ActiveWindow.FreezePanes = true;
+
+			//_xlWorksheet = (Excel.Worksheet)_xlWorkbook.ActiveSheet;
+			//_xlWorksheet.Name = "VisioData";
+
+			deleteWorkSheet("Sheet1");	// this must be called after _xlWorksheet has been initialized
 
 			// open existing excel file
 			//_xlWorkbook = _xlApp.Workbooks.Open(fileNamePath);
@@ -62,7 +79,8 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				// we only need to get the first few columns to determine what to do
 				if (!headerNames.TryGetValue(col, out headerName))
 				{
-					MessageBox.Show(string.Format("writeHeader::Error writing header.  column:{0}-Name:{1}", col, headerName));
+					string sTmp = string.Format("writeHeader::Error writing header.  column:{0}-Name:{1}", col, headerName);
+					MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
 					return -1;
 				}
 				((Excel.Range)workSheet.Cells[row, col + 1]).Value = headerName;
@@ -89,81 +107,96 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 		private int writeConfiguration(Excel.Worksheet workSheet, DiagramData diagramData, int cellIndex, int nRow)
 		{
 			ShapeInformation shpObj = null;
-
-			// Write comment section named "Configuration"
-			shpObj = new ShapeInformation();
-			shpObj.VisioPage = 0;
-			shpObj.ShapeType = "Configuration";
-			shpObj.UniqueKey = String.Empty;
-			shpObj.StencilLabel = String.Empty;
-			if (writeData(workSheet, shpObj, nRow, true))
+			string sTmp = string.Empty;
+			try
 			{
-				MessageBox.Show("CreateExeclDataFile:: writeConfiguration Error.  Failed to write Comment data");
-				return -1;
+				// Write comment section named "Configuration"
+				shpObj = new ShapeInformation();
+				shpObj.VisioPage = 0;
+				shpObj.ShapeType = "Configuration";
+				shpObj.UniqueKey = String.Empty;
+				shpObj.StencilLabel = String.Empty;
+				if (writeData(workSheet, shpObj, nRow, true))
+				{
+					 sTmp = "CreateExeclDataFile::writeConfiguration \n\nFailed to write Comment data";
+					MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+					return -1;
+				}
+
+				// Write Template section
+				shpObj = new ShapeInformation();
+				nRow++;
+				shpObj.VisioPage = 0;
+				shpObj.ShapeType = "Template";
+				shpObj.UniqueKey = string.Format(@"{0}", diagramData.VisioTemplateFilePath + VisioVariables.DefaultBlueprintingTemplateFile);
+				shpObj.StencilLabel = string.Format("Use the Blueprinting Visio Template.  Already contains the {0}", VisioVariables.DefaultBlueprintingTemplateFile);
+				if (writeData(workSheet, shpObj, nRow, true))
+				{
+					sTmp = "CreateExeclDataFile::writeConfiguration Error\n\nFailed to write Template data";
+					MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
+					return -2;
+				}
+
+				// Write the Stencil data
+				shpObj = new ShapeInformation();
+				nRow++;
+				shpObj.VisioPage = 0;
+				shpObj.ShapeType = "Stencil";
+				shpObj.UniqueKey = string.Format(@"{0}", diagramData.VisioStencilFilePaths[0] + VisioVariables.DefaultBlueprintingStencilFile);
+				shpObj.StencilLabel = string.Format("Use the Blueprinting Visio Stencil.  Already contains the Stencil file:{0}", VisioVariables.DefaultBlueprintingStencilFile);
+				if (writeData(workSheet, shpObj, nRow, false))
+				{
+					sTmp = "CreateExeclDataFile::writeConfiguration Error\n\nFailed to write Stincel data";
+					MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
+					return -3;
+				}
+
+				// Write Page setup Section
+				shpObj = new ShapeInformation();
+				nRow++;
+				shpObj.VisioPage = 0;
+				shpObj.ShapeType = "Page Setup";
+				shpObj.UniqueKey = VisioVariables.VisioPageOrientation.Portrait + ":" + VisioVariables.VisioPageSize.Legal;
+				shpObj.StencilLabel = "• Orientation: Landscape or Portrait (default)\r\n• Size: Letter (default), Tabloid, Ledger, Legal, A3, A4";
+				if (writeData(workSheet, shpObj, nRow, true))
+				{
+					sTmp = "CreateExeclDataFile::writeConfiguration Error\n\nFailed to Setup Page data";
+					MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
+					return -4;
+				}
+
+				shpObj = new ShapeInformation();
+				nRow++;
+				shpObj.VisioPage = 0;
+				shpObj.ShapeType = "Page Setup";
+				shpObj.UniqueKey = "Autosize:true";
+				shpObj.StencilLabel = "• true - Autosize all pages\r\n• false - (default) don't Autosize the pages";
+				if (writeData(workSheet, shpObj, nRow, true))
+				{
+					sTmp = "CreateExeclDataFile::writeConfiguration Error\n\nFailed to Setup Page data";
+					MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
+					return -5;
+				}
+
+				// Write comment section named "Visio Shapes"
+				shpObj = new ShapeInformation();
+				nRow++;
+				shpObj.VisioPage = 0;
+				shpObj.ShapeType = "Visio Section";
+				shpObj.UniqueKey = string.Empty;
+				shpObj.StencilLabel = String.Empty;
+				if (writeData(workSheet, shpObj, nRow, true))
+				{
+					sTmp = "CreateExeclDataFile::writeConfiguration Error\n\nFailed to write Visio Section Comment data";
+					MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
+					return -6;
+				}
 			}
-
-			// Write Template section
-			shpObj = new ShapeInformation();
-			nRow++;
-			shpObj.VisioPage = 0;
-			shpObj.ShapeType = "Template";
-			shpObj.UniqueKey = string.Format(@"{0}",diagramData.VisioTemplateFilePath + VisioVariables.DefaultBlueprintingTemplateFile);
-			shpObj.StencilLabel = string.Format("Use the Blueprinting Visio Template.  Already contains the {0}",VisioVariables.DefaultBlueprintingTemplateFile);
-			if (writeData(workSheet, shpObj, nRow, true))
+			catch(Exception ex)
 			{
-				MessageBox.Show("CreateExeclDataFile:: writeConfiguration Error.  Failed to write Template data");
-				return -2;
-			}
-
-			// Write the Stencil data
-			shpObj = new ShapeInformation();
-			nRow++;
-			shpObj.VisioPage = 0;
-			shpObj.ShapeType = "Stencil";
-			shpObj.UniqueKey = string.Format(@"{0}", diagramData.VisioStencilFilePaths[0] +VisioVariables.DefaultBlueprintingStencilFile);
-			shpObj.StencilLabel = string.Format("Use the Blueprinting Visio Stencil.  Already contains the Stencil file:{0}",VisioVariables.DefaultBlueprintingStencilFile);
-			if (writeData(workSheet, shpObj, nRow, false))
-			{
-				MessageBox.Show("CreateExeclDataFile:: writeConfiguration Error.  Failed to write Stincel data");
-				return -3;
-			}
-
-			// Write Page setup Section
-			shpObj = new ShapeInformation();
-			nRow++;
-			shpObj.VisioPage = 0;
-			shpObj.ShapeType = "Page Setup";
-			shpObj.UniqueKey = VisioVariables.VisioPageOrientation.Portrait + ":" + VisioVariables.VisioPageSize.Legal;
-			shpObj.StencilLabel = "• Orientation: Landscape or Portrait (default)\r\n• Size: Letter (default), Tabloid, Ledger, Legal, A3, A4";
-			if (writeData(workSheet, shpObj, nRow, true))
-			{
-				MessageBox.Show("CreateExeclDataFile:: writeConfiguration Error.  Failed to Setup Page data");
-				return -4;
-			}
-
-			shpObj = new ShapeInformation();
-			nRow++;
-			shpObj.VisioPage = 0;
-			shpObj.ShapeType = "Page Setup";
-			shpObj.UniqueKey = "Autosize:true";
-			shpObj.StencilLabel = "• true - Autosize all pages\r\n• false - (default) don't Autosize the pages";
-			if (writeData(workSheet, shpObj, nRow, true))
-			{
-				MessageBox.Show("CreateExeclDataFile:: writeConfiguration Error.  Failed to Setup Page data");
-				return -5;
-			}
-
-			// Write comment section named "Visio Shapes"
-			shpObj = new ShapeInformation();
-			nRow++;
-			shpObj.VisioPage = 0;
-			shpObj.ShapeType = "Visio Section";
-			shpObj.UniqueKey = string.Empty;
-			shpObj.StencilLabel = String.Empty;
-			if (writeData(workSheet, shpObj, nRow, true))
-			{
-				MessageBox.Show("CreateExeclDataFile:: writeConfiguration Error.  Failed to write Comment2 data");
-				return -6;
+				sTmp = string.Format("CreateExeclDataFile::writeConfiguration Exception\n\n{0}-{1}", ex.Message, ex.StackTrace);
+				MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
 			}
 			return nRow;
 		}
@@ -172,6 +205,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 		public bool PopulateExcelDataFile(DiagramData diagramData, Dictionary<int, ShapeInformation> shapesMap, string namePath)
 		{
 			int nRow = 1;
+			string sTmp = string.Empty;
 
 			// if file already exists display a message box asking the user
 			// if the file can be overwritten or needs to be saved off
@@ -191,7 +225,8 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 					nRow = writeHeader(_xlWorksheet, ExcelVariables.GetExcelHeaderNames(), nRow);
 					if (nRow < 0)
 					{
-						MessageBox.Show("Error::PopulateExcelDataFile\n Writing the header");
+						sTmp = "CreateExcelDataFile::PopulateExcelDataFile\n\nWriting the header";
+						MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
 						closeExcel();
 						return true;
 					}
@@ -199,7 +234,8 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 					nRow = writeConfiguration(_xlWorksheet, diagramData, ExcelVariables.GetHeaderCount(), ++nRow);
 					if (nRow < 0)
 					{
-						MessageBox.Show("Error::PopulateExcelDataFile\n Writing the configuration section");
+						sTmp = "CreateExcelDataFile::PopulateExcelDataFile\n\nWriting the configuration section";
+						MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
 						closeExcel();
 						return true;
 					}
@@ -208,95 +244,87 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 					nRow = writeAllData(_xlWorksheet, shapesMap, ++nRow);
 					if (nRow < 0)
 					{
+						sTmp = string.Format("CreateExcelDataFile::PopulateExcelDataFile\n\nWriting All Data:{0}",nRow);
+						MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
 						closeExcel();
 						return true;
 					}
 
-					FormatWorkSheet(_xlWorksheet);
+					// format the VisioData sheet
+					formatVisioDataSheet(_xlWorksheet);
+
+					// populate the Tables sheet
+					writeTableSheet();
+
+					// some column use a dropdown list so we need to setup it up
+					setColumnsDropdownList();
 
 					// this should stop the check Compatibility diaglog from poping up
 					_xlWorkbook.DoNotPromptForConvert = true;             
 					
-						// save and close the excel file
+					// save and close the excel file
 					saveFile(namePath);
 				}
 				catch(Exception ex)
 				{
-					MessageBox.Show(string.Format("Exception::PopulateExcelDataFile\n{0}", ex.Message));
+					sTmp = string.Format("Exception::PopulateExcelDataFile\n{0}", ex.Message);
+					MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
 					return true;
 				}
 			}
 			return false;
 		}
 
-
-
-		private Excel.Workbook createNewWorkbook(string sWorkbookName)
+		/// <summary>
+		/// addNewWorksheet
+		/// add a new worksheet to the workbook and give it a name
+		/// the new sheet will be added after the last sheet
+		/// </summary>
+		/// <param name="sheetName"></param>
+		private void addNewWorksheet(string sheetName)
 		{
-			return _xlApp.Workbooks.Add(sWorkbookName);
+			Excel.Sheets xlSheets = _xlWorkbook.Worksheets;
+			var xlNewSheet = (Excel.Worksheet)xlSheets.Add(xlSheets[1], Type.Missing, Type.Missing, Type.Missing);
+			xlNewSheet.Name = sheetName;
+
+			int totalSheets = _xlApp.Application.ActiveWorkbook.Sheets.Count;
+			((Excel.Worksheet)_xlApp.Application.ActiveSheet).Move(
+				 _xlApp.Application.Worksheets[totalSheets]);
 		}
 
-		private bool saveFile(string fileNamePath)
+		private Excel.Worksheet selectWorkSheet(string sheetName)
 		{
-			if (_xlWorkbook != null)
-			{
-				//Here saving the file in xlsx
-				_xlWorkbook.SaveAs(fileNamePath, Microsoft.Office.Interop.Excel.XlFileFormat.xlOpenXMLWorkbook, Type.Missing,
-				Type.Missing, Type.Missing, Type.Missing, Microsoft.Office.Interop.Excel.XlSaveAsAccessMode.xlExclusive, Type.Missing, Type.Missing, Type.Missing, Type.Missing, Type.Missing);
-
-				//_xlWorkbook.SaveAs(fileNamePath, Excel.XlFileFormat.xlWorkbookNormal, Type.Missing, Type.Missing, Type.Missing, Type.Missing,
-				//						Excel.XlSaveAsAccessMode.xlExclusive, Type.Missing, Type.Missing, Type.Missing, Type.Missing, Type.Missing);
-			}
-			closeExcel();
-
-			return false;
+			Excel.Worksheet workSheet = _xlWorkbook.Sheets[sheetName];
+			workSheet.Activate();
+			return workSheet;
 		}
 
-		private void closeExcel()
-		{
-			if (_xlWorkbook != null)
-			{
-				_xlWorkbook.Close(true, Type.Missing, Type.Missing);
-			}
-			if (_xlApp != null)
-			{
-				_xlApp.Quit();
-			}
-
-			Marshal.ReleaseComObject(_xlWorksheet);
-			Marshal.ReleaseComObject(_xlWorkbook);
-			Marshal.ReleaseComObject(_xlApp);
-
-			_xlWorksheet = null;
-			_xlWorkbook = null;
-			_xlApp = null;
-		}
-
-		private void addNexWorksheet(string sheetName)
-		{
-			_xlApp.DisplayAlerts = false;
-
-			//var xlNewSheet = (Excel.Worksheet)Worksheets.Add(Worksheets[1], Type.Missing, Type.Missing, Type.Missing);
-			//xlNewSheet.Name = sheetName;
-			//xlNewSheet.Cells[1, 1] = "New sheet content";
-		}
-
-		private void selectWorkSheet(string sheetName)
-		{
-			int nIdx = 1;  // should be the first sheet
-
-			// get the sheet index for the given name to make this correct
-
-			selectworkSheet(nIdx);
-		}
-
-		private void selectworkSheet(int nIdx)
+		private void selectWorkSheet(int nIdx)
 		{
 			// check to ensure the nIdx value is withing range
 
 			_xlWorksheet = (Excel.Worksheet)_xlWorkbook.Worksheets.get_Item(nIdx);
 			_xlWorksheet.Select();
 
+		}
+
+		/// <summary>
+		/// deleteWorkSheet
+		/// delete the worksheet by name from the workbook
+		/// </summary>
+		/// <param name="name"></param>
+		private void deleteWorkSheet(string name)
+		{
+			for (int xx = 1; xx <= _xlWorkbook.Worksheets.Count; xx++)
+			{
+				Excel.Worksheet workSheet = (Excel.Worksheet)_xlWorkbook.Worksheets.get_Item(xx);
+				if (workSheet.Name == name)
+				{
+					// delete;
+					((Excel.Worksheet)_xlApp.Application.ActiveWorkbook.Sheets[xx]).Delete();
+					return;
+				}
+			}
 		}
 
 		/// <summary>
@@ -327,7 +355,8 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 			}
 			catch(Exception ex)
 			{
-				MessageBox.Show(string.Format("Exception::writeExcelDataSheet - {0}"), ex.Message);
+				string sTmp = string.Format("Exception::writeExcelDataSheet - Exception\n\n{0}\n{1}",ex.Message, ex.StackTrace);
+				MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
 				return -1;	// error
 			}
 			return rowCount;
@@ -410,7 +439,8 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 			}
 			catch (Exception ex)
 			{
-				MessageBox.Show(string.Format("Exception::writeExcelDataSheet - {0}"), ex.Message);
+				string sTmp = string.Format("Exception::writeExcelDataSheet - Exception\n\n{0}\n{1}", ex.Message, ex.StackTrace);
+				MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
 				return true;
 			}
 			if (IsComment)
@@ -421,7 +451,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 			return false;
 		}
 
-		public void FormatWorkSheet(Excel.Worksheet workSheet)
+		private void formatVisioDataSheet(Excel.Worksheet workSheet)
 		{
 			Excel.Range xlRange = workSheet.UsedRange;
 			int rowCount = xlRange.Rows.Count;
@@ -449,6 +479,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 
 						case "VISIO PAGE":
 						case "SHAPE TYPE":
+						case "STENCIL IMAGE":
 							((Excel.Range)workSheet.Cells[1, nCol]).ColumnWidth = 16.00;
 							break;
 
@@ -459,6 +490,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 							((Excel.Range)workSheet.Cells[1, nCol]).ColumnWidth = 8.00;
 							((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.PosX]).NumberFormat = "#0.000";
 							break;
+
 						case "MACH_NAME":
 						case "MACH_ID":
 						case "SITE_ID":
@@ -469,6 +501,13 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 						case "SITEID_OMNIID":
 						case "FILL COLOR":
 							((Excel.Range)workSheet.Cells[1, nCol]).ColumnWidth = 8.00;
+							break;
+
+						case "CONNECT FROM":
+						case "CONNECT TO":
+						case "FROM LINE LABEL":
+						case "TO LINE LABEL":
+							((Excel.Range)workSheet.Cells[1, nCol]).ColumnWidth = 20.00;
 							break;
 
 						default:
@@ -485,8 +524,8 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 		}
 
 		/// <summary>
-		/// wruteSystemInfoSheet
-		/// Write to the SystemInfo sheet
+		/// writeSystemInfoSheet
+		/// Not yet implemented
 		/// </summary>
 		/// <returns></returns>
 		private bool writeSystemInfoSheet()
@@ -494,15 +533,268 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 			return false;
 		}
 
-
+		/// <summary>
+		/// writeInterfacesSheet
+		/// Not yet implemented
+		/// </summary>
+		/// <returns></returns>
 		private bool writeInterfacesSheet()
 		{
 			return false;
 		}
 
+		/// <summary>
+		/// writeTableSheet
+		/// write the data to the table sheet
+		/// the user can use this sheet as list to the excel file
+		/// </summary>
+		/// <returns></returns>
 		private bool writeTableSheet()
 		{
+			Excel.Worksheet xlNewSheet = selectWorkSheet("Tables");
+
+			// column A is Colors
+			((Excel.Range)xlNewSheet.Cells[1, 1]).Value = "Color";
+			((Excel.Range)xlNewSheet.Cells[1, 1]).ColumnWidth = 20.00;
+			xlNewSheet.Cells[1, 1].Interior.Color = Excel.XlRgbColor.rgbDarkSeaGreen;
+
+			((Excel.Range)xlNewSheet.Cells[2, 1]).Value = "";
+			((Excel.Range)xlNewSheet.Cells[3, 1]).Value = "Black";
+			((Excel.Range)xlNewSheet.Cells[4, 1]).Value = "Blue";
+			((Excel.Range)xlNewSheet.Cells[5, 1]).Value = "Cyan";
+			((Excel.Range)xlNewSheet.Cells[6, 1]).Value = "Gray";
+			((Excel.Range)xlNewSheet.Cells[7, 1]).Value = "Green";
+			((Excel.Range)xlNewSheet.Cells[8, 1]).Value = "Light Blue";
+			((Excel.Range)xlNewSheet.Cells[9, 1]).Value = "Light Green";
+			((Excel.Range)xlNewSheet.Cells[10, 1]).Value = "Orange";
+			((Excel.Range)xlNewSheet.Cells[11, 1]).Value = "Red";
+			((Excel.Range)xlNewSheet.Cells[12, 1]).Value = "Yellow";
+
+			Excel.Range range = xlNewSheet.Range[xlNewSheet.Cells[1, 1], xlNewSheet.Cells[12, 1]];
+			range.Borders.LineStyle = XlLineStyle.xlContinuous;
+			range.Rows.AutoFit();      // auto aize the rows
+
+			// Column C is Arrows
+			((Excel.Range)xlNewSheet.Cells[1, 3]).Value = "Arrows";
+			((Excel.Range)xlNewSheet.Cells[1, 3]).ColumnWidth = 20.00;
+			xlNewSheet.Cells[1, 3].Interior.Color = Excel.XlRgbColor.rgbDarkSeaGreen;
+
+			((Excel.Range)xlNewSheet.Cells[2, 3]).Value = "";
+			((Excel.Range)xlNewSheet.Cells[3, 3]).Value = "None";
+			((Excel.Range)xlNewSheet.Cells[4, 3]).Value = "Start";
+			((Excel.Range)xlNewSheet.Cells[5, 3]).Value = "End";
+			((Excel.Range)xlNewSheet.Cells[6, 3]).Value = "Both";
+
+			range = xlNewSheet.Range[xlNewSheet.Cells[1, 3], xlNewSheet.Cells[6, 3]];
+			range.Borders.LineStyle = XlLineStyle.xlContinuous;
+			range.Rows.AutoFit();      // auto aize the rows
+
+			// Column E is Stencil Label Font size
+			((Excel.Range)xlNewSheet.Cells[1, 5]).Value = "Stencil Label Font Size";
+			((Excel.Range)xlNewSheet.Cells[1, 5]).ColumnWidth = 20.00;
+			xlNewSheet.Cells[1, 5].Interior.Color = Excel.XlRgbColor.rgbDarkSeaGreen;
+
+			((Excel.Range)xlNewSheet.Cells[2, 5]).Value = "";
+			((Excel.Range)xlNewSheet.Cells[3, 5]).Value = "6";
+			((Excel.Range)xlNewSheet.Cells[4, 5]).Value = "6:B";
+			((Excel.Range)xlNewSheet.Cells[5, 5]).Value = "8";
+			((Excel.Range)xlNewSheet.Cells[6, 5]).Value = "8:B";
+			((Excel.Range)xlNewSheet.Cells[7, 5]).Value = "9";
+			((Excel.Range)xlNewSheet.Cells[8, 5]).Value = "9:B";
+			((Excel.Range)xlNewSheet.Cells[9, 5]).Value = "10";
+			((Excel.Range)xlNewSheet.Cells[10, 5]).Value = "10:B";
+			((Excel.Range)xlNewSheet.Cells[11, 5]).Value = "11";
+			((Excel.Range)xlNewSheet.Cells[12, 5]).Value = "11:B";
+			((Excel.Range)xlNewSheet.Cells[13, 5]).Value = "12";
+			((Excel.Range)xlNewSheet.Cells[14, 5]).Value = "12:B";
+			((Excel.Range)xlNewSheet.Cells[15, 5]).Value = "14";
+			((Excel.Range)xlNewSheet.Cells[16, 5]).Value = "14:B";
+
+			range = xlNewSheet.Range[xlNewSheet.Cells[1, 5], xlNewSheet.Cells[16, 5]];
+			range.Borders.LineStyle = XlLineStyle.xlContinuous;
+			range.Rows.AutoFit();      // auto aize the rows
+
+			// Column G is Line Pattern
+			((Excel.Range)xlNewSheet.Cells[1, 7]).Value = "Line Pattern";
+			((Excel.Range)xlNewSheet.Cells[1, 7]).ColumnWidth = 20.00;
+			xlNewSheet.Cells[1, 7].Interior.Color = Excel.XlRgbColor.rgbDarkSeaGreen;
+
+			((Excel.Range)xlNewSheet.Cells[2, 7]).Value = "";
+			((Excel.Range)xlNewSheet.Cells[3, 7]).Value = "Solid";
+			((Excel.Range)xlNewSheet.Cells[4, 7]).Value = "Dashed";
+			((Excel.Range)xlNewSheet.Cells[5, 7]).Value = "Dotted";
+			((Excel.Range)xlNewSheet.Cells[6, 7]).Value = "Dash_Dot";
+
+			range = xlNewSheet.Range[xlNewSheet.Cells[1, 7], xlNewSheet.Cells[6, 7]];
+			range.Borders.LineStyle = XlLineStyle.xlContinuous;
+			range.Rows.AutoFit();      // auto aize the rows
+
+			// Column I is Stencil Label Position
+			((Excel.Range)xlNewSheet.Cells[1, 9]).Value = "Stencil Label Position";
+			((Excel.Range)xlNewSheet.Cells[1, 9]).ColumnWidth = 20.00;
+			xlNewSheet.Cells[1, 9].Interior.Color = Excel.XlRgbColor.rgbDarkSeaGreen;
+
+			((Excel.Range)xlNewSheet.Cells[2, 9]).Value = "";
+			((Excel.Range)xlNewSheet.Cells[3, 9]).Value = "Top";
+			((Excel.Range)xlNewSheet.Cells[4, 9]).Value = "Bottom";
+
+			range = xlNewSheet.Range[xlNewSheet.Cells[1, 9], xlNewSheet.Cells[4, 9]];
+			range.Borders.LineStyle = XlLineStyle.xlContinuous;
+			range.Rows.AutoFit();      // auto aize the rows
+
+			// Column K Shape Type
+			((Excel.Range)xlNewSheet.Cells[1, 11]).Value = "Shape Type";
+			((Excel.Range)xlNewSheet.Cells[1, 11]).ColumnWidth = 20.00;
+			xlNewSheet.Cells[1, 11].Interior.Color = Excel.XlRgbColor.rgbDarkSeaGreen;
+			
+			((Excel.Range)xlNewSheet.Cells[2, 11]).Value = "";
+			((Excel.Range)xlNewSheet.Cells[3, 11]).Value = "Template";
+			((Excel.Range)xlNewSheet.Cells[4, 11]).Value = "Stencil";
+			((Excel.Range)xlNewSheet.Cells[5, 11]).Value = "Page Setup";
+			((Excel.Range)xlNewSheet.Cells[6, 11]).Value = "Shape";
+
+			range = xlNewSheet.Range[xlNewSheet.Cells[1, 11], xlNewSheet.Cells[6, 11]];
+			range.Borders.LineStyle = XlLineStyle.xlContinuous;
+			range.Rows.AutoFit();      // auto aize the rows
+
+			// Column N is OC_Blueprinting stencil names  (may get this from a list to make dymanic)
+			((Excel.Range)xlNewSheet.Cells[1, 14]).Value = "Default Stencil Names";
+			((Excel.Range)xlNewSheet.Cells[1, 14]).ColumnWidth = 20.00;
+			xlNewSheet.Cells[1, 11].Interior.Color = Excel.XlRgbColor.rgbDarkSeaGreen;
+
+			((Excel.Range)xlNewSheet.Cells[2, 14]).Value = "";
+
+			range = xlNewSheet.Range[xlNewSheet.Cells[1, 14], xlNewSheet.Cells[2, 14]];
+			range.Borders.LineStyle = XlLineStyle.xlContinuous;
+			range.Rows.AutoFit();      // auto aize the rows
+
+			// format each cell to be center justified and Left aligned in the row
+			xlNewSheet.Cells.Style.VerticalAlignment = Microsoft.Office.Interop.Excel.XlVAlign.xlVAlignCenter;
+			xlNewSheet.Cells.Style.HorizontalAlignment = Microsoft.Office.Interop.Excel.XlHAlign.xlHAlignLeft;
+
 			return false;
+		}
+
+		private void setColumnsDropdownList()
+		{
+			Excel.Range xlRange = _xlWorksheet.UsedRange;
+			int rowCount = xlRange.Rows.Count;
+			int colCount = xlRange.Columns.Count;
+
+			// Shape Type column
+			Excel.Range xlRange1 = _xlWorksheet.get_Range(string.Format("B2:B{0}", rowCount)).EntireColumn;
+			xlRange1.Validation.Delete();
+			xlRange1.Validation.Add(XlDVType.xlValidateList,Excel.XlDVAlertStyle.xlValidAlertStop,
+						Excel.XlFormatConditionOperator.xlBetween, ExcelVariables.TablesShapeTypeColumn, Type.Missing);
+			xlRange1.Validation.InCellDropdown = true;
+			xlRange1.Validation.IgnoreBlank = false;
+
+			// Stencil Label position
+			xlRange1 = _xlWorksheet.get_Range(string.Format("F2:F{0}", rowCount)).EntireColumn;
+			xlRange1.Validation.Delete();
+			xlRange1.Validation.Add(XlDVType.xlValidateList, Excel.XlDVAlertStyle.xlValidAlertStop,
+						Excel.XlFormatConditionOperator.xlBetween, ExcelVariables.TablesLabelPositionColumn, Type.Missing);
+			xlRange1.Validation.InCellDropdown = true;
+			xlRange1.Validation.IgnoreBlank = false;
+
+			// Stencil Label Font Size
+			xlRange1 = _xlWorksheet.get_Range(string.Format("G2:G{0}", rowCount)).EntireColumn;
+			xlRange1.Validation.Delete();
+			xlRange1.Validation.Add(XlDVType.xlValidateList, Excel.XlDVAlertStyle.xlValidAlertStop,
+						Excel.XlFormatConditionOperator.xlBetween, ExcelVariables.TablesLabelFontSizeColumn, Type.Missing);
+			xlRange1.Validation.InCellDropdown = true;
+			xlRange1.Validation.IgnoreBlank = false;
+
+			// Fill Color
+			xlRange1 = _xlWorksheet.get_Range(string.Format("W2:W{0}", rowCount)).EntireColumn;
+			xlRange1.Validation.Delete();
+			xlRange1.Validation.Add(XlDVType.xlValidateList, Excel.XlDVAlertStyle.xlValidAlertStop,
+						Excel.XlFormatConditionOperator.xlBetween, ExcelVariables.TablesColorColumn, Type.Missing);
+			xlRange1.Validation.InCellDropdown = true;
+			xlRange1.Validation.IgnoreBlank = false;
+
+			// From Line Pattern
+			xlRange1 = _xlWorksheet.get_Range(string.Format("Z2:Z{0}", rowCount)).EntireColumn;
+			xlRange1.Validation.Delete();
+			xlRange1.Validation.Add(XlDVType.xlValidateList, Excel.XlDVAlertStyle.xlValidAlertStop,
+						Excel.XlFormatConditionOperator.xlBetween, ExcelVariables.TablesLinePatternColumn, Type.Missing);
+			xlRange1.Validation.InCellDropdown = true;
+			xlRange1.Validation.IgnoreBlank = false;
+
+			// From Arrow
+			xlRange1 = _xlWorksheet.get_Range(string.Format("AA2:AA{0}", rowCount)).EntireColumn;
+			xlRange1.Validation.Delete();
+			xlRange1.Validation.Add(XlDVType.xlValidateList, Excel.XlDVAlertStyle.xlValidAlertStop,
+						Excel.XlFormatConditionOperator.xlBetween, ExcelVariables.TablesArrowsColumn, Type.Missing);
+			xlRange1.Validation.InCellDropdown = true;
+			xlRange1.Validation.IgnoreBlank = false;
+
+			// From Line Color
+			xlRange1 = _xlWorksheet.get_Range(string.Format("AB2:AB{0}", rowCount)).EntireColumn;
+			xlRange1.Validation.Delete();
+			xlRange1.Validation.Add(XlDVType.xlValidateList, Excel.XlDVAlertStyle.xlValidAlertStop,
+						Excel.XlFormatConditionOperator.xlBetween, ExcelVariables.TablesColorColumn, Type.Missing);
+			xlRange1.Validation.InCellDropdown = true;
+			xlRange1.Validation.IgnoreBlank = false;
+
+			// To Line Pattern
+			xlRange1 = _xlWorksheet.get_Range(string.Format("AE2:AE{0}", rowCount)).EntireColumn;
+			xlRange1.Validation.Delete();
+			xlRange1.Validation.Add(XlDVType.xlValidateList, Excel.XlDVAlertStyle.xlValidAlertStop,
+						Excel.XlFormatConditionOperator.xlBetween, ExcelVariables.TablesLinePatternColumn, Type.Missing);
+			xlRange1.Validation.InCellDropdown = true;
+			xlRange1.Validation.IgnoreBlank = false;
+
+			// To Arrow
+			xlRange1 = _xlWorksheet.get_Range(string.Format("AF2:AF{0}", rowCount)).EntireColumn;
+			xlRange1.Validation.Delete();
+			xlRange1.Validation.Add(XlDVType.xlValidateList, Excel.XlDVAlertStyle.xlValidAlertStop,
+						Excel.XlFormatConditionOperator.xlBetween, ExcelVariables.TablesArrowsColumn, Type.Missing);
+			xlRange1.Validation.InCellDropdown = true;
+			xlRange1.Validation.IgnoreBlank = false;
+
+			// To Line Color
+			xlRange1 = _xlWorksheet.get_Range(string.Format("AG2:AG{0}", rowCount)).EntireColumn;
+			xlRange1.Validation.Delete();
+			xlRange1.Validation.Add(XlDVType.xlValidateList, Excel.XlDVAlertStyle.xlValidAlertStop,
+						Excel.XlFormatConditionOperator.xlBetween, ExcelVariables.TablesColorColumn, Type.Missing);
+			xlRange1.Validation.InCellDropdown = true;
+			xlRange1.Validation.IgnoreBlank = false;
+		}
+		private bool saveFile(string fileNamePath)
+		{
+			if (_xlWorkbook != null)
+			{
+				//Here saving the file in xlsx
+				_xlWorkbook.SaveAs(fileNamePath, Microsoft.Office.Interop.Excel.XlFileFormat.xlOpenXMLWorkbook, Type.Missing,
+				Type.Missing, Type.Missing, Type.Missing, Microsoft.Office.Interop.Excel.XlSaveAsAccessMode.xlExclusive, Type.Missing, Type.Missing, Type.Missing, Type.Missing, Type.Missing);
+
+				//_xlWorkbook.SaveAs(fileNamePath, Excel.XlFileFormat.xlWorkbookNormal, Type.Missing, Type.Missing, Type.Missing, Type.Missing,
+				//						Excel.XlSaveAsAccessMode.xlExclusive, Type.Missing, Type.Missing, Type.Missing, Type.Missing, Type.Missing);
+			}
+			closeExcel();
+
+			return false;
+		}
+
+		private void closeExcel()
+		{
+			if (_xlWorkbook != null)
+			{
+				_xlWorkbook.Close(true, Type.Missing, Type.Missing);
+			}
+			if (_xlApp != null)
+			{
+				_xlApp.Quit();
+			}
+
+			Marshal.ReleaseComObject(_xlWorksheet);
+			Marshal.ReleaseComObject(_xlWorkbook);
+			Marshal.ReleaseComObject(_xlApp);
+
+			_xlWorksheet = null;
+			_xlWorkbook = null;
+			_xlApp = null;
 		}
 
 	}

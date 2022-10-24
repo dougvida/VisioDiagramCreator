@@ -36,7 +36,7 @@ namespace OmnicellBlueprintingTool.Visio
 			ConsoleOut.writeLine(string.Format("Active Document:{0}: Master in document:{1}", appVisio.ActiveDocument, appVisio.ActiveDocument.Masters));
 
 			// get the connectors for each shape in the diagram 
-			Dictionary<int, ShapeInformation> shpConn = getVisioStencils(this.vDocument);
+			Dictionary<int, ShapeInformation> shpConn = getShapeInformation(this.vDocument);
 
 			try
 			{
@@ -57,13 +57,13 @@ namespace OmnicellBlueprintingTool.Visio
 		}
 
 		/// <summary>
-		/// getVisioStencils
+		/// getShapeInformation
 		/// get the visio diagram stencil connection information
 		/// used to add to the Excel Data file
 		/// </summary>
 		/// <param name="doc">Visio document</param>
 		/// <returns>"Dictionary<string, ShapeInformation>"</returns>
-		private static Dictionary<int, ShapeInformation> getVisioStencils(Visio1.Document doc)
+		private static Dictionary<int, ShapeInformation> getShapeInformation(Visio1.Document doc)
 		{
 			// Look at each shape in the collection.
 			Visio1.Page page = doc.Pages[1];
@@ -75,12 +75,6 @@ namespace OmnicellBlueprintingTool.Visio
 			{
 				allPageShapesMap = new Dictionary<int, ShapeInformation>();
 
-
-				Dictionary<int, string> connectors = null;
-				Dictionary<string, string> connectMap = null;
-				connectMap = new Dictionary<string, string>();
-				connectors = new Dictionary<int, string>();
-				
 				foreach (Visio1.Shape shape in page.Shapes)
 				{
 					// Use this index to look at each row in the properties section.
@@ -99,211 +93,221 @@ namespace OmnicellBlueprintingTool.Visio
 					shpInfo.StencilImage = saStr[0].Trim();
 					shpInfo.StencilLabel = shape.Text.Trim();
 
-					if (shpInfo.StencilImage.ToUpper().IndexOf("ETHERNET") >= 0)
-					{
-						// skip this shape
-						ConsoleOut.writeLine(string.Format("Skip this ID:{0}; shapeKey:{1} - Stencil Image:{2}", shape.ID, shpInfo.UniqueKey, shpInfo.StencilImage));
-						
-						// let this go through we are not trying to make connections
-						//continue;
-					}
+					//if (shpInfo.StencilImage.ToUpper().IndexOf("ETHERNET") >= 0)
+					//{
+					//	// skip this shape
+					//	ConsoleOut.writeLine(string.Format("Skip this ID:{0}; shapeKey:{1} - Stencil Image:{2}", shape.ID, shpInfo.UniqueKey, shpInfo.StencilImage));
+					//}
 
 					if (shape.Style.ToUpper().IndexOf("CONNECTOR") >= 0)
 					{
-						// skip this stencil
+						// we don't want to add connectors to the shapes map list 
 						continue;
 					}
 
-#if FALSE
-					if (shape.Style.Equals("Connector"))
+					// skip this stencil
+					getShapeConnections(doc, shape, ref allPageShapesMap, ref shpInfo);
+					
+					if (!allPageShapesMap.ContainsKey(shape.ID))		// && !allPageShapesMap.ContainsKey(sKey2)) // cnnShape.ID
 					{
-						//continue;
-						ShapeInformation lookupShapeMap = null;
-						Visio1.Connects visconnects2 = shape.Connects;
-						int lookupKey = 0;
-						string sTmp = string.Empty;
-						string sTmp2 = string.Empty;
-						string arrowType = VisioVariables.sARROW_NONE;
-						string lineColor = VisioVariables.COLOR_BLACK;
-						double linePattern = VisioVariables.LINE_PATTERN_SOLID;
-						string lineWeight = string.Empty;
-
-						for (int k = 1; k <= visconnects2.Count; k++)
-						{
-							// look through the connections to get the both ends
-
-							Visio1.Connect visconnect = visconnects2[k];
-							Visio1.Shape toshape = visconnect.ToSheet;
-							if (k == 1)
-							{
-								// first end From
-
-								lookupKey = toshape.ID;
-								allPageShapesMap.TryGetValue(toshape.ID, out lookupShapeMap);
-
-								sTmp = string.Empty;
-								sTmp2 = string.Empty;
-								sTmp = string.Format("Connector ID:{0} Shape ID:{1}-{2} LineLabel:{3}", shape.ID, toshape.ID, toshape.Name, shape.Text);
-								sTmp2 = string.Format("id:{0};name:{1};label:{2}", toshape.ID, toshape.Name, shape.Text);
-
-								int startArrow = int.Parse(shape.get_CellsU("BeginArrow").FormulaU);
-								int endArrow = int.Parse(shape.get_CellsU("EndArrow").FormulaU);
-								if (startArrow > 0 && endArrow > 0) // both
-								{
-									arrowType = VisioVariables.sARROW_BOTH;
-								}
-								else if (startArrow > 0 && endArrow == 0)
-								{
-									arrowType = VisioVariables.sARROW_START;
-								}
-								else if (startArrow == 0 && endArrow > 0)
-								{
-									arrowType = VisioVariables.sARROW_END;
-								}
-								lineColor = shape.get_CellsU("LineColor").FormulaU;
-								linePattern = double.Parse(shape.get_CellsU("LinePattern").FormulaU);
-								lineWeight = shape.get_CellsU("LineWeight").FormulaU;
-							}
-							else
-							{
-								// second end To
-								if (lookupShapeMap == null)
-								{
-									// the shape was not found so we are lookup up the From shape
-									// fill in the connectFrom fields if this has occurred
-									//lookupKey = toshape.ID;
-									allPageShapesMap.TryGetValue(toshape.ID, out lookupShapeMap);
-									if (lookupShapeMap != null)
-									{
-										if (string.IsNullOrEmpty(lookupShapeMap.ConnectFrom))
-										{
-											lookupShapeMap.ConnectFrom = toshape.Name;
-											lookupShapeMap.ConnectFromID = lookupKey;
-										}
-										lookupShapeMap.FromLineLabel = shape.Text;
-										lookupShapeMap.FromArrowType = arrowType;
-										lookupShapeMap.FromLineColor = lineColor;
-										lookupShapeMap.FromLinePattern = linePattern;
-									}
-									lookupKey = toshape.ID; // keep in this order.  we use this for update the object
-								}
-								else
-								{
-									if (string.IsNullOrEmpty(lookupShapeMap.ConnectTo))
-									{
-										lookupShapeMap.ConnectTo = toshape.Name;
-										lookupShapeMap.ConnectToID = toshape.ID;
-									}
-									lookupShapeMap.ToLineLabel = shape.Text;  // use the Text value from the connector shape
-									lookupShapeMap.ToArrowType = arrowType;
-									lookupShapeMap.ToLineColor = lineColor;
-									lookupShapeMap.ToLinePattern = linePattern;
-								}
-
-								sTmp += string.Format(" - {0} To Shape ID:{1}-{2} LineLabel:{3}", shape.ID, toshape.ID, toshape.Name, shape.Text);
-								sTmp2 += string.Format("|id:{0};name:{1};label:{2}", toshape.ID, toshape.Name, shape.Text);
-							}
-						}
-						if (lookupShapeMap != null)
-						{
-							allPageShapesMap[lookupKey] = lookupShapeMap;
-						}
-
-						connectors.Add(shape.ID, sTmp2);
-						ConsoleOut.writeLine(sTmp);
-						//continue;
-					}
-
-					ConsoleOut.writeLine(string.Format("Found shape ID:{0}-{1} in the diagram", shpInfo.ID, shpInfo.UniqueKey));
-
-					// get connections To
-					var shpConnection = shape.ConnectedShapes(VisConnectedShapesFlags.visConnectedShapesOutgoingNodes, "");
-					if (shpConnection != null && shpConnection.Length > 0)
-					{
-						try
-						{
-							int nCnt = 0;
-							foreach (int nIdx in shpConnection)
-							{
-								Visio1.Shape lookupShape = page.Shapes.ItemFromID[nIdx];
-								string sKey = shape.ID + ":" + lookupShape.ID;
-								string sKey2 = lookupShape.ID + ":" + shape.ID; // see if duplicate exists
-								if (connectMap.ContainsKey(sKey) || connectMap.ContainsKey(sKey2))
-								{
-									//shpInfo.ConnectToID = 0;
-									//shpInfo.ConnectTo = string.Empty;
-									continue;      // we don't want to save this information
-								}
-								shpInfo.ConnectToID = lookupShape.ID;
-								if (nCnt++ > 0)
-								{
-									shpInfo.ConnectTo += "," + lookupShape.NameU;
-								}
-								else
-								{
-									shpInfo.ConnectTo += lookupShape.NameU;
-								}
-								shpInfo.ToLineColor = "BLACK";
-								shpInfo.ToLinePattern = VisioVariables.LINE_PATTERN_SOLID;
-								connectMap.Add(sKey, sKey2);
-							}
-						}
-						catch (Exception exp)
-						{
-							MessageBox.Show(String.Format("getShapeConnections - Connection:{0} - {1}", shpInfo.ConnectFrom, exp.Message));
-						}
-					}
-					// get connections from
-					shpConnection = shape.ConnectedShapes(VisConnectedShapesFlags.visConnectedShapesAllNodes, "");
-					if (shpConnection != null && shpConnection.Length > 0)
-					{
-						try
-						{
-							int nCnt = 0;
-							foreach (int nIdx in shpConnection)
-							{
-								Visio1.Shape lookupShape = page.Shapes.ItemFromID[nIdx];
-
-								string sKey = shape.ID + ":" + lookupShape.ID;
-								string sKey2 = lookupShape.ID + ":" + shape.ID; // see if duplicate exists
-								if (connectMap.ContainsKey(sKey) || connectMap.ContainsKey(sKey2))
-								{
-									//shpInfo.ConnectFromID = 0;
-									//shpInfo.ConnectFrom = string.Empty;
-									continue;      // we don't want to save this information
-								}
-								shpInfo.ConnectFromID = lookupShape.ID;
-								if (nCnt++ > 0)
-								{
-									shpInfo.ConnectFrom += "," + lookupShape.NameU;
-								}
-								else
-								{
-									shpInfo.ConnectFrom += lookupShape.NameU;
-								}
-								shpInfo.FromLineColor = "BLACK";
-								shpInfo.FromLinePattern = VisioVariables.LINE_PATTERN_SOLID;
-								connectMap.Add(sKey, sKey2);
-							}
-						}
-						catch (Exception exp)
-						{
-							MessageBox.Show(String.Format("getShapeConnections - Connection:{0} - {1}", shpInfo.ConnectFrom, exp.Message));
-						}
-					}
-#endif
-
-					if (!allPageShapesMap.ContainsKey(shape.ID)) // && !allPageShapesMap.ContainsKey(sKey2)) // cnnShape.ID
-					{
-						allPageShapesMap.Add(shape.ID, shpInfo);   // shape.ID
+						allPageShapesMap.Add(shape.ID, shpInfo);	// shape.ID
 					}
 				}
 			}
 			catch (Exception ex)
 			{
-				MessageBox.Show(string.Format("Exception::getVisioStencils - Foreach loop:\n{0}", ex.Message));
+				string sTmp = string.Format("ProcessVisioDiagramShapes::getShapeInformation - Exception\n\nForeach loop:\n{0}", ex.Message);
+				MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
 			}
 			return allPageShapesMap;
+		}
+
+		private static void getShapeConnections(Visio1.Document doc, Visio1.Shape shape, ref Dictionary<int, ShapeInformation> allPageShapesMap, ref ShapeInformation shpInfo)
+		{
+			// what we need to do is get the shape and determine if shape is connected.
+			// we don't want to save the shape if it is a connector
+
+			// Look at each shape in the collection.
+			Visio1.Page page = doc.Pages[1];
+
+			Dictionary<int, string> connectors = new Dictionary<int, string>();
+			Dictionary<string, string> connectMap = new Dictionary<string, string>();
+
+			//continue;
+			ShapeInformation lookupShapeMap = null;
+			Visio1.Connects visconnects2 = shape.Connects;
+			int lookupKey = 0;
+			string sTmp = string.Empty;
+			string sTmp2 = string.Empty;
+			string arrowType = VisioVariables.sARROW_NONE;
+			string lineColor = VisioVariables.COLOR_BLACK;
+			double linePattern = VisioVariables.LINE_PATTERN_SOLID;
+			string lineWeight = string.Empty;
+
+			for (int k = 1; k <= visconnects2.Count; k++)
+			{
+				// look through the connections to get the both ends
+				Visio1.Connect visconnect = visconnects2[k];
+				Visio1.Shape toshape = visconnect.ToSheet;
+				if (k == 1)
+				{
+					// first end From
+					lookupKey = toshape.ID;
+					allPageShapesMap.TryGetValue(toshape.ID, out lookupShapeMap);
+
+					sTmp = string.Empty;
+					sTmp2 = string.Empty;
+					sTmp = string.Format("Connector ID:{0} Shape ID:{1}-{2} LineLabel:{3}", shape.ID, toshape.ID, toshape.Name, shape.Text);
+					sTmp2 = string.Format("id:{0};name:{1};label:{2}", toshape.ID, toshape.Name, shape.Text);
+
+					int startArrow = int.Parse(shape.get_CellsU("BeginArrow").FormulaU);
+					int endArrow = int.Parse(shape.get_CellsU("EndArrow").FormulaU);
+					if (startArrow > 0 && endArrow > 0) // both
+					{
+						arrowType = VisioVariables.sARROW_BOTH;
+					}
+					else if (startArrow > 0 && endArrow == 0)
+					{
+						arrowType = VisioVariables.sARROW_START;
+					}
+					else if (startArrow == 0 && endArrow > 0)
+					{
+						arrowType = VisioVariables.sARROW_END;
+					}
+					lineColor = shape.get_CellsU("LineColor").FormulaU;
+					linePattern = double.Parse(shape.get_CellsU("LinePattern").FormulaU);
+					lineWeight = shape.get_CellsU("LineWeight").FormulaU;
+				}
+				else
+				{
+					// second end To
+					if (lookupShapeMap == null)
+					{
+						// the shape was not found so we are lookup up the From shape
+						// fill in the connectFrom fields if this has occurred
+						//lookupKey = toshape.ID;
+						allPageShapesMap.TryGetValue(toshape.ID, out lookupShapeMap);
+						if (lookupShapeMap != null)
+						{
+							if (string.IsNullOrEmpty(lookupShapeMap.ConnectFrom))
+							{
+								lookupShapeMap.ConnectFrom = toshape.Name;
+								lookupShapeMap.ConnectFromID = lookupKey;
+							}
+							lookupShapeMap.FromLineLabel = shape.Text;
+							lookupShapeMap.FromArrowType = arrowType;
+							lookupShapeMap.FromLineColor = lineColor;
+							lookupShapeMap.FromLinePattern = linePattern;
+						}
+						lookupKey = toshape.ID; // keep in this order.  we use this for update the object
+					}
+					else
+					{
+						if (string.IsNullOrEmpty(lookupShapeMap.ConnectTo))
+						{
+							lookupShapeMap.ConnectTo = toshape.Name;
+							lookupShapeMap.ConnectToID = toshape.ID;
+						}
+						lookupShapeMap.ToLineLabel = shape.Text;  // use the Text value from the connector shape
+						lookupShapeMap.ToArrowType = arrowType;
+						lookupShapeMap.ToLineColor = lineColor;
+						lookupShapeMap.ToLinePattern = linePattern;
+					}
+
+					sTmp += string.Format(" - {0} To Shape ID:{1}-{2} LineLabel:{3}", shape.ID, toshape.ID, toshape.Name, shape.Text);
+					sTmp2 += string.Format("|id:{0};name:{1};label:{2}", toshape.ID, toshape.Name, shape.Text);
+				}
+			}
+			if (lookupShapeMap != null)
+			{
+				allPageShapesMap[lookupKey] = lookupShapeMap;
+			}
+
+			connectors.Add(shape.ID, sTmp2);
+			ConsoleOut.writeLine(sTmp);
+
+			ConsoleOut.writeLine(string.Format("Found shape ID:{0}-{1} in the diagram", shpInfo.ID, shpInfo.UniqueKey));
+
+#if true
+			// get connections To
+			var shpConnection = shape.ConnectedShapes(VisConnectedShapesFlags.visConnectedShapesOutgoingNodes, "");
+			if (shpConnection != null && shpConnection.Length > 0)
+			{
+				try
+				{
+					int nCnt = 0;
+					foreach (int nIdx in shpConnection)
+					{
+						Visio1.Shape lookupShape = page.Shapes.ItemFromID[nIdx];
+						string sKey = shape.ID + ":" + lookupShape.ID;
+						string sKey2 = lookupShape.ID + ":" + shape.ID; // see if duplicate exists
+						if (connectMap.ContainsKey(sKey) || connectMap.ContainsKey(sKey2))
+						{
+							//shpInfo.ConnectToID = 0;
+							//shpInfo.ConnectTo = string.Empty;
+							continue;      // we don't want to save this information
+						}
+						shpInfo.ConnectToID = lookupShape.ID;
+						if (nCnt++ > 0)
+						{
+							shpInfo.ConnectTo += "," + lookupShape.NameU;
+						}
+						else
+						{
+							shpInfo.ConnectTo += lookupShape.NameU;
+						}
+						shpInfo.ToLineColor = "Black";
+						shpInfo.ToLinePattern = VisioVariables.LINE_PATTERN_SOLID;
+						connectMap.Add(sKey, sKey2);
+					}
+				}
+				catch (Exception exp)
+				{
+					sTmp = String.Format("ProcessVisioDiagramShapes::getShapeConnections - Exception\n\nConnection:{0}\n{1}", shpInfo.ConnectFrom, exp.Message);
+					MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
+				}
+			}
+
+			// get connections from
+			shpConnection = shape.ConnectedShapes(VisConnectedShapesFlags.visConnectedShapesAllNodes, "");
+			if (shpConnection != null && shpConnection.Length > 0)
+			{
+				try
+				{
+					int nCnt = 0;
+					foreach (int nIdx in shpConnection)
+					{
+						Visio1.Shape lookupShape = page.Shapes.ItemFromID[nIdx];
+
+						string sKey = shape.ID + ":" + lookupShape.ID;
+						string sKey2 = lookupShape.ID + ":" + shape.ID; // see if duplicate exists
+						if (connectMap.ContainsKey(sKey) || connectMap.ContainsKey(sKey2))
+						{
+							//shpInfo.ConnectFromID = 0;
+							//shpInfo.ConnectFrom = string.Empty;
+							continue;      // we don't want to save this information
+						}
+						shpInfo.ConnectFromID = lookupShape.ID;
+						if (nCnt++ > 0)
+						{
+							shpInfo.ConnectFrom += "," + lookupShape.NameU;
+						}
+						else
+						{
+							shpInfo.ConnectFrom += lookupShape.NameU;
+						}
+						shpInfo.FromLineColor = "Black";
+						shpInfo.FromLinePattern = VisioVariables.LINE_PATTERN_SOLID;
+						connectMap.Add(sKey, sKey2);
+					}
+				}
+				catch (Exception exp)
+				{
+					sTmp = string.Format("ProcessVisioDiagramShapes::getShapeConnections - Exception\n\nConnection:{0}\n{1}", shpInfo.ConnectFrom, exp.Message);
+					MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
+				}
+			}
+#endif
 		}
 	}
 }

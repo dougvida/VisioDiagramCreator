@@ -26,12 +26,11 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 		/// <exception cref="Exception"></exception>
 		public DiagramData parseExcelFile(string file, DiagramData diagData)
 		{
-			object misValue = System.Reflection.Missing.Value; 
-			
 			if (string.IsNullOrEmpty(file))
 			{
 				// Error file is empty
-				MessageBox.Show(string.Format("Exception:parseExcelFile(File is missing: {0})", nameof(file)));
+				string sTmp = string.Format("ProcessExcelDataFile::parseExcelFile - Exception\n\n(File is missing: {0})", nameof(file));
+				MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
 				return null;
 			}
 
@@ -138,10 +137,6 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 								}
 								break;
 
-							case "BLANK DOCUMENT":     // create a new blank Visio document.  No existing stencils attached.  Not using a Template
-								diagData.VisioTemplateFilePath = "";
-								break;
-
 							case "STENCIL":            // stencils to add
 								data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.UniqueKey);
 								string stencilFile = data.ToString();// but we only want the first part of the key
@@ -162,7 +157,8 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 
 							default:
 								// the finally will be called to clean / close up everything
-								MessageBox.Show(String.Format("ERROR::parseExcelFile\n\nInvalid value for the field 'ShapeType'\nFound:({0}) at Row:{1}\n\nPlease resolve this issue in the Excel Data file", data, row));
+								string sTmp = String.Format("ProcessExcelDataFile::parseExcelFile\n\nInvalid value for the field 'ShapeType'\nFound:({0}) at Row:{1}\n\nPlease resolve this issue in the Excel Data file", data, row);
+								MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
 								return null;
 						}
 					}
@@ -172,7 +168,8 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 			catch (Exception ex)
 			{
 				ConsoleOut.writeLine(ex.Message + " - " + ex.StackTrace);
-				MessageBox.Show(String.Format("Exception::parseExcelFile - Duplicate key:({0}) found.\nPlease resolve this issue in the Excel Data file\n{1}", device.ShapeInfo.UniqueKey, ex.Message)); //, ex.StackTrace.ToString);
+				string sTmp = string.Format("ProcessExcelDataFile::parseExcelFile - Exception\n\nDuplicate key:({0}) found.\nPlease resolve this issue in the Excel Data file\n{1}\n{2}", device.ShapeInfo.UniqueKey, ex.Message, ex.StackTrace);
+				MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
 				return null;
 			}
 			finally
@@ -183,7 +180,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				}
 
 				//quit and release
-				xlWorkbook.Close(true, misValue, misValue);
+				xlWorkbook.Close(true, Type.Missing, Type.Missing);
 				xlApp.Quit();
 
 				//release com objects to fully kill excel process from running in the background
@@ -567,7 +564,8 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 			catch (Exception ex)
 			{
 				obj = null;
-				MessageBox.Show("Unable to release the Object " + ex.ToString());
+				string sTmp = string.Format("ProcessExcelDataFile::releaseObject - Exception\n\nUnable to release the Object:{0}\n{1}",ex.Message, ex.StackTrace);
+				MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
 			}
 			finally
 			{
