@@ -59,7 +59,15 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 					var data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.VisioPage);
 					if (data == null) // value is null skip this column
 					{
-						continue;   // should not happen
+						// because first column will contain ';' or a numeric or blank value
+						// this is a cluster don't have time to fix correctly
+						// so look at the 2nd column because this is normally filled if VisioPage is blank
+						// it's a good row to process
+						if (myArray.GetValue(row, (int)ExcelVariables.CellIndex.ShapeType) == null)
+						{ 
+							continue;   // both VisioPage and Shape Type are blank so lets skip this row
+						}
+						data = 0;
 					}
 					if (data.ToString().StartsWith(";"))   // first row is a header so skip
 					{

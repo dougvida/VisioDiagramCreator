@@ -104,8 +104,6 @@ namespace OmnicellBlueprintingTool
 
 			diagramData.BaseWorkingDir = baseWorkingDir;
 			diagramData.ScriptDataPath = scriptDataPath;
-			//diagramData.VisioTemplateFilePath = visioTemplateFilesPath;
-			//diagramData.VisioStencilFilePaths.Add(visioStencilFilesPath);
 			diagramData.ExcelDataPath = excelDataPath;
 			diagramData.VisioFilesPath = visioFilesPath;
 
@@ -142,11 +140,6 @@ namespace OmnicellBlueprintingTool
 
 							// Lets make the connections 
 							bool bAns = visHlp.ConnectShapes(diagramData);
-
-							// using true will auto size the document.
-							// sometimes this is not needed/wanted
-							// can use AutoSize:false "Page Setup" in excel data file
-							visHlp.SetAutoSizeDiagram(diagramData.AutoSizeVisioPages);
 
 							// set focus to first page
 							int maxPages = visHlp.GetNumberOfPages();

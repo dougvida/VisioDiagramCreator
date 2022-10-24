@@ -23,11 +23,11 @@ namespace OmnicellBlueprintingTool.Visio
 		}
 
 		/// <summary>
-		/// SetAutoSizeDiagram
+		/// setAutoSizeDiagram
 		/// set the AutoSize parameter for each page in the Document
 		/// </summary>
 		/// <param name="bMode"><option>true - Autosize diagram</option><option>false - Dont autosize diagram (default)</option></param>
-		public void SetAutoSizeDiagram(bool bMode = false)
+		private void setAutoSizeDiagram(bool bMode = false)
 		{
 			if (bMode)
 			{
@@ -49,7 +49,7 @@ namespace OmnicellBlueprintingTool.Visio
 		/// <param name="orientation"><options>"Portrait" or "Landscape"</options></param>
 		/// <param name="size"><options>"Letter", "Tabloid", "Ledger", "Legal", "A3", "A4"</options></param>
 		/// <return>bool<options>true error or false success</options></return>
-		private bool SetupDiagramPage(Visio1.Page currentPage, VisioPageOrientation orientation, VisioPageSize size)
+		private bool setupDiagramPage(Visio1.Page currentPage, VisioPageOrientation orientation, VisioPageSize size)
 		{
 			Visio1.Shape sheet = currentPage.PageSheet;
 			string width = string.Empty;
@@ -57,7 +57,7 @@ namespace OmnicellBlueprintingTool.Visio
 
 			if (currentPage == null)
 			{
-				string sTmp = string.Format("VisioHelper::SetupDiagramPage - Error\n\nOne of the following is null or empty: Page{0}, Orientation:{1}, Size:{3}", currentPage, orientation, size);
+				string sTmp = string.Format("VisioHelper::setupDiagramPage - Error\n\nOne of the following is null or empty: Page{0}, Orientation:{1}, Size:{3}", currentPage, orientation, size);
 				MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
 				return true;
 			}
@@ -194,19 +194,17 @@ namespace OmnicellBlueprintingTool.Visio
 			}
 
 			Visio1.Pages pagesObj = appVisio.ActiveDocument.Pages;
-			//appVisio.Visible = true;
 
 			// The new document will have one page, get the a reference to it.
 			Visio1.Page page1 = vDocument.Pages[1];
 			page1.Name = "Page-1";
-			page1.AutoSize = true;
-			//page1.AutoSizeDrawing();
+			//page1.AutoSize = true;
 
 			//Assuming 'No theme' is set for the page, no arrow will be shown so change theme to see connector arrow
 			page1.SetTheme("Office Theme");
 
 			// Page 1 is Standard
-			if (!SetupDiagramPage(page1, diagramData.VisioPageOrientation, diagramData.VisioPageSize))
+			if (!setupDiagramPage(page1, diagramData.VisioPageOrientation, diagramData.VisioPageSize))
 			{
 				double xPosition = page1.PageSheet.get_CellsU("PageWidth").ResultIU;
 				double yPosition = page1.PageSheet.get_CellsU("PageHeight").ResultIU;
@@ -222,14 +220,12 @@ namespace OmnicellBlueprintingTool.Visio
 				Visio1.Page page = vDocument.Pages.Add();
 				// Name the pages. This is what is shown in the page tabs.
 				page.Name = "Page-" + (i + 2);
-				page.AutoSize = false;
-				// this.vPage.AutoSizeDrawing(); // this can make the page taller
 
 				//Assuming 'No theme' is set for the page, no arrow will be shown so change theme to see connector arrow
 				page.SetTheme("Office Theme");
 
 				// Page 1 is Standard
-				if (!SetupDiagramPage(page, diagramData.VisioPageOrientation, diagramData.VisioPageSize))
+				if (!setupDiagramPage(page, diagramData.VisioPageOrientation, diagramData.VisioPageSize))
 				{
 					double xPosition = page.PageSheet.get_CellsU("PageWidth").ResultIU;
 					double yPosition = page.PageSheet.get_CellsU("PageHeight").ResultIU;
@@ -238,13 +234,10 @@ namespace OmnicellBlueprintingTool.Visio
 				}
 			}
 
-			// Move the second page to the first position in the list of pages.
-			//page1.Index = 1;
-			//page2.Index = 2;
-			//return page1.Index;
-
 			// set the active page to the first page
-			this.appVisio.ActiveWindow.Page = pagesObj[1];
+			//this.appVisio.ActiveWindow.Page = pagesObj[1];
+			SetActivePage(1);
+
 			return pagesObj;
 		}
 
@@ -630,8 +623,15 @@ namespace OmnicellBlueprintingTool.Visio
 					return true;
 				}
 			}
+
 			// use before saving AutoSizeDrawing
 			appVisio.AutoLayout = true;
+
+			// using true will auto size the document.
+			// sometimes this is not needed/wanted
+			// can use AutoSize:false "Page Setup" in excel data file
+			setAutoSizeDiagram(diagramData.AutoSizeVisioPages);
+
 			return false;
 		}
 
@@ -788,6 +788,11 @@ namespace OmnicellBlueprintingTool.Visio
 				// error
 				return true;
 			}
+
+			// using true will auto size the document.
+			// sometimes this is not needed/wanted
+			// can use AutoSize:false "Page Setup" in excel data file
+			//setAutoSizeDiagram(diagramData.AutoSizeVisioPages);
 
 			ArrayList masterArray_0 = new ArrayList();
 			Visio1.Document doc_0 = vDocuments[1];    // Document stencil figures
