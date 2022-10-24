@@ -57,7 +57,8 @@ namespace OmnicellBlueprintingTool.Visio
 
 			if (currentPage == null)
 			{
-				MessageBox.Show(string.Format("Error one of the following is null or empty: Page{0}, Orientation:{1}, Size:{3}", currentPage, orientation, size));
+				string sTmp = string.Format("VisioHelper::SetupDiagramPage - Error\n\nOne of the following is null or empty: Page{0}, Orientation:{1}, Size:{3}", currentPage, orientation, size);
+				MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
 				return true;
 			}
 
@@ -150,8 +151,8 @@ namespace OmnicellBlueprintingTool.Visio
 			}
 			catch (Exception ex1)
 			{
-				sErr = "Error with the Template file";
-				MessageBox.Show(string.Format("Exception::setupVisioDiagram - {0}\n{1}", sErr, ex1));
+				string sTmp = string.Format("VisioHelper::setupVisioDiagram - Exception\n\nwith the Template file\n{0}\n{1}",ex1.Message, ex1.StackTrace);
+				MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
 				return null;
 			}
 			string sStencil = string.Empty;
@@ -187,8 +188,8 @@ namespace OmnicellBlueprintingTool.Visio
 			}
 			catch (Exception ex2)
 			{
-				sErr = String.Format("Error load Stencil file:({0})\nMost likely the wrong stencil file name or path location\n", sStencil);
-				MessageBox.Show(string.Format("Exception::setupVisioDiagram - {0}\n{1}", sErr, ex2));
+				string sTmp = string.Format("VisioHelper::setupVisioDiagram - Exception\n\nloading Stencil file:({0})\nMost likely the wrong stencil file name or path location\n{1}",sStencil, ex2.Message);
+				MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
 				return null;
 			}
 
@@ -248,6 +249,38 @@ namespace OmnicellBlueprintingTool.Visio
 		}
 
 		/// <summary>
+ 		/// SetPage1Active
+		/// set the active page
+		/// pageNumber may not be less than 1 and can't be greater than the max number of pages
+		/// </summary>
+		/// <param name="pageNumber">Range is 1-max page</param>
+		public void SetActivePage(int pageNumber)
+		{
+			Visio1.Pages pagesObj = appVisio.ActiveDocument.Pages;
+			if (pageNumber < 1 || pageNumber > pagesObj.Count)
+			{
+				// default to first page
+				this.appVisio.ActiveWindow.Page = pagesObj[1];
+			}
+			else 
+			{
+				// set the active page to the first page
+				this.appVisio.ActiveWindow.Page = pagesObj[pageNumber];
+			}
+		}
+
+
+		/// <summary>
+		/// GetNumberOfPages
+		/// return the number of pages in the document
+		/// </summary>
+		/// <returns></returns>
+		public int GetNumberOfPages()
+		{
+			return appVisio.ActiveDocument.Pages.Count;
+		}
+
+		/// <summary>
 		/// _drawShape
 		/// draw the visio stencil on the visio document
 		/// update the dictionaries in the DiagramData object for connection info
@@ -304,8 +337,8 @@ namespace OmnicellBlueprintingTool.Visio
 			}
 			if (stnObj == null)
 			{
-				string sTmp = string.Format("ERROR::_drawShape - Can't find Stencil:{0}", device.ShapeInfo.StencilImage);
-				MessageBox.Show(sTmp);
+				string sTmp = string.Format("VisioHelper::_drawShape  Error\n\nCan't find Stencil:{0}", device.ShapeInfo.StencilImage);
+				MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
 				Console.WriteLine(sTmp);
 				return null;
 			}
@@ -450,33 +483,36 @@ namespace OmnicellBlueprintingTool.Visio
 					shpObj.get_CellsU("VerticalAlign").FormulaForceU = "0";
 				}
 
-				// dont resize the text for the Title and Footer stencils
-				if ( device.ShapeInfo.StencilImage.IndexOf("Title") <= 0 && device.ShapeInfo.StencilImage.IndexOf("Footer") <= 0)
+				// dont resize the text for the Title and Footer stencils or if the Stencil label font size is set to a value
+				if (string.IsNullOrEmpty(device.ShapeInfo.StencilLabelFontSize))
 				{
-					int nSize = 0;
-					string[] saTmp = device.ShapeInfo.StencilLabel.Split('\n');
-					foreach( string saTmpStr in saTmp )
+					if (device.ShapeInfo.StencilImage.IndexOf("Title") <= 0 && device.ShapeInfo.StencilImage.IndexOf("Footer") <= 0)
 					{
-						if (saTmpStr.Length > nSize)
+						int nSize = 0;
+						string[] saTmp = device.ShapeInfo.StencilLabel.Split('\n');
+						foreach (string saTmpStr in saTmp)
 						{
-							nSize = saTmpStr.Length;
+							if (saTmpStr.Length > nSize)
+							{
+								nSize = saTmpStr.Length;
+							}
 						}
-					}
-					//	Set the text transform formulas:
-					//var lHeight = Math.Truncate(shpObj.get_CellsU("TxtHeight").ResultIU * 1000) / 1000;
-					//shpObj.get_CellsU("TxtPinY").FormulaForceU = "Height*0";
-					double lWidth = Math.Truncate(shpObj.get_CellsU("TxtWidth").ResultIU * 1000) / 1000;
-					double fSize = Math.Truncate(shpObj.get_CellsU("Char.Size").ResultIU * 1000) / 1000;
-					double xx = Math.Truncate(((fSize * nSize) - lWidth) * 1000) / 1000;
-					if (xx > lWidth)
-					{
-						//	Set the paragraph alignment formula:
-						// shpObj.get_CellsU("VerticalAlign").FormulaForceU = "0";
-						//scale = shpObj.get_CellsSRC((short)Visio1.VisSectionIndices.visSectionUser, (short)Visio1.VisRowIndices.visRowUser, (short)Visio1.VisCellIndices.visUserValue).ResultIU;
-						double scale = 0.5;
-						// Then set the font, and the TextMargins(for any that are non - zero) with the following(assuming the normal font size is 12 and the left margin is 4pt.:
-						shpObj.get_CellsSRC((short)Visio1.VisSectionIndices.visSectionCharacter, 0, (short)Visio1.VisCellIndices.visCharacterSize).FormulaU = (scale * 12).ToString() + "pt";
-						shpObj.get_CellsSRC((short)Visio1.VisSectionIndices.visSectionObject, (short)Visio1.VisRowIndices.visRowText, (short)Visio1.VisCellIndices.visTxtBlkLeftMargin).FormulaU = (scale * 2).ToString() + "pt";
+						//	Set the text transform formulas:
+						//var lHeight = Math.Truncate(shpObj.get_CellsU("TxtHeight").ResultIU * 1000) / 1000;
+						//shpObj.get_CellsU("TxtPinY").FormulaForceU = "Height*0";
+						double lWidth = Math.Truncate(shpObj.get_CellsU("TxtWidth").ResultIU * 1000) / 1000;
+						double fSize = Math.Truncate(shpObj.get_CellsU("Char.Size").ResultIU * 1000) / 1000;
+						double xx = Math.Truncate(((fSize * nSize) - lWidth) * 1000) / 1000;
+						if (xx > lWidth)
+						{
+							//	Set the paragraph alignment formula:
+							// shpObj.get_CellsU("VerticalAlign").FormulaForceU = "0";
+							//scale = shpObj.get_CellsSRC((short)Visio1.VisSectionIndices.visSectionUser, (short)Visio1.VisRowIndices.visRowUser, (short)Visio1.VisCellIndices.visUserValue).ResultIU;
+							double scale = 0.5;
+							// Then set the font, and the TextMargins(for any that are non - zero) with the following(assuming the normal font size is 12 and the left margin is 4pt.:
+							shpObj.get_CellsSRC((short)Visio1.VisSectionIndices.visSectionCharacter, 0, (short)Visio1.VisCellIndices.visCharacterSize).FormulaU = (scale * 12).ToString() + "pt";
+							shpObj.get_CellsSRC((short)Visio1.VisSectionIndices.visSectionObject, (short)Visio1.VisRowIndices.visRowText, (short)Visio1.VisCellIndices.visTxtBlkLeftMargin).FormulaU = (scale * 2).ToString() + "pt";
+						}
 					}
 				}
 			}
@@ -588,7 +624,8 @@ namespace OmnicellBlueprintingTool.Visio
 				}
 				catch (Exception ex)
 				{
-					MessageBox.Show(string.Format("Exception::setupVisioDiagram - Stencil Image:{0} not found.  Shape Key:{1}\n{2}", device.ShapeInfo.StencilImage, device.ShapeInfo.UniqueKey, ex.Message));
+					string sTmp = string.Format("VisioHelper::setupVisioDiagram - Exception\n\nStencil Image:{0} not found.\nShape Key:{1}\n{2}", device.ShapeInfo.StencilImage, device.ShapeInfo.UniqueKey, ex.Message);
+					MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
 					Console.WriteLine(string.Format("Exception::setupVisioDiagram - Stencil Image:{0} not found.  Shape Key:{1}\n{2}", device.ShapeInfo.StencilImage, device.ShapeInfo.UniqueKey, ex.Message));
 					return true;
 				}

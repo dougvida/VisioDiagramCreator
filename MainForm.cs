@@ -104,8 +104,8 @@ namespace OmnicellBlueprintingTool
 
 			diagramData.BaseWorkingDir = baseWorkingDir;
 			diagramData.ScriptDataPath = scriptDataPath;
-			diagramData.VisioTemplateFilePath = visioTemplateFilesPath;
-			diagramData.VisioStencilFilePaths.Add(visioStencilFilesPath);
+			//diagramData.VisioTemplateFilePath = visioTemplateFilesPath;
+			//diagramData.VisioStencilFilePaths.Add(visioStencilFilesPath);
 			diagramData.ExcelDataPath = excelDataPath;
 			diagramData.VisioFilesPath = visioFilesPath;
 
@@ -121,7 +121,8 @@ namespace OmnicellBlueprintingTool
 					diagramData = new ProcessExcelDataFile().parseExcelFile(tb_excelDataFile.Text.Trim(), diagramData);
 					if (diagramData == null)
 					{
-						// MessageBox.Show("MainForm - ERROR: parseExcelFile returned null\nNo shapes will be drawn");
+						//string sTmp = "MainForm - ERROR\n\nReturn from ProcessExcelDataFile returned null\nNo shapes will be drawn";
+						//MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
 						visHlp.VisioForceCloseAll();
 						this.Close();
 					}
@@ -146,12 +147,24 @@ namespace OmnicellBlueprintingTool
 							// sometimes this is not needed/wanted
 							// can use AutoSize:false "Page Setup" in excel data file
 							visHlp.SetAutoSizeDiagram(diagramData.AutoSizeVisioPages);
+
+							// set focus to first page
+							int maxPages = visHlp.GetNumberOfPages();
+							visHlp.SetActivePage(1);
 						}
 					}
 				}
 				else
 				{
-					MessageBox.Show("This process will build an Excel data file from a Visio file.\nIt may take some time to complete.\nWhen complete you may use this data file to build the Visio diagram\n  You may need to modify some of the stencils (PosX,PosY) Values.\n");
+					diagramData.VisioTemplateFilePath = visioTemplateFilesPath;
+					diagramData.VisioStencilFilePaths.Add(visioStencilFilesPath);
+
+					string sTmp = string.Format("This process will build an Excel data file from a Visio file.\n\n"+
+						"Note: This process may take a few minutes so please be patient.\n\n"+
+						"Use the excel data file with this tool to rebuild the Visio diagram.\nWhen making modifications / additions make it to the Excel Data file.\n\n"+
+						"You may need to modify stencils positions as well as connections");
+
+					MessageBox.Show(this, sTmp, "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
 					// Set cursor as hourglass
 					Cursor.Current = Cursors.WaitCursor;
@@ -164,7 +177,8 @@ namespace OmnicellBlueprintingTool
 					Dictionary<int, ShapeInformation> shapesMap = new ProcessVisioDiagramShapes().GetAllShapesProperties(tb_buildVisioFilePath.Text.Trim(), VisioVariables.ShowDiagram.Show);
 					if (shapesMap == null)
 					{
-						MessageBox.Show("No shapes found on the Visio Diagram");
+						sTmp = "MainForm\n\nNo shapes found on the Visio Diagram";
+						MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
 					}
 					else
 					{
@@ -178,11 +192,13 @@ namespace OmnicellBlueprintingTool
 						string sPath = string.Format(@"{0}{1}", tb_buildExcelPath.Text.Trim(), tb_buildExcelFileName.Text.Trim());
 						if (createExcelDataFile.PopulateExcelDataFile(diagramData, shapesMap, sPath) )
 						{
-							MessageBox.Show(String.Format("Error::MainForm - Failed to create excel data file:{0}", sPath));
+							sTmp = String.Format("MainForm - Error\n\nFailed to create excel data file:{0}", sPath);
+							MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
 						}
 						else
 						{
-							MessageBox.Show(string.Format("MainForm::Excil data file has been created: {0}", sPath));
+							sTmp = string.Format("MainForm::Excil data file has been created\n{0}", sPath);
+							MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Information);
 						}
 					}
 				}
@@ -196,11 +212,13 @@ namespace OmnicellBlueprintingTool
 			}
 			catch (IOException ioe)
 			{
-				MessageBox.Show(string.Format("Exception::MainForm - {0}", ioe.Message), "Warning File Access Exception", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+				string sTmp = string.Format("MainForm - IOEException\n{0}\n", ioe.Message, ioe.StackTrace);
+				MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
 			}
 			catch (Exception ex)
 			{
-				MessageBox.Show(string.Format("Exception::MainForm - {0}\n{1}", ex.Message, ex.StackTrace), "Exception");
+				string sTmp = string.Format("MainForm - Exception\n{0}\n{1}", ex.Message, ex.StackTrace);
+				MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
 			}
 			finally
 			{
