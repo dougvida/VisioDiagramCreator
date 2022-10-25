@@ -1,0 +1,15 @@
+{ 
+	"Omnicell":{
+		"BlueprintingTool":{
+			"Version": "1.0.2.2",
+			"Tables":{
+				"Colors": ["","Black","Blue","Cyan","Gray","Green","Light Blue","Light Green","Orange","Red","Yellow"],
+				"Arrows": ["","None","Start","End","Both"],
+				"Line Patterns": ["","Solid","Dashed","Dotted","Dash_Dot"],
+				"Stencil Label Positions": ["","Top","Bottom","Left","Right"],
+				"Shape Types": ["","Template","Stencil","Page Setup","Shape"],
+				"Label Font Sizes": ["","6","6:B","8","8:B","9","9:B","10","10:B","11","11:B","12","12:B","14","14:B"]
+			}
+		}
+	}
+}

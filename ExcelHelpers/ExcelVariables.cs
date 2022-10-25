@@ -5,13 +5,6 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 {
 	public class ExcelVariables
 	{
-		public const string TablesColorColumn = "=Tables!$A$2:$A$12";
-		public const string TablesArrowsColumn = "=Tables!$C$2:$C$6";
-		public const string TablesLabelFontSizeColumn = "=Tables!$E$2:$E$16";
-		public const string TablesLinePatternColumn = "=Tables!$G$2:$G6";
-		public const string TablesLabelPositionColumn = "=Tables!$I$2:$I4";
-		public const string TablesShapeTypeColumn = "=Tables!$K$2:$K$6";
-
 		public static int GetHeaderCount()
 		{
 			return (Enum.GetNames(typeof(CellIndex)).Length);

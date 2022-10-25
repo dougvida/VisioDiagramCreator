@@ -1,4 +1,6 @@
-﻿using System.Windows.Forms;
+﻿using System;
+using System.IO;
+using System.Windows.Forms;
 
 namespace OmnicellBlueprintingTool.Extensions
 {
@@ -63,6 +65,17 @@ namespace OmnicellBlueprintingTool.Extensions
 				}
 			}
 			return filePath;
+		}
+
+		/// <summary>
+		/// FileExists
+		/// does the file exist
+		/// </summary>
+		/// <param name="fileNamePath"></param>
+		/// <returns>true Yes, false no</returns>
+		public static bool FileExists(string fileNamePath)
+		{
+			return File.Exists(fileNamePath);
 		}
 	}
 }

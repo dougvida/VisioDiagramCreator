@@ -1,4 +1,5 @@
-﻿using OmnicellBlueprintingTool.ExcelHelpers;
+﻿using OmnicellBlueprintingTool.Configuration;
+using OmnicellBlueprintingTool.ExcelHelpers;
 using OmnicellBlueprintingTool.Extensions;
 using OmnicellBlueprintingTool.Models;
 using OmnicellBlueprintingTool.Visio;
@@ -15,12 +16,15 @@ namespace OmnicellBlueprintingTool
 		DiagramData diagramData = null;
 		Boolean _bBuildVisioFromExcelDataFile = true;
 		VisioHelper visHlp = new VisioHelper();
+		AppConfiguration appCfg = null;
 
 #if DEBUG
 		static string baseWorkingDir = @"C:\Omnicell_Blueprinting_tool";
 #else
 		static string baseWorkingDir = Application.StartupPath;	// System.IO.Directory.GetCurrentDirectory();
 #endif
+
+		string sJsonConfigFile = string.Format(@"{0}\OmnicellBlueprintingTool.json", baseWorkingDir);
 
 		static string scriptDataPath = baseWorkingDir + @"\data\ScriptData\";
 		private static string visioTemplateFilesPath = baseWorkingDir + @"\data\Templates\";
@@ -33,7 +37,6 @@ namespace OmnicellBlueprintingTool
 		{
 			InitializeComponent();
 			this.Text = "Omnicell Blueprinting Tool";
-			this.Text += String.Format(" - v{0}", ProductVersion);
 		}
 
 		private void MainForm_Load(object sender, EventArgs e)
@@ -80,6 +83,16 @@ namespace OmnicellBlueprintingTool
 			tb_buildExcelFileName.Enabled = false;
 			tb_buildExcelPath.Enabled = false;
 			tb_buildVisioFilePath.Enabled = false;
+
+			appCfg = ReadJsonFile.ReadJSONFile(sJsonConfigFile);
+			if (appCfg == null)
+			{
+				// close the application
+				this.Close();
+				return;
+			}
+			appCfg.Version = String.Format("v{0}", ProductVersion);
+
 		}
 
 		private void btn_Quit_Click(object sender, EventArgs e)
@@ -106,6 +119,8 @@ namespace OmnicellBlueprintingTool
 			diagramData.ScriptDataPath = scriptDataPath;
 			diagramData.ExcelDataPath = excelDataPath;
 			diagramData.VisioFilesPath = visioFilesPath;
+
+			diagramData.AppConfig = appCfg;
 
 			try
 			{
@@ -257,7 +272,6 @@ namespace OmnicellBlueprintingTool
 				btn_Submit.Enabled = false;
 			}
 		}
-
 		private void btn_openExcelPath_Click(object sender, EventArgs e)
 		{
 			string folder = string.Empty;
@@ -284,7 +298,6 @@ namespace OmnicellBlueprintingTool
 				}
 			}
 		}
-
 		private void btn_VisioFileToRead_Click(object sender, EventArgs e)
 		{
 			string filePath = string.Empty;
@@ -321,7 +334,6 @@ namespace OmnicellBlueprintingTool
 				tb_buildExcelFileName.Text = String.Format("{0}_ExcelData_{1}.xlsx", sName, DateTime.Now.ToString("MMddyyyy"));
 			}
 		}
-
 		private void btn_readExcelfile_Click(object sender, EventArgs e)
 		{
 			string filePath = string.Empty;
@@ -347,7 +359,6 @@ namespace OmnicellBlueprintingTool
 				}
 			}
 		}
-
 
 		/// <summary>
 		/// validate_field

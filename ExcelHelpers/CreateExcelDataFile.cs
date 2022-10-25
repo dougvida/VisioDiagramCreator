@@ -254,10 +254,10 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 					formatVisioDataSheet(_xlWorksheet);
 
 					// populate the Tables sheet
-					writeTableSheet();
+					writeTableSheet(diagramData);
 
 					// some column use a dropdown list so we need to setup it up
-					setColumnsDropdownList();
+					setColumnsDropdownList(diagramData);
 
 					// this should stop the check Compatibility diaglog from poping up
 					_xlWorkbook.DoNotPromptForConvert = true;             
@@ -549,7 +549,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 		/// the user can use this sheet as list to the excel file
 		/// </summary>
 		/// <returns></returns>
-		private bool writeTableSheet()
+		private bool writeTableSheet(DiagramData diagramData)
 		{
 			Excel.Worksheet xlNewSheet = selectWorkSheet("Tables");
 
@@ -675,89 +675,98 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 			return false;
 		}
 
-		private void setColumnsDropdownList()
+		private void setColumnsDropdownList(DiagramData diagramData)
 		{
 			Excel.Range xlRange = _xlWorksheet.UsedRange;
+			int startingRow = 2;
 			int rowCount = xlRange.Rows.Count;
 			int colCount = xlRange.Columns.Count;
 
+			// the count will be dynamic based on the json data in the OmnicellBlueprintingTool.json.json file
+			string tablesColorColumn = String.Format("=Tables!$A${0}:$A${1}",startingRow, diagramData.AppConfig.Colors.Count);
+			string tablesArrowsColumn = String.Format("=Tables!$C${0}:$C${1}", startingRow, diagramData.AppConfig.Arrows.Count);
+			string tablesLabelFontSizeColumn = String.Format("=Tables!$E${0}:$E${1}", startingRow, diagramData.AppConfig.LabelFontSizes.Count);
+			string tablesLinePatternColumn = String.Format("=Tables!$G${0}:$G{1}", startingRow, diagramData.AppConfig.LinePatterns.Count);
+			string tablesLabelPositionColumn = String.Format("=Tables!$I${0}:$I{1}", startingRow, diagramData.AppConfig.StencilLabelPosition.Count);
+			string tablesShapeTypeColumn = String.Format("=Tables!$K${0}:$K${1}", startingRow, diagramData.AppConfig.ShapeTypes.Count);
+
 			// Shape Type column
-			Excel.Range xlRange1 = _xlWorksheet.get_Range(string.Format("B2:B{0}", rowCount)).EntireColumn;
+			Excel.Range xlRange1 = _xlWorksheet.get_Range(string.Format("B{0}2:B{1}", startingRow, rowCount)).EntireColumn;
 			xlRange1.Validation.Delete();
 			xlRange1.Validation.Add(XlDVType.xlValidateList,Excel.XlDVAlertStyle.xlValidAlertStop,
-						Excel.XlFormatConditionOperator.xlBetween, ExcelVariables.TablesShapeTypeColumn, Type.Missing);
+						Excel.XlFormatConditionOperator.xlBetween, tablesShapeTypeColumn, Type.Missing);
 			xlRange1.Validation.InCellDropdown = true;
 			xlRange1.Validation.IgnoreBlank = false;
 
 			// Stencil Label position
-			xlRange1 = _xlWorksheet.get_Range(string.Format("F2:F{0}", rowCount)).EntireColumn;
+			xlRange1 = _xlWorksheet.get_Range(string.Format("F{0}:F{1}", startingRow, rowCount)).EntireColumn;
 			xlRange1.Validation.Delete();
 			xlRange1.Validation.Add(XlDVType.xlValidateList, Excel.XlDVAlertStyle.xlValidAlertStop,
-						Excel.XlFormatConditionOperator.xlBetween, ExcelVariables.TablesLabelPositionColumn, Type.Missing);
+						Excel.XlFormatConditionOperator.xlBetween, tablesLabelPositionColumn, Type.Missing);
 			xlRange1.Validation.InCellDropdown = true;
 			xlRange1.Validation.IgnoreBlank = false;
 
 			// Stencil Label Font Size
-			xlRange1 = _xlWorksheet.get_Range(string.Format("G2:G{0}", rowCount)).EntireColumn;
+			xlRange1 = _xlWorksheet.get_Range(string.Format("G{0}:G{1}", startingRow,rowCount)).EntireColumn;
 			xlRange1.Validation.Delete();
 			xlRange1.Validation.Add(XlDVType.xlValidateList, Excel.XlDVAlertStyle.xlValidAlertStop,
-						Excel.XlFormatConditionOperator.xlBetween, ExcelVariables.TablesLabelFontSizeColumn, Type.Missing);
+						Excel.XlFormatConditionOperator.xlBetween, tablesLabelFontSizeColumn, Type.Missing);
 			xlRange1.Validation.InCellDropdown = true;
 			xlRange1.Validation.IgnoreBlank = false;
 
 			// Fill Color
-			xlRange1 = _xlWorksheet.get_Range(string.Format("W2:W{0}", rowCount)).EntireColumn;
+			xlRange1 = _xlWorksheet.get_Range(string.Format("W{0}:W{1}", startingRow, rowCount)).EntireColumn;
 			xlRange1.Validation.Delete();
 			xlRange1.Validation.Add(XlDVType.xlValidateList, Excel.XlDVAlertStyle.xlValidAlertStop,
-						Excel.XlFormatConditionOperator.xlBetween, ExcelVariables.TablesColorColumn, Type.Missing);
+						Excel.XlFormatConditionOperator.xlBetween, tablesColorColumn, Type.Missing);
 			xlRange1.Validation.InCellDropdown = true;
 			xlRange1.Validation.IgnoreBlank = false;
 
 			// From Line Pattern
-			xlRange1 = _xlWorksheet.get_Range(string.Format("Z2:Z{0}", rowCount)).EntireColumn;
+			xlRange1 = _xlWorksheet.get_Range(string.Format("Z{0}:Z{1}", startingRow, rowCount)).EntireColumn;
 			xlRange1.Validation.Delete();
 			xlRange1.Validation.Add(XlDVType.xlValidateList, Excel.XlDVAlertStyle.xlValidAlertStop,
-						Excel.XlFormatConditionOperator.xlBetween, ExcelVariables.TablesLinePatternColumn, Type.Missing);
+						Excel.XlFormatConditionOperator.xlBetween, tablesLinePatternColumn, Type.Missing);
 			xlRange1.Validation.InCellDropdown = true;
 			xlRange1.Validation.IgnoreBlank = false;
 
 			// From Arrow
-			xlRange1 = _xlWorksheet.get_Range(string.Format("AA2:AA{0}", rowCount)).EntireColumn;
+			xlRange1 = _xlWorksheet.get_Range(string.Format("AA{0}:AA{1}", startingRow, rowCount)).EntireColumn;
 			xlRange1.Validation.Delete();
 			xlRange1.Validation.Add(XlDVType.xlValidateList, Excel.XlDVAlertStyle.xlValidAlertStop,
-						Excel.XlFormatConditionOperator.xlBetween, ExcelVariables.TablesArrowsColumn, Type.Missing);
+						Excel.XlFormatConditionOperator.xlBetween, tablesArrowsColumn, Type.Missing);
 			xlRange1.Validation.InCellDropdown = true;
 			xlRange1.Validation.IgnoreBlank = false;
 
 			// From Line Color
-			xlRange1 = _xlWorksheet.get_Range(string.Format("AB2:AB{0}", rowCount)).EntireColumn;
+			xlRange1 = _xlWorksheet.get_Range(string.Format("AB{0}:AB{1}", startingRow, rowCount)).EntireColumn;
 			xlRange1.Validation.Delete();
 			xlRange1.Validation.Add(XlDVType.xlValidateList, Excel.XlDVAlertStyle.xlValidAlertStop,
-						Excel.XlFormatConditionOperator.xlBetween, ExcelVariables.TablesColorColumn, Type.Missing);
+						Excel.XlFormatConditionOperator.xlBetween, tablesColorColumn, Type.Missing);
 			xlRange1.Validation.InCellDropdown = true;
 			xlRange1.Validation.IgnoreBlank = false;
 
 			// To Line Pattern
-			xlRange1 = _xlWorksheet.get_Range(string.Format("AE2:AE{0}", rowCount)).EntireColumn;
+			xlRange1 = _xlWorksheet.get_Range(string.Format("AE{0}:AE{1}", startingRow, rowCount)).EntireColumn;
 			xlRange1.Validation.Delete();
 			xlRange1.Validation.Add(XlDVType.xlValidateList, Excel.XlDVAlertStyle.xlValidAlertStop,
-						Excel.XlFormatConditionOperator.xlBetween, ExcelVariables.TablesLinePatternColumn, Type.Missing);
+						Excel.XlFormatConditionOperator.xlBetween, tablesLinePatternColumn, Type.Missing);
 			xlRange1.Validation.InCellDropdown = true;
 			xlRange1.Validation.IgnoreBlank = false;
 
 			// To Arrow
-			xlRange1 = _xlWorksheet.get_Range(string.Format("AF2:AF{0}", rowCount)).EntireColumn;
+			xlRange1 = _xlWorksheet.get_Range(string.Format("AF{0}:AF{1}",	startingRow, rowCount)).EntireColumn;
 			xlRange1.Validation.Delete();
 			xlRange1.Validation.Add(XlDVType.xlValidateList, Excel.XlDVAlertStyle.xlValidAlertStop,
-						Excel.XlFormatConditionOperator.xlBetween, ExcelVariables.TablesArrowsColumn, Type.Missing);
+						Excel.XlFormatConditionOperator.xlBetween, tablesArrowsColumn, Type.Missing);
 			xlRange1.Validation.InCellDropdown = true;
 			xlRange1.Validation.IgnoreBlank = false;
 
 			// To Line Color
-			xlRange1 = _xlWorksheet.get_Range(string.Format("AG2:AG{0}", rowCount)).EntireColumn;
+			xlRange1 = _xlWorksheet.get_Range(string.Format("AG{0}:AG{1}", startingRow, rowCount)).EntireColumn;
 			xlRange1.Validation.Delete();
 			xlRange1.Validation.Add(XlDVType.xlValidateList, Excel.XlDVAlertStyle.xlValidAlertStop,
-						Excel.XlFormatConditionOperator.xlBetween, ExcelVariables.TablesColorColumn, Type.Missing);
+						Excel.XlFormatConditionOperator.xlBetween, tablesColorColumn, Type.Missing);
 			xlRange1.Validation.InCellDropdown = true;
 			xlRange1.Validation.IgnoreBlank = false;
 		}
