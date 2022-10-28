@@ -7,6 +7,9 @@ using OmnicellBlueprintingTool.Models;
 using Visio1 = Microsoft.Office.Interop.Visio;
 using System.Xml.Linq;
 using static OmnicellBlueprintingTool.Visio.VisioVariables;
+using OmnicellBlueprintingTool.Properties;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.TrayNotify;
+using System.Drawing;
 
 namespace OmnicellBlueprintingTool.Visio
 {
@@ -343,6 +346,7 @@ namespace OmnicellBlueprintingTool.Visio
 			// draw the shape on the document
 			shpObj = this.appVisio.ActivePage.Drop(stnObj, device.ShapeInfo.Pos_x, device.ShapeInfo.Pos_y);
 			shpObj.NameU = device.ShapeInfo.UniqueKey;
+			shpObj.Name = device.ShapeInfo.StencilImage;
 
 			// normal stencils are normal (east-width and south-height)
 			if (device.ShapeInfo.Width > 0.0)
@@ -357,48 +361,16 @@ namespace OmnicellBlueprintingTool.Visio
 			}
 
 			//var linePatternCell = shpConn.get_CellsU("LinePattern");
+
 			string rgb = string.Empty;
-			switch (device.ShapeInfo.FillColor.Trim().ToUpper())
+			if (device.ShapeInfo.FillColor.Trim().ToUpper().IndexOf("RGB(") >= 0)
 			{
-				case "YELLOW":
-					rgb = VisioVariables.COLOR_YELLOW;
-					break;
-				case "GREEN":
-					rgb = VisioVariables.COLOR_GREEN;
-					break;
-				case "LIGHT GREEN":
-					rgb = VisioVariables.COLOR_GREEN_LIGHT;
-					break;
-				case "RED":
-					rgb = VisioVariables.COLOR_RED;
-					break;
-				case "GRAY":
-					rgb = VisioVariables.COLOR_GRAY;
-					break;
-
-				case "BLUE":
-					rgb = VisioVariables.COLOR_BLUE;
-					break;
-				case "LIGHT BLUE":
-					rgb = VisioVariables.COLOR_BLUE_SERVER;
-					break;
-				case "CYAN":
-					rgb = VisioVariables.COLOR_CYAN;
-					break;
-
-				case "ORANGE":
-					rgb = VisioVariables.COLOR_ORANGE;
-					break;
-				case "LIGHT ORANGE":
-					rgb = VisioVariables.COLOR_ORANGE_SERVER;
-					break;
-
-				case "WHITE":
-					rgb = VisioVariables.COLOR_WHITE;
-					break;
-				default:
-					// no fill
-					break;
+				rgb = device.ShapeInfo.FillColor.Trim().ToUpper();
+			}
+			else
+			{
+				// value must be a color word.  convert to RGB
+				rgb = VisioVariables.GetRGBColor(device.ShapeInfo.FillColor.Trim().ToUpper());
 			}
 			if (!string.IsNullOrEmpty(rgb))
 			{
@@ -411,7 +383,7 @@ namespace OmnicellBlueprintingTool.Visio
 				shpObj.get_CellsSRC(
 					 (short)Visio1.VisSectionIndices.visSectionObject,
 					 (short)Visio1.VisRowIndices.visRowFill,
-					 (short)Visio1.VisCellIndices.visFillBkgnd).FormulaU = VisioVariables.COLOR_BLACK;
+					 (short)Visio1.VisCellIndices.visFillBkgnd).FormulaU = VisioVariables.GetRGBColor("BLACK");
 
 				// for an shape to be filled this needs to be set
 				shpObj.get_CellsSRC(
@@ -425,7 +397,7 @@ namespace OmnicellBlueprintingTool.Visio
 			// we want to keep the shape outline color Black for this Stencil
 			if (device.ShapeInfo.UniqueKey.ToUpper().StartsWith("TABLECELL"))
 			{
-				shpObj.get_Cells("LineColor").Formula = VisioVariables.COLOR_BLACK;
+				shpObj.get_Cells("LineColor").Formula = VisioVariables.GetRGBColor("BLACK");
 			}
 			if (!string.IsNullOrEmpty(device.ShapeInfo.StencilLabel))
 			{
@@ -533,7 +505,6 @@ namespace OmnicellBlueprintingTool.Visio
 			}
 		}
 
-
 		/// <summary>
 		/// ClearStencilList
 		/// this will clear the stencils list for reuse
@@ -546,12 +517,16 @@ namespace OmnicellBlueprintingTool.Visio
 				stencils.Clear();
 			}
 		}
+
 		/// <summary>
 		/// VisioForceCloseAll
 		/// Close all the Visio documents
-		/// This will display the Save file dialog
+		/// if no file name is present Visio will give the option to saveAs
+		/// if a file name is present Visio will save using the path and file name
+		/// User has the ability to not save, Cancel or Save
 		/// </summary>
-		public void VisioForceCloseAll()
+		/// <param name="fileNamePath">if null prompt the user, else save using this path and name</param>
+		public void VisioForceCloseAll(string fileNamePath)
 		{
 			try
 			{
@@ -559,6 +534,18 @@ namespace OmnicellBlueprintingTool.Visio
 
 				if (this.vDocuments != null)
 				{
+					// if the file already exists prompt the user if they want to overright the existing file
+					// not yet implemented
+					//
+					if (!string.IsNullOrEmpty(fileNamePath))
+					{
+						this.appVisio.ActiveDocument.SaveAs(fileNamePath);
+					}
+					else
+					{
+						this.appVisio.ActiveDocument.Save();
+					}
+
 					while (this.vDocuments.Count > 0)
 					{
 						this.vDocuments.Application.ActiveDocument.Close();
@@ -577,7 +564,7 @@ namespace OmnicellBlueprintingTool.Visio
 			}
 			catch (System.Runtime.InteropServices.COMException ex)
 			{
-				ConsoleOut.writeLine(string.Format("This exception is OK because the user closed the Visio document before exiting the application:  {0}", ex.Message));
+				ConsoleOut.writeLine(string.Format("VisioHelper::VisioForceCloseAll - Exception\n\nUser closed the Visio document before exiting the application\n\n{0}", ex.Message));
 			}
 		}
 
@@ -617,9 +604,9 @@ namespace OmnicellBlueprintingTool.Visio
 				}
 				catch (Exception ex)
 				{
-					string sTmp = string.Format("VisioHelper::setupVisioDiagram - Exception\n\nStencil Image:{0} not found.\nShape Key:{1}\n{2}", device.ShapeInfo.StencilImage, device.ShapeInfo.UniqueKey, ex.Message);
+					string sTmp = string.Format("VisioHelper::DrawAllShapes - Exception\n\nStencil Image:{0} not found.\nShape Key:{1}\n{2}", device.ShapeInfo.StencilImage, device.ShapeInfo.UniqueKey, ex.Message);
 					MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
-					Console.WriteLine(string.Format("Exception::setupVisioDiagram - Stencil Image:{0} not found.  Shape Key:{1}\n{2}", device.ShapeInfo.StencilImage, device.ShapeInfo.UniqueKey, ex.Message));
+					Console.WriteLine(string.Format("Exception::DrawAllShapes - Stencil Image:{0} not found.  Shape Key:{1}\n{2}", device.ShapeInfo.StencilImage, device.ShapeInfo.UniqueKey, ex.Message));
 					return true;
 				}
 			}
@@ -647,11 +634,11 @@ namespace OmnicellBlueprintingTool.Visio
 		{
 			ShapeConnection lookupShapeConnection = null;
 			Visio1.Shape shpConn = null;
-
+			int nCnt = 0;
 			try
 			{
 				// iterate over the ShapeConnectionsMap to determine if a connection shape is needed
-				for (int nCnt = 0; nCnt < diagData.ShapeConnectionsMap.Count; nCnt++)
+				for (nCnt = 0; nCnt < diagData.ShapeConnectionsMap.Count; nCnt++)
 				{
 					// nCnt is the key
 					if (diagData.ShapeConnectionsMap.TryGetValue(nCnt, out lookupShapeConnection))
@@ -670,7 +657,7 @@ namespace OmnicellBlueprintingTool.Visio
 						shpConn.get_CellsU("ShdwPattern").ResultIU = VisioVariables.SHDW_PATTERN;
 						shpConn.get_CellsU("BeginArrow").ResultIU = VisioVariables.ARROW_NONE;
 						shpConn.get_CellsU("EndArrow").ResultIU = VisioVariables.ARROW_NONE;
-						shpConn.get_CellsU("LineColor").FormulaU = VisioVariables.COLOR_BLACK;
+						shpConn.get_CellsU("LineColor").FormulaU = VisioVariables.GetRGBColor("BLACK");
 						shpConn.get_CellsU("Rounding").ResultIU = VisioVariables.ROUNDING;
 						shpConn.get_CellsU("LinePattern").ResultIU = VisioVariables.LINE_PATTERN_SOLID;
 						shpConn.get_CellsU("LineWeight").FormulaU = VisioVariables.sLINE_WEIGHT_1;
@@ -709,43 +696,34 @@ namespace OmnicellBlueprintingTool.Visio
 						}
 
 						//var linePatternCell = shpConn.get_CellsU("LinePattern");
-						switch (lookupShapeConnection.LineColor.Trim().ToUpper())
+						string rgbColor = string.Empty;
+						rgbColor = VisioVariables.GetRGBColor(lookupShapeConnection.LineColor.Trim().ToUpper());
+						if (lookupShapeConnection.LineColor.IndexOf("RGB(") >= 0)
 						{
-							case "YELLOW":
-								shpConn.get_CellsU("LineColor").FormulaU = VisioVariables.COLOR_YELLOW;
-								break;
-							case "LIGHT GREEN":
-								shpConn.get_CellsU("LineColor").FormulaU = VisioVariables.COLOR_GREEN_LIGHT;
-								break;
-							case "GREEN":
-								shpConn.get_CellsU("LineColor").FormulaU = VisioVariables.COLOR_GREEN;
-								break;
-							case "GRAY":
-								shpConn.get_CellsU("LineColor").FormulaU = VisioVariables.COLOR_GRAY;
-								break;
-							case "RED":
-								shpConn.get_CellsU("LineColor").FormulaU = VisioVariables.COLOR_RED;
-								break;
-							case "CYAN":
-								shpConn.get_CellsU("LineColor").FormulaU = VisioVariables.COLOR_CYAN;
-								break;
-							case "LIGHT BLUE":
-								shpConn.get_CellsU("LineColor").FormulaU = VisioVariables.COLOR_BLUE_SERVER;
-								break;
-							case "BLUE":
-								shpConn.get_CellsU("LineColor").FormulaU = VisioVariables.COLOR_BLUE;
-								break;
-							case "LIGHT ORANGE":
-								shpConn.get_CellsU("LineColor").FormulaU = VisioVariables.COLOR_ORANGE_SERVER;
-								break;
-							case "ORANGE":
-								shpConn.get_CellsU("LineColor").FormulaU = VisioVariables.COLOR_ORANGE;
-								break;
-							default:
-							case "BLACK":
-								shpConn.get_CellsU("LineColor").FormulaU = VisioVariables.COLOR_BLACK;
-								break;
+							string sColor = VisioVariables.GetColorValueFromRGB(lookupShapeConnection.LineColor.Trim().ToUpper());
+							if (!string.IsNullOrEmpty(sColor))
+							{
+								rgbColor = VisioVariables.GetRGBColor(sColor);
+							}
 						}
+						if (string.IsNullOrEmpty(rgbColor))
+						{
+							rgbColor = VisioVariables.GetRGBColor("BLACK");
+						}
+						shpConn.get_CellsU("LineColor").Formula = "="+rgbColor;
+
+						// default the connection Text color Black
+						shpConn.get_CellsU("Char.Color").FormulaU = "="+VisioVariables.GetRGBColor("BLACK");
+
+						//set the shape back color
+						//shpConn.get_CellsSRC((short)VisSectionIndices.visSectionObject,
+					 	//						(short)VisRowIndices.visRowFill,
+						//						(short)VisCellIndices.visFillForegnd).FormulaU = "="+rgbColor;
+						//
+						//shpConn.get_CellsSRC((short)Visio1.VisSectionIndices.visSectionObject,
+						//							(short)Visio1.VisRowIndices.visRowCharacter,
+						//							(short)Visio1.VisCellIndices.visTxtBlkBkgndTrans).FormulaU = "1";
+						////(short)Visio1.VisCellIndices.visTxtBlkBkgnd).FormulaU = "0";
 
 						// now connect the connector to the objects
 						if (lookupShapeConnection.ShpFromObj != null && lookupShapeConnection.ShpToObj != null)
@@ -768,7 +746,7 @@ namespace OmnicellBlueprintingTool.Visio
 			}
 			catch (Exception ex)
 			{
-				throw new Exception(string.Format("Exception::ConnectShapes - {0}", ex.Message));
+				throw new Exception(string.Format("VisioHelper::ConnectShapes - Exception\n\n{0}\n{1}", ex.Message, ex.StackTrace));
 			}
 			return false;
 		}
@@ -812,7 +790,7 @@ namespace OmnicellBlueprintingTool.Visio
 				masterArray_0.Add(master.NameU);   // THIS WILL CONTAIN DIAGRAM FIGURES
 				Console.WriteLine(string.Format("ListDocumentStencils - Master1 - ID:{0} Name:{1} NameU:{2}", master.ID, master.Name, master.NameU));
 			}
-			this.VisioForceCloseAll();
+			this.VisioForceCloseAll("");
 
 			return false;
 		}

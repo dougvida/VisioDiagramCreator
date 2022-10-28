@@ -3,7 +3,10 @@
 		"BlueprintingTool":{
 			"Version": "1.0.2.2",
 			"Tables":{
-				"Colors": ["","Black","Blue","Cyan","Gray","Green","Light Blue","Light Green","Orange","Red","Yellow"],
+				"Colors": ["","Beige","Black","Blue","Blue Alice","Blue Silver","Blue Steel","Brown","Cyan","Gold",
+					"Gray","Green","Green Light","Green Lime","Green Sea","Khaki","Khaki Dark","Lime","Magenta","Mint","Navy","Olive",
+					"Olive Drab","Orange","Orange Light","Peach","Pink Light","Purple","Red","Salmon","Silver","Tan","Teal",
+					"White","White Smoke","Yellow" ],
 				"Arrows": ["","None","Start","End","Both"],
 				"Line Patterns": ["","Solid","Dashed","Dotted","Dash_Dot"],
 				"Stencil Label Positions": ["","Top","Bottom","Left","Right"],

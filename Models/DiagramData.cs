@@ -11,6 +11,7 @@ namespace OmnicellBlueprintingTool.Models
 		public string visioStencilFilesPath = string.Empty;
 		public string ExcelDataPath = string.Empty;
 		public string VisioFilesPath = string.Empty;
+		public string ExcelDataFileName = string.Empty;
 
 		public AppConfiguration AppConfig { get; set; }
 		public VisioVariables.VisioPageOrientation VisioPageOrientation { get; set; } = VisioVariables.VisioPageOrientation.Portrait;
@@ -39,7 +40,6 @@ namespace OmnicellBlueprintingTool.Models
 			visioTemplateFilesPath = string.Empty;
 			visioStencilFilesPath = string.Empty;
 			ExcelDataPath = string.Empty;
-			VisioFilesPath = string.Empty;
 
 			if (AllShapesMap != null)
 			{

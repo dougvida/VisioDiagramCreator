@@ -18,6 +18,8 @@ namespace OmnicellBlueprintingTool
 		VisioHelper visHlp = new VisioHelper();
 		AppConfiguration appCfg = null;
 
+		string ExcelDataFileName = string.Empty;	// if this is populated it will single the close operation to prompt the user to save the visio file
+
 #if DEBUG
 		static string baseWorkingDir = @"C:\Omnicell_Blueprinting_tool";
 #else
@@ -98,8 +100,11 @@ namespace OmnicellBlueprintingTool
 		private void btn_Quit_Click(object sender, EventArgs e)
 		{
 			// close the Visio diagram if open
-			visHlp.VisioForceCloseAll();
-
+			if (!string.IsNullOrEmpty(ExcelDataFileName))
+			{
+				visHlp.VisioForceCloseAll(string.Format(@"{0}{1}.vsdx", visioFilesPath, ExcelDataFileName));
+			}
+			ExcelDataFileName = string.Empty;
 			// close the application
 			this.Close();
 		}
@@ -109,8 +114,12 @@ namespace OmnicellBlueprintingTool
 			// close the Visio diagram if open
 			// after the run will keep it open to allow the user to work on the diagram before saving
 			// if the quit button is pressed the close Visio document will be call
-			visHlp.VisioForceCloseAll();
-			visHlp.ClearStencilList();
+			if (!string.IsNullOrEmpty(ExcelDataFileName))
+			{
+				visHlp.VisioForceCloseAll(string.Format(@"{0}{1}.vsdx",visioFilesPath, ExcelDataFileName));
+				visHlp.ClearStencilList();
+				ExcelDataFileName = string.Empty;
+			}
 
 			// parse the data file and draw the visio diagram
 			diagramData = new DiagramData();
@@ -131,12 +140,13 @@ namespace OmnicellBlueprintingTool
 					
 					// build visio file form data file
 					ConsoleOut.writeLine(String.Format("MainForm - Build Visio file from an excel data file:{0}", tb_excelDataFile.Text));
+					ExcelDataFileName = FileExtension.GetFileNameOnly(tb_excelDataFile.Text);
 					diagramData = new ProcessExcelDataFile().parseExcelFile(tb_excelDataFile.Text.Trim(), diagramData);
 					if (diagramData == null)
 					{
 						//string sTmp = "MainForm - ERROR\n\nReturn from ProcessExcelDataFile returned null\nNo shapes will be drawn";
 						//MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
-						visHlp.VisioForceCloseAll();
+						visHlp.VisioForceCloseAll("");
 						this.Close();
 					}
 
@@ -172,7 +182,7 @@ namespace OmnicellBlueprintingTool
 						"Use the excel data file with this tool to rebuild the Visio diagram.\nWhen making modifications / additions make it to the Excel Data file.\n\n"+
 						"You may need to modify stencils positions as well as connections");
 
-					MessageBox.Show(this, sTmp, "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
+					//MessageBox.Show(this, sTmp, "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
 					// Set cursor as hourglass
 					Cursor.Current = Cursors.WaitCursor;

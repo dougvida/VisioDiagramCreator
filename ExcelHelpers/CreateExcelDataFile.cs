@@ -551,6 +551,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 		/// <returns></returns>
 		private bool writeTableSheet(DiagramData diagramData)
 		{
+			int Row = 1;
 			Excel.Worksheet xlNewSheet = selectWorkSheet("Tables");
 
 			// column A is Colors
@@ -558,19 +559,17 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 			((Excel.Range)xlNewSheet.Cells[1, 1]).ColumnWidth = 20.00;
 			xlNewSheet.Cells[1, 1].Interior.Color = Excel.XlRgbColor.rgbDarkSeaGreen;
 
-			((Excel.Range)xlNewSheet.Cells[2, 1]).Value = "";
-			((Excel.Range)xlNewSheet.Cells[3, 1]).Value = "Black";
-			((Excel.Range)xlNewSheet.Cells[4, 1]).Value = "Blue";
-			((Excel.Range)xlNewSheet.Cells[5, 1]).Value = "Cyan";
-			((Excel.Range)xlNewSheet.Cells[6, 1]).Value = "Gray";
-			((Excel.Range)xlNewSheet.Cells[7, 1]).Value = "Green";
-			((Excel.Range)xlNewSheet.Cells[8, 1]).Value = "Light Blue";
-			((Excel.Range)xlNewSheet.Cells[9, 1]).Value = "Light Green";
-			((Excel.Range)xlNewSheet.Cells[10, 1]).Value = "Orange";
-			((Excel.Range)xlNewSheet.Cells[11, 1]).Value = "Red";
-			((Excel.Range)xlNewSheet.Cells[12, 1]).Value = "Yellow";
+			string[] saTmp = VisioVariables.GetAllKeyValues();
+			if (saTmp.Length > 0)
+			{
+				Row = 2;
+				for (int nRow = 2; nRow <= saTmp.Length; nRow++)
+				{
+					((Excel.Range)xlNewSheet.Cells[nRow, 1]).Value = saTmp[nRow];
+				}
+			}
 
-			Excel.Range range = xlNewSheet.Range[xlNewSheet.Cells[1, 1], xlNewSheet.Cells[12, 1]];
+			Excel.Range range = xlNewSheet.Range[xlNewSheet.Cells[1, 1], xlNewSheet.Cells[saTmp.Length, 1]];
 			range.Borders.LineStyle = XlLineStyle.xlContinuous;
 			range.Rows.AutoFit();      // auto aize the rows
 

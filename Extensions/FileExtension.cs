@@ -1,6 +1,8 @@
-﻿using System;
+﻿using Microsoft.Office.Interop.Visio;
+using System;
 using System.IO;
 using System.Windows.Forms;
+using Path = System.IO.Path;
 
 namespace OmnicellBlueprintingTool.Extensions
 {
@@ -76,6 +78,15 @@ namespace OmnicellBlueprintingTool.Extensions
 		public static bool FileExists(string fileNamePath)
 		{
 			return File.Exists(fileNamePath);
+		}
+
+		public static string GetFileName(string fileNamePath)
+		{
+			return Path.GetFileName(fileNamePath);
+		}
+		public static string GetFileNameOnly(string fileNamePath)
+		{
+			return Path.GetFileNameWithoutExtension(fileNamePath);
 		}
 	}
 }

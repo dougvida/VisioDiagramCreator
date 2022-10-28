@@ -3,3 +3,4 @@ Archive*
 obj*
 bin*
 *.piz
+/packages

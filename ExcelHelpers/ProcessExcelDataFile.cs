@@ -212,6 +212,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 		/// <returns>Device</returns>
 		private Device _parseExcelData(System.Array myArray, int row)
 		{
+			string sColor = string.Empty;
 			Device device = new Device();
 			ShapeInformation visioInfo = new ShapeInformation();
 			try
@@ -389,8 +390,15 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.FillColor);
 				if (data != null)
 				{
-					// should be a string like
-					visioInfo.FillColor = data.ToString().Trim();
+					visioInfo.FillColor = sColor;
+
+					// get the RGB value based on the Text color
+					sColor = VisioVariables.GetRGBColor(data.ToString().Trim().ToUpper());
+					if (!string.IsNullOrEmpty(sColor))
+					{
+						visioInfo.rgbFillColor = sColor;
+						visioInfo.FillColor = sColor;
+					}
 				}
 
 				// connector from shape
@@ -462,11 +470,15 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.FromLineColor);
 				if (data != null)
 				{
-					visioInfo.FromLineColor = data.ToString().Trim();
+					sColor = VisioVariables.GetRGBColor(data.ToString().Trim().ToUpper());
+					if (!string.IsNullOrEmpty(sColor))
+					{
+						visioInfo.FromLineColor = sColor;
+					}
 				}
 				if (string.IsNullOrEmpty(visioInfo.FromLineColor))
 				{
-					visioInfo.FromLineColor = VisioVariables.COLOR_BLACK;
+					visioInfo.FromLineColor = VisioVariables.GetRGBColor("BLACK");
 				}
 
 				//
@@ -545,11 +557,15 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.ToLineColor);
 				if (data != null)
 				{
-					visioInfo.ToLineColor = data.ToString().Trim();
+					sColor = VisioVariables.GetRGBColor(data.ToString().Trim().ToUpper());
+					if (!string.IsNullOrEmpty(sColor))
+					{
+						visioInfo.ToLineColor = sColor;
+					}
 				}
 				if (string.IsNullOrEmpty(visioInfo.ToLineColor))
 				{
-					visioInfo.ToLineColor = VisioVariables.COLOR_BLACK;
+					visioInfo.ToLineColor = VisioVariables.GetRGBColor("BLACK");
 				}
 				device.ShapeInfo = visioInfo;
 			}
