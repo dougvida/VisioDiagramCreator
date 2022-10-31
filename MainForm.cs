@@ -102,9 +102,11 @@ namespace OmnicellBlueprintingTool
 			// close the Visio diagram if open
 			if (!string.IsNullOrEmpty(ExcelDataFileName))
 			{
-				visHlp.VisioForceCloseAll(string.Format(@"{0}{1}.vsdx", visioFilesPath, ExcelDataFileName));
+				SaveVisioDiagram(string.Format(@"{0}{1}.vsdx", visioFilesPath, ExcelDataFileName));
+				visHlp.VisioForceCloseAll();
 			}
 			ExcelDataFileName = string.Empty;
+			
 			// close the application
 			this.Close();
 		}
@@ -116,8 +118,9 @@ namespace OmnicellBlueprintingTool
 			// if the quit button is pressed the close Visio document will be call
 			if (!string.IsNullOrEmpty(ExcelDataFileName))
 			{
-				visHlp.VisioForceCloseAll(string.Format(@"{0}{1}.vsdx",visioFilesPath, ExcelDataFileName));
-				visHlp.ClearStencilList();
+				SaveVisioDiagram(string.Format(@"{0}{1}.vsdx", visioFilesPath, ExcelDataFileName));
+
+				visHlp.VisioForceCloseAll();
 				ExcelDataFileName = string.Empty;
 			}
 
@@ -146,7 +149,7 @@ namespace OmnicellBlueprintingTool
 					{
 						//string sTmp = "MainForm - ERROR\n\nReturn from ProcessExcelDataFile returned null\nNo shapes will be drawn";
 						//MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
-						visHlp.VisioForceCloseAll("");
+						visHlp.VisioForceCloseAll();
 						this.Close();
 					}
 
@@ -367,6 +370,23 @@ namespace OmnicellBlueprintingTool
 				{
 					btn_Submit.Enabled = false;
 				}
+			}
+		}
+
+		private void SaveVisioDiagram(string fileNamePath)
+		{
+			bool bSave = false;	// dont save
+
+			// ask user if want to save diagram
+			if (MessageBox.Show(string.Format("Do you want to save the Visio document ({0}) ?", fileNamePath), "Save Visio Diagram", MessageBoxButtons.YesNo) == DialogResult.Yes)
+			{
+				bSave = true;
+			}
+			// must always call SaveDocuments
+			if (visHlp.SaveDocument(fileNamePath, bSave))
+			{
+				string sTmp = string.Format("WARNING:: failed to save Visio diagram to the file:'{0}'", fileNamePath);
+				MessageBox.Show(sTmp, "WARNING", MessageBoxButtons.OK, MessageBoxIcon.Error);
 			}
 		}
 

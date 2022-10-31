@@ -15,7 +15,8 @@ namespace OmnicellBlueprintingTool.Visio
 		public string StencilLabelFontSize { get; set; } = String.Empty;  // Text size if different than default (I.E.  12:B is 12 pt. Bold else 12 is 12 pt.)
 		public bool isStencilLabelFontBold { get; set; } = false;
 		public string FillColor { get; set; } = String.Empty; // stincel fill color (default is none)
-		public string rgbFillColor { get; set; } = String.Empty;	// will ge populated when reading a visio diagram.  Try to match up to a preset color we are using	
+		public string rgbFillColor { get; set; } = String.Empty;	// will ge populated when reading a visio diagram.
+																					// Try to match up to a preset color we are using	
 		public double Pos_x { get; set; } = 0.0;         // X position to place the image
 		public double Pos_y { get; set; } = 0.0;         // Y position to place the image
 		public double Width { get; set; } = 0.0;         // width size of the image

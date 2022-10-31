@@ -362,16 +362,8 @@ namespace OmnicellBlueprintingTool.Visio
 
 			//var linePatternCell = shpConn.get_CellsU("LinePattern");
 
-			string rgb = string.Empty;
-			if (device.ShapeInfo.FillColor.Trim().ToUpper().IndexOf("RGB(") >= 0)
-			{
-				rgb = device.ShapeInfo.FillColor.Trim().ToUpper();
-			}
-			else
-			{
-				// value must be a color word.  convert to RGB
-				rgb = VisioVariables.GetRGBColor(device.ShapeInfo.FillColor.Trim().ToUpper());
-			}
+			// we should be using the FillColor to lookup the RGB color
+			string rgb = VisioVariables.GetRGBColor(device.ShapeInfo.FillColor);
 			if (!string.IsNullOrEmpty(rgb))
 			{
 				//set the shape back color
@@ -519,6 +511,52 @@ namespace OmnicellBlueprintingTool.Visio
 		}
 
 		/// <summary>
+		/// SaveDiagram
+		/// Save the Visio Diagram using the name passed from the fileNamePath argument
+		/// if argument is null or empty Visio app will prompt the user for the file name and path
+		/// if argument is valid use it as the path and file name to saveAs
+		/// return true if error
+		/// return false if successful
+		/// </summary>
+		/// <param name="fileNamePath"></param>
+		/// <param name="bSave">
+		/// false - User does not want the document to be saved.  However, we must set the saved flag to true
+		///         Don't want to be prompted to save when closing Visio
+		/// true - save document and set saved flag to true
+		/// </param>
+		/// <returns>true - error</returns>
+		public bool SaveDocument(string fileNamePath, bool bSave)
+		{
+			try
+			{
+				if (string.IsNullOrEmpty(fileNamePath))
+				{
+					return true;
+				}
+
+				if (bSave)	// user requested this document to be saved
+				{
+					if (this.vDocuments != null)
+					{
+						if (!string.IsNullOrEmpty(fileNamePath))
+						{
+							this.appVisio.ActiveDocument.SaveAs(fileNamePath);
+						}
+					}
+				}
+				// set document has been saved
+				this.vDocument.Saved = true;
+			}
+			catch (System.Runtime.InteropServices.COMException ex)
+			{
+				string sTmp = string.Format("VisioHelper::SaveDocument - Exception\n\nSaving Visio File:'{0}'\n\n{1}", fileNamePath, ex.Message);
+				MessageBox.Show(sTmp, "EXCEPTION", MessageBoxButtons.OK, MessageBoxIcon.Error);
+				ConsoleOut.writeLine(sTmp);
+			}
+			return false;
+		}
+
+		/// <summary>
 		/// VisioForceCloseAll
 		/// Close all the Visio documents
 		/// if no file name is present Visio will give the option to saveAs
@@ -526,7 +564,7 @@ namespace OmnicellBlueprintingTool.Visio
 		/// User has the ability to not save, Cancel or Save
 		/// </summary>
 		/// <param name="fileNamePath">if null prompt the user, else save using this path and name</param>
-		public void VisioForceCloseAll(string fileNamePath)
+		public void VisioForceCloseAll()
 		{
 			try
 			{
@@ -534,21 +572,13 @@ namespace OmnicellBlueprintingTool.Visio
 
 				if (this.vDocuments != null)
 				{
-					// if the file already exists prompt the user if they want to overright the existing file
-					// not yet implemented
-					//
-					if (!string.IsNullOrEmpty(fileNamePath))
-					{
-						this.appVisio.ActiveDocument.SaveAs(fileNamePath);
-					}
-					else
-					{
-						this.appVisio.ActiveDocument.Save();
-					}
-
 					while (this.vDocuments.Count > 0)
 					{
-						this.vDocuments.Application.ActiveDocument.Close();
+						// set document has been saved
+						//this.vDocument.Saved = true;
+						
+						this.vDocument.Close();
+						//this.vDocuments.Application.ActiveDocument.Close();
 					}
 					this.vDocuments = null;
 				}
@@ -564,7 +594,9 @@ namespace OmnicellBlueprintingTool.Visio
 			}
 			catch (System.Runtime.InteropServices.COMException ex)
 			{
-				ConsoleOut.writeLine(string.Format("VisioHelper::VisioForceCloseAll - Exception\n\nUser closed the Visio document before exiting the application\n\n{0}", ex.Message));
+				string sTmp = string.Format("VisioHelper::VisioForceCloseAll - Exception\n\nUser closed the Visio document before exiting the application\n\n{0}", ex.Message);
+				MessageBox.Show(sTmp, "EXCEPTION", MessageBoxButtons.OK, MessageBoxIcon.Error);
+				ConsoleOut.writeLine(sTmp);
 			}
 		}
 
@@ -657,7 +689,7 @@ namespace OmnicellBlueprintingTool.Visio
 						shpConn.get_CellsU("ShdwPattern").ResultIU = VisioVariables.SHDW_PATTERN;
 						shpConn.get_CellsU("BeginArrow").ResultIU = VisioVariables.ARROW_NONE;
 						shpConn.get_CellsU("EndArrow").ResultIU = VisioVariables.ARROW_NONE;
-						shpConn.get_CellsU("LineColor").FormulaU = VisioVariables.GetRGBColor("BLACK");
+						shpConn.get_CellsU("LineColor").FormulaU = VisioVariables.GetRGBColor("Black");
 						shpConn.get_CellsU("Rounding").ResultIU = VisioVariables.ROUNDING;
 						shpConn.get_CellsU("LinePattern").ResultIU = VisioVariables.LINE_PATTERN_SOLID;
 						shpConn.get_CellsU("LineWeight").FormulaU = VisioVariables.sLINE_WEIGHT_1;
@@ -698,22 +730,14 @@ namespace OmnicellBlueprintingTool.Visio
 						//var linePatternCell = shpConn.get_CellsU("LinePattern");
 						string rgbColor = string.Empty;
 						rgbColor = VisioVariables.GetRGBColor(lookupShapeConnection.LineColor.Trim().ToUpper());
-						if (lookupShapeConnection.LineColor.IndexOf("RGB(") >= 0)
-						{
-							string sColor = VisioVariables.GetColorValueFromRGB(lookupShapeConnection.LineColor.Trim().ToUpper());
-							if (!string.IsNullOrEmpty(sColor))
-							{
-								rgbColor = VisioVariables.GetRGBColor(sColor);
-							}
-						}
 						if (string.IsNullOrEmpty(rgbColor))
 						{
-							rgbColor = VisioVariables.GetRGBColor("BLACK");
+							rgbColor = VisioVariables.GetRGBColor("Black");
 						}
 						shpConn.get_CellsU("LineColor").Formula = "="+rgbColor;
 
 						// default the connection Text color Black
-						shpConn.get_CellsU("Char.Color").FormulaU = "="+VisioVariables.GetRGBColor("BLACK");
+						shpConn.get_CellsU("Char.Color").FormulaU = "="+VisioVariables.GetRGBColor("Black");
 
 						//set the shape back color
 						//shpConn.get_CellsSRC((short)VisSectionIndices.visSectionObject,
@@ -790,7 +814,7 @@ namespace OmnicellBlueprintingTool.Visio
 				masterArray_0.Add(master.NameU);   // THIS WILL CONTAIN DIAGRAM FIGURES
 				Console.WriteLine(string.Format("ListDocumentStencils - Master1 - ID:{0} Name:{1} NameU:{2}", master.ID, master.Name, master.NameU));
 			}
-			this.VisioForceCloseAll("");
+			this.VisioForceCloseAll();
 
 			return false;
 		}

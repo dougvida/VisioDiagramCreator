@@ -11,6 +11,12 @@ namespace OmnicellBlueprintingTool.Visio
 		public static string DefaultBlueprintingStencilFile = "OC_BlueprintingStencils.vssx";
 		private static StringComparer comparer = StringComparer.OrdinalIgnoreCase;
 
+		private static List<string> _shapeTypes = null;
+		private static List<string> _connectorArrows = null;
+		private static List<string> _connectorLinePatterns = null;
+		private static List<string> _stencilLabelPositions = null;
+		private static List<string> _stencilLabelFontSize = null;
+
 		private static Dictionary<string, string> _visioColorsMap = null; // new Dictionary<string, string>(comparer); 
 		//private static Dictionary<string, string> _visioColorsMap = null;
 
@@ -102,7 +108,6 @@ namespace OmnicellBlueprintingTool.Visio
 				case "Landscape":
 				default:
 					return VisioPageOrientation.Portrait;
-					break;
 			}
 		}
 
@@ -127,13 +132,93 @@ namespace OmnicellBlueprintingTool.Visio
 			}
 		}
 
+		public static List<string> GetShapeTypes()
+		{
+			if (_shapeTypes == null)
+			{
+				_shapeTypes = new List<string>();
+
+				_shapeTypes.Add("");
+				_shapeTypes.Add("Template");
+				_shapeTypes.Add("Stencil");
+				_shapeTypes.Add("Page Setup");
+				_shapeTypes.Add("Shape");
+			}
+			return _shapeTypes;
+		}
+		public static List<string> GetConnectorArrows()
+		{
+			if (_connectorArrows == null)
+			{
+				_connectorArrows = new List<string>();
+
+				_connectorArrows.Add("");
+				_connectorArrows.Add("None");
+				_connectorArrows.Add("Start");
+				_connectorArrows.Add("End");
+				_connectorArrows.Add("Both");
+			}
+			return _connectorArrows;
+		}
+
+		public static List<string> GetConnectorLinePatterns()
+		{
+			if (_connectorLinePatterns == null)
+			{
+				_connectorLinePatterns = new List<string>();
+
+				_connectorLinePatterns.Add("");
+				_connectorLinePatterns.Add("Solid");
+				_connectorLinePatterns.Add("Dashed");
+				_connectorLinePatterns.Add("Dotted");
+				_connectorLinePatterns.Add("Dash_Dot");
+			}
+			return _connectorLinePatterns;
+		}
+
+		public static List<string> GetStencilLabelPositions()
+		{
+			if (_stencilLabelPositions == null)
+			{
+				_stencilLabelPositions = new List<string>();
+
+				_stencilLabelPositions.Add("");
+				_stencilLabelPositions.Add("Top");
+				_stencilLabelPositions.Add("Bottom");
+			}
+			return _stencilLabelPositions;
+		}
+
+		public static List<string> GetStencilLabelFontSize()
+		{
+			if (_stencilLabelFontSize == null)
+			{
+				_stencilLabelFontSize = new List<string>();
+				_stencilLabelFontSize.Add("");
+				_stencilLabelFontSize.Add("6");
+				_stencilLabelFontSize.Add("6:B");
+				_stencilLabelFontSize.Add("8");
+				_stencilLabelFontSize.Add("8:B");
+				_stencilLabelFontSize.Add("9");
+				_stencilLabelFontSize.Add("9:B");
+				_stencilLabelFontSize.Add("10");
+				_stencilLabelFontSize.Add("10:B");
+				_stencilLabelFontSize.Add("11");
+				_stencilLabelFontSize.Add("11:B");
+				_stencilLabelFontSize.Add("12");
+				_stencilLabelFontSize.Add("12:B");
+				_stencilLabelFontSize.Add("14");
+				_stencilLabelFontSize.Add("14:B");
+			}
+			return _stencilLabelFontSize;
+		}
 		private static void setupVisioColorsMap()
 		{
 			_visioColorsMap = new Dictionary<string, string>(comparer); 
 			//_visioColorsMap = new Dictionary<string, string>();
 
 			// Visio colors
-			_visioColorsMap.Add("", "RGB(0,0,0)");
+			//_visioColorsMap.Add("", "RGB(0,0,0)");
 			_visioColorsMap.Add("Beige", "RGB(245,245,220)");
 			_visioColorsMap.Add("Black", "RGB(0,0,0)");
 			_visioColorsMap.Add("Blue", "RGB(30,144,255)");				// Dodger blue
@@ -197,12 +282,6 @@ namespace OmnicellBlueprintingTool.Visio
 					return kvp.Value.Trim().ToString();
 				}
 			}
-
-			//_visioColorsMap.TryGetValue(color, out value);
-			//if (string.IsNullOrEmpty(value))
-			//{
-			//	return null;
-			//}
 			return value;
 		}
 
@@ -234,13 +313,15 @@ namespace OmnicellBlueprintingTool.Visio
 			return null;
 		}
 
-		public static string[] GetAllKeyValues()
+		public static string[] GetAllColorKeyValues()
 		{
 			int nIdx = 0;
-			string[] saTmp = new string[_visioColorsMap.Count];
+			string[] saTmp = new string[_visioColorsMap.Count+1];
+			saTmp[nIdx++] = "";	// we need to add a blank as the first entry
 			foreach (KeyValuePair<string, string> keyValue in _visioColorsMap)
 			{
-				saTmp[nIdx] = keyValue.Key.Trim();
+				// adjust the index to be minus 1 bacause we added a row outside the array
+				saTmp[nIdx++] = keyValue.Key.Trim();
 			}
 			return saTmp;
 		}

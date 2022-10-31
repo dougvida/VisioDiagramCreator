@@ -267,7 +267,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				}
 				catch(Exception ex)
 				{
-					sTmp = string.Format("Exception::PopulateExcelDataFile\n{0}", ex.Message);
+					sTmp = string.Format("Exception::PopulateExcelDataFile\n\n{0}\n{1}", ex.Message,ex.StackTrace);
 					MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
 					return true;
 				}
@@ -410,7 +410,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.Height]).Value = shape.Height;
 					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.Height]).NumberFormat = "#0.000";
 
-					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.FillColor]).Value = shape.FillColor;
+					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.FillColor]).Value = shape.FillColor;	// should be color name
 
 					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.ConnectFrom]).Value = shape.ConnectFrom;
 					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.FromLineLabel]).Value = shape.FromLineLabel;
@@ -551,126 +551,131 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 		/// <returns></returns>
 		private bool writeTableSheet(DiagramData diagramData)
 		{
-			int Row = 1;
+			int startingRow = 1;
 			Excel.Worksheet xlNewSheet = selectWorkSheet("Tables");
 
-			// column A is Colors
-			((Excel.Range)xlNewSheet.Cells[1, 1]).Value = "Color";
-			((Excel.Range)xlNewSheet.Cells[1, 1]).ColumnWidth = 20.00;
-			xlNewSheet.Cells[1, 1].Interior.Color = Excel.XlRgbColor.rgbDarkSeaGreen;
-
-			string[] saTmp = VisioVariables.GetAllKeyValues();
-			if (saTmp.Length > 0)
+			try
 			{
-				Row = 2;
-				for (int nRow = 2; nRow <= saTmp.Length; nRow++)
+				// column A is Colors
+				((Excel.Range)xlNewSheet.Cells[1, 1]).Value = "Color";
+				((Excel.Range)xlNewSheet.Cells[1, 1]).ColumnWidth = 20.00;
+				xlNewSheet.Cells[startingRow++, 1].Interior.Color = Excel.XlRgbColor.rgbDarkSeaGreen;
+				string[] saTmp = VisioVariables.GetAllColorKeyValues();
+				if (saTmp.Length > 0)
 				{
-					((Excel.Range)xlNewSheet.Cells[nRow, 1]).Value = saTmp[nRow];
+					for (int nIdx = 0; nIdx < saTmp.Length; nIdx++)
+					{
+						((Excel.Range)xlNewSheet.Cells[startingRow++, 1]).Value = saTmp[nIdx];
+					}
 				}
+				Excel.Range range = xlNewSheet.Range[xlNewSheet.Cells[2, 1], xlNewSheet.Cells[startingRow - 1, 1]];
+				range.Borders.LineStyle = XlLineStyle.xlContinuous;
+				range.Rows.AutoFit();      // auto aize the rows
+
+				// Column C is Arrows
+				((Excel.Range)xlNewSheet.Cells[1, 3]).Value = "Arrows";
+				((Excel.Range)xlNewSheet.Cells[1, 3]).ColumnWidth = 20.00;
+				xlNewSheet.Cells[1, 3].Interior.Color = Excel.XlRgbColor.rgbDarkSeaGreen;
+				List<string> strArray = VisioVariables.GetConnectorArrows();
+				if (strArray.Count > 0)
+				{
+					int nRow = 2;
+					foreach (string str in strArray)
+					{
+						((Excel.Range)xlNewSheet.Cells[nRow++, 3]).Value = str;
+					}
+				}
+				range = xlNewSheet.Range[xlNewSheet.Cells[2, 3], xlNewSheet.Cells[strArray.Count + 1, 3]];
+				range.Borders.LineStyle = XlLineStyle.xlContinuous;
+				range.Rows.AutoFit();      // auto aize the rows
+
+				// Column E is Stencil Label Font size
+				((Excel.Range)xlNewSheet.Cells[1, 5]).Value = "Stencil Label Font Size";
+				((Excel.Range)xlNewSheet.Cells[1, 5]).ColumnWidth = 20.00;
+				xlNewSheet.Cells[1, 5].Interior.Color = Excel.XlRgbColor.rgbDarkSeaGreen;
+				strArray = VisioVariables.GetStencilLabelFontSize();
+				if (strArray.Count > 0)
+				{
+					int nRow = 2;
+					foreach (string str in strArray)
+					{
+						((Excel.Range)xlNewSheet.Cells[nRow++, 5]).Value = str;
+					}
+				}
+				range = xlNewSheet.Range[xlNewSheet.Cells[2, 5], xlNewSheet.Cells[strArray.Count + 1, 5]];
+				range.Borders.LineStyle = XlLineStyle.xlContinuous;
+				range.Rows.AutoFit();      // auto aize the rows
+
+				// Column G is Line Pattern
+				((Excel.Range)xlNewSheet.Cells[1, 7]).Value = "Line Pattern";
+				((Excel.Range)xlNewSheet.Cells[1, 7]).ColumnWidth = 20.00;
+				xlNewSheet.Cells[1, 7].Interior.Color = Excel.XlRgbColor.rgbDarkSeaGreen;
+				strArray = VisioVariables.GetConnectorLinePatterns();
+				if (strArray.Count > 0)
+				{
+					int nRow = 2;
+					foreach(string str in strArray)
+					{
+						((Excel.Range)xlNewSheet.Cells[nRow++, 7]).Value = str;
+					}
+				}
+				range = xlNewSheet.Range[xlNewSheet.Cells[2, 7], xlNewSheet.Cells[strArray.Count + 1, 7]];
+				range.Borders.LineStyle = XlLineStyle.xlContinuous;
+				range.Rows.AutoFit();      // auto aize the rows
+
+				// Column I is Stencil Label Position
+				((Excel.Range)xlNewSheet.Cells[1, 9]).Value = "Stencil Label Position";
+				((Excel.Range)xlNewSheet.Cells[1, 9]).ColumnWidth = 20.00;
+				xlNewSheet.Cells[1, 9].Interior.Color = Excel.XlRgbColor.rgbDarkSeaGreen;
+				strArray = VisioVariables.GetStencilLabelPositions();
+				if (strArray.Count > 0)
+				{
+					int nRow = 2;
+					foreach (string str in strArray)
+					{
+						((Excel.Range)xlNewSheet.Cells[nRow++, 9]).Value = str;
+					}
+				}
+				range = xlNewSheet.Range[xlNewSheet.Cells[2, 9], xlNewSheet.Cells[strArray.Count + 1, 9]];
+				range.Borders.LineStyle = XlLineStyle.xlContinuous;
+				range.Rows.AutoFit();      // auto aize the rows
+
+				// Column K Shape Type
+				((Excel.Range)xlNewSheet.Cells[1, 11]).Value = "Shape Type";
+				((Excel.Range)xlNewSheet.Cells[1, 11]).ColumnWidth = 20.00;
+				xlNewSheet.Cells[1, 11].Interior.Color = Excel.XlRgbColor.rgbDarkSeaGreen;
+				 strArray = VisioVariables.GetShapeTypes();
+				if (strArray.Count > 0)
+				{
+					int nRow = 2;
+					foreach (string str in strArray)
+					{
+						((Excel.Range)xlNewSheet.Cells[nRow++, 11]).Value = str;
+					}
+				}
+				range = xlNewSheet.Range[xlNewSheet.Cells[2, 11], xlNewSheet.Cells[strArray.Count + 1, 11]];
+				range.Borders.LineStyle = XlLineStyle.xlContinuous;
+				range.Rows.AutoFit();      // auto aize the rows
+
+				// Column N is OC_Blueprinting stencil names  (may get this from a list to make dymanic)
+				((Excel.Range)xlNewSheet.Cells[1, 14]).Value = "Default Stencil Names";
+				((Excel.Range)xlNewSheet.Cells[1, 14]).ColumnWidth = 20.00;
+				xlNewSheet.Cells[1, 11].Interior.Color = Excel.XlRgbColor.rgbDarkSeaGreen;
+
+				((Excel.Range)xlNewSheet.Cells[2, 14]).Value = "";
+
+				range = xlNewSheet.Range[xlNewSheet.Cells[2, 14], xlNewSheet.Cells[2, 14]];
+				range.Borders.LineStyle = XlLineStyle.xlContinuous;
+				range.Rows.AutoFit();      // auto aize the rows
+
+				// format each cell to be center justified and Left aligned in the row
+				xlNewSheet.Cells.Style.VerticalAlignment = Microsoft.Office.Interop.Excel.XlVAlign.xlVAlignCenter;
+				xlNewSheet.Cells.Style.HorizontalAlignment = Microsoft.Office.Interop.Excel.XlHAlign.xlHAlignLeft;
 			}
-
-			Excel.Range range = xlNewSheet.Range[xlNewSheet.Cells[1, 1], xlNewSheet.Cells[saTmp.Length, 1]];
-			range.Borders.LineStyle = XlLineStyle.xlContinuous;
-			range.Rows.AutoFit();      // auto aize the rows
-
-			// Column C is Arrows
-			((Excel.Range)xlNewSheet.Cells[1, 3]).Value = "Arrows";
-			((Excel.Range)xlNewSheet.Cells[1, 3]).ColumnWidth = 20.00;
-			xlNewSheet.Cells[1, 3].Interior.Color = Excel.XlRgbColor.rgbDarkSeaGreen;
-
-			((Excel.Range)xlNewSheet.Cells[2, 3]).Value = "";
-			((Excel.Range)xlNewSheet.Cells[3, 3]).Value = "None";
-			((Excel.Range)xlNewSheet.Cells[4, 3]).Value = "Start";
-			((Excel.Range)xlNewSheet.Cells[5, 3]).Value = "End";
-			((Excel.Range)xlNewSheet.Cells[6, 3]).Value = "Both";
-
-			range = xlNewSheet.Range[xlNewSheet.Cells[1, 3], xlNewSheet.Cells[6, 3]];
-			range.Borders.LineStyle = XlLineStyle.xlContinuous;
-			range.Rows.AutoFit();      // auto aize the rows
-
-			// Column E is Stencil Label Font size
-			((Excel.Range)xlNewSheet.Cells[1, 5]).Value = "Stencil Label Font Size";
-			((Excel.Range)xlNewSheet.Cells[1, 5]).ColumnWidth = 20.00;
-			xlNewSheet.Cells[1, 5].Interior.Color = Excel.XlRgbColor.rgbDarkSeaGreen;
-
-			((Excel.Range)xlNewSheet.Cells[2, 5]).Value = "";
-			((Excel.Range)xlNewSheet.Cells[3, 5]).Value = "6";
-			((Excel.Range)xlNewSheet.Cells[4, 5]).Value = "6:B";
-			((Excel.Range)xlNewSheet.Cells[5, 5]).Value = "8";
-			((Excel.Range)xlNewSheet.Cells[6, 5]).Value = "8:B";
-			((Excel.Range)xlNewSheet.Cells[7, 5]).Value = "9";
-			((Excel.Range)xlNewSheet.Cells[8, 5]).Value = "9:B";
-			((Excel.Range)xlNewSheet.Cells[9, 5]).Value = "10";
-			((Excel.Range)xlNewSheet.Cells[10, 5]).Value = "10:B";
-			((Excel.Range)xlNewSheet.Cells[11, 5]).Value = "11";
-			((Excel.Range)xlNewSheet.Cells[12, 5]).Value = "11:B";
-			((Excel.Range)xlNewSheet.Cells[13, 5]).Value = "12";
-			((Excel.Range)xlNewSheet.Cells[14, 5]).Value = "12:B";
-			((Excel.Range)xlNewSheet.Cells[15, 5]).Value = "14";
-			((Excel.Range)xlNewSheet.Cells[16, 5]).Value = "14:B";
-
-			range = xlNewSheet.Range[xlNewSheet.Cells[1, 5], xlNewSheet.Cells[16, 5]];
-			range.Borders.LineStyle = XlLineStyle.xlContinuous;
-			range.Rows.AutoFit();      // auto aize the rows
-
-			// Column G is Line Pattern
-			((Excel.Range)xlNewSheet.Cells[1, 7]).Value = "Line Pattern";
-			((Excel.Range)xlNewSheet.Cells[1, 7]).ColumnWidth = 20.00;
-			xlNewSheet.Cells[1, 7].Interior.Color = Excel.XlRgbColor.rgbDarkSeaGreen;
-
-			((Excel.Range)xlNewSheet.Cells[2, 7]).Value = "";
-			((Excel.Range)xlNewSheet.Cells[3, 7]).Value = "Solid";
-			((Excel.Range)xlNewSheet.Cells[4, 7]).Value = "Dashed";
-			((Excel.Range)xlNewSheet.Cells[5, 7]).Value = "Dotted";
-			((Excel.Range)xlNewSheet.Cells[6, 7]).Value = "Dash_Dot";
-
-			range = xlNewSheet.Range[xlNewSheet.Cells[1, 7], xlNewSheet.Cells[6, 7]];
-			range.Borders.LineStyle = XlLineStyle.xlContinuous;
-			range.Rows.AutoFit();      // auto aize the rows
-
-			// Column I is Stencil Label Position
-			((Excel.Range)xlNewSheet.Cells[1, 9]).Value = "Stencil Label Position";
-			((Excel.Range)xlNewSheet.Cells[1, 9]).ColumnWidth = 20.00;
-			xlNewSheet.Cells[1, 9].Interior.Color = Excel.XlRgbColor.rgbDarkSeaGreen;
-
-			((Excel.Range)xlNewSheet.Cells[2, 9]).Value = "";
-			((Excel.Range)xlNewSheet.Cells[3, 9]).Value = "Top";
-			((Excel.Range)xlNewSheet.Cells[4, 9]).Value = "Bottom";
-
-			range = xlNewSheet.Range[xlNewSheet.Cells[1, 9], xlNewSheet.Cells[4, 9]];
-			range.Borders.LineStyle = XlLineStyle.xlContinuous;
-			range.Rows.AutoFit();      // auto aize the rows
-
-			// Column K Shape Type
-			((Excel.Range)xlNewSheet.Cells[1, 11]).Value = "Shape Type";
-			((Excel.Range)xlNewSheet.Cells[1, 11]).ColumnWidth = 20.00;
-			xlNewSheet.Cells[1, 11].Interior.Color = Excel.XlRgbColor.rgbDarkSeaGreen;
-			
-			((Excel.Range)xlNewSheet.Cells[2, 11]).Value = "";
-			((Excel.Range)xlNewSheet.Cells[3, 11]).Value = "Template";
-			((Excel.Range)xlNewSheet.Cells[4, 11]).Value = "Stencil";
-			((Excel.Range)xlNewSheet.Cells[5, 11]).Value = "Page Setup";
-			((Excel.Range)xlNewSheet.Cells[6, 11]).Value = "Shape";
-
-			range = xlNewSheet.Range[xlNewSheet.Cells[1, 11], xlNewSheet.Cells[6, 11]];
-			range.Borders.LineStyle = XlLineStyle.xlContinuous;
-			range.Rows.AutoFit();      // auto aize the rows
-
-			// Column N is OC_Blueprinting stencil names  (may get this from a list to make dymanic)
-			((Excel.Range)xlNewSheet.Cells[1, 14]).Value = "Default Stencil Names";
-			((Excel.Range)xlNewSheet.Cells[1, 14]).ColumnWidth = 20.00;
-			xlNewSheet.Cells[1, 11].Interior.Color = Excel.XlRgbColor.rgbDarkSeaGreen;
-
-			((Excel.Range)xlNewSheet.Cells[2, 14]).Value = "";
-
-			range = xlNewSheet.Range[xlNewSheet.Cells[1, 14], xlNewSheet.Cells[2, 14]];
-			range.Borders.LineStyle = XlLineStyle.xlContinuous;
-			range.Rows.AutoFit();      // auto aize the rows
-
-			// format each cell to be center justified and Left aligned in the row
-			xlNewSheet.Cells.Style.VerticalAlignment = Microsoft.Office.Interop.Excel.XlVAlign.xlVAlignCenter;
-			xlNewSheet.Cells.Style.HorizontalAlignment = Microsoft.Office.Interop.Excel.XlHAlign.xlHAlignLeft;
-
+			catch(IndexOutOfRangeException ex)
+			{
+				ConsoleOut.writeLine(String.Format("CreateExcelDataFile::writeTableSheet - Exception\n\n{0}\n{1}",ex.Message, ex.StackTrace));
+			}
 			return false;
 		}
 
@@ -682,13 +687,14 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 			int colCount = xlRange.Columns.Count;
 
 			// the count will be dynamic based on the json data in the OmnicellBlueprintingTool.json.json file
-			string tablesColorColumn = String.Format("=Tables!$A${0}:$A${1}",startingRow, diagramData.AppConfig.Colors.Count);
-			string tablesArrowsColumn = String.Format("=Tables!$C${0}:$C${1}", startingRow, diagramData.AppConfig.Arrows.Count);
-			string tablesLabelFontSizeColumn = String.Format("=Tables!$E${0}:$E${1}", startingRow, diagramData.AppConfig.LabelFontSizes.Count);
-			string tablesLinePatternColumn = String.Format("=Tables!$G${0}:$G{1}", startingRow, diagramData.AppConfig.LinePatterns.Count);
-			string tablesLabelPositionColumn = String.Format("=Tables!$I${0}:$I{1}", startingRow, diagramData.AppConfig.StencilLabelPosition.Count);
-			string tablesShapeTypeColumn = String.Format("=Tables!$K${0}:$K${1}", startingRow, diagramData.AppConfig.ShapeTypes.Count);
+			string tablesColorColumn = String.Format("=Tables!$A${0}:$A${1}", startingRow, VisioVariables.GetAllColorKeyValues().Length + 1);
+			string tablesArrowsColumn = String.Format("=Tables!$C${0}:$C${1}", startingRow, VisioVariables.GetConnectorArrows().Count + 1);
+			string tablesLabelFontSizeColumn = String.Format("=Tables!$E${0}:$E${1}", startingRow, VisioVariables.GetStencilLabelFontSize().Count + 1);
+			string tablesLinePatternColumn = String.Format("=Tables!$G${0}:$G${1}", startingRow, VisioVariables.GetConnectorLinePatterns().Count + 1);
+			string tablesLabelPositionColumn = String.Format("=Tables!$I${0}:$I${1}", startingRow, VisioVariables.GetStencilLabelPositions().Count + 1);
+			string tablesShapeTypeColumn = String.Format("=Tables!$K${0}:$K${1}", startingRow, VisioVariables.GetShapeTypes().Count + 1);
 
+			// now lets link the data list to the excel columns on the VisioData sheet
 			// Shape Type column
 			Excel.Range xlRange1 = _xlWorksheet.get_Range(string.Format("B{0}2:B{1}", startingRow, rowCount)).EntireColumn;
 			xlRange1.Validation.Delete();

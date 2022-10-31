@@ -6,6 +6,8 @@ using System.Windows.Forms;
 using OmnicellBlueprintingTool.Models;
 using Visio1 = Microsoft.Office.Interop.Visio;
 using Microsoft.Office.Core;
+using System.Drawing;
+using Color = Microsoft.Office.Interop.Visio.Color;
 
 namespace OmnicellBlueprintingTool.Visio
 {
@@ -75,6 +77,7 @@ namespace OmnicellBlueprintingTool.Visio
 			try
 			{
 				allPageShapesMap = new Dictionary<int, ShapeInformation>();
+				string sColor = string.Empty;
 
 				foreach (Visio1.Shape shape in page.Shapes)
 				{
@@ -89,6 +92,12 @@ namespace OmnicellBlueprintingTool.Visio
 					//var fillBkColor = shape.Cells["FillBkgnd"].ResultIU;
 					Color c = doc.Colors.Item16[(short)shape.Cells["FillBkgnd"].ResultIU];
 					shpInfo.rgbFillColor = $"RGB({c.Red},{c.Green},{c.Blue})";
+					sColor = VisioVariables.GetColorValueFromRGB(shpInfo.rgbFillColor);
+					shpInfo.FillColor = sColor;
+					if (string.IsNullOrEmpty(sColor))
+					{
+						shpInfo.FillColor = "";	// color not found so don't set it
+					}
 
 					//short iRow = (short)VisRowIndices.visRowFirst;
 					shpInfo.Pos_x = Math.Truncate(shape.Cells["PinX"].ResultIU * 1000) / 1000;
@@ -177,6 +186,7 @@ namespace OmnicellBlueprintingTool.Visio
 			{
 				try
 				{
+					string sColor = string.Empty;
 					int nCnt = 0;
 					foreach (int nIdx in shpConnection)
 					{
@@ -222,9 +232,17 @@ namespace OmnicellBlueprintingTool.Visio
 						var colorIdx = shape.CellsU["FillBkgnd"].ResultIU;
 						var c = doc.Colors.Item16[(short)colorIdx];
 						shpInfo.rgbFillColor = $"RGB({c.Red},{c.Green},{c.Blue})";
+						sColor = VisioVariables.GetColorValueFromRGB(shpInfo.rgbFillColor);
+						//shpInfo.ToLineColor = "";
+						if (!string.IsNullOrEmpty(sColor))
+						{
+							shpInfo.ToLineColor = sColor;
+						}
+
+
 						// end new section
 
-						shpInfo.ToLineColor = "Black";
+						//shpInfo.ToLineColor = "Black";
 						shpInfo.ToLinePattern = VisioVariables.LINE_PATTERN_SOLID;
 						shpInfo.ToLineLabel = shape.Text;
 						connectMap.Add(sKey, sKey2);
@@ -243,6 +261,7 @@ namespace OmnicellBlueprintingTool.Visio
 			{
 				try
 				{
+					string sColor = string.Empty;
 					int nCnt = 0;
 					foreach (int nIdx in shpConnection)
 					{
@@ -289,9 +308,15 @@ namespace OmnicellBlueprintingTool.Visio
 						var colorIdx = shape.CellsU["FillBkgnd"].ResultIU;
 						var c = doc.Colors.Item16[(short)colorIdx];
 						shpInfo.rgbFillColor = $"RGB({c.Red},{c.Green},{c.Blue})";
+						sColor = VisioVariables.GetColorValueFromRGB(shpInfo.rgbFillColor);
+						//shpInfo.FromLineColor = "";
+						if (!string.IsNullOrEmpty(sColor))
+						{
+							shpInfo.FromLineColor = sColor;
+						}
 						// end new section
 
-						shpInfo.FromLineColor = "Black";
+						//shpInfo.FromLineColor = "Black";
 						shpInfo.FromLinePattern = VisioVariables.LINE_PATTERN_SOLID;
 						shpInfo.FromLineLabel = shape.Text;
 						connectMap.Add(sKey, sKey2);
@@ -370,10 +395,19 @@ namespace OmnicellBlueprintingTool.Visio
 					}
 					rgbLineColor = shape.get_CellsU("LineColor").FormulaU;
 					string color = VisioVariables.GetColorValueFromRGB(rgbLineColor);
-					if (!string.IsNullOrEmpty(color))
+					if (string.IsNullOrEmpty(color))
 					{
+						if (VisioVariables.GetColorValueFromRGB(rgbLineColor).IndexOf("RGB(") >= 0)
+						{
+							lineColor = string.Empty;
+						}
 						lineColor = VisioVariables.GetColorValueFromRGB(rgbLineColor);
 					}
+					else
+					{
+						lineColor = color;
+					}
+
 					linePattern = double.Parse(shape.get_CellsU("LinePattern").FormulaU);
 					lineWeight = shape.get_CellsU("LineWeight").FormulaU;
 				}

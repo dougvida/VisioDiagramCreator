@@ -212,7 +212,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 		/// <returns>Device</returns>
 		private Device _parseExcelData(System.Array myArray, int row)
 		{
-			string sColor = string.Empty;
+			//string sColor = string.Empty;
 			Device device = new Device();
 			ShapeInformation visioInfo = new ShapeInformation();
 			try
@@ -386,19 +386,11 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 					visioInfo.StencilLabel += " / " + data.ToString().Trim();
 				}
 
-				// shape fill color
+				// shape fill color.  Should be the text color if being read from the excel data file not rgb
 				data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.FillColor);
 				if (data != null)
 				{
-					visioInfo.FillColor = sColor;
-
-					// get the RGB value based on the Text color
-					sColor = VisioVariables.GetRGBColor(data.ToString().Trim().ToUpper());
-					if (!string.IsNullOrEmpty(sColor))
-					{
-						visioInfo.rgbFillColor = sColor;
-						visioInfo.FillColor = sColor;
-					}
+					visioInfo.FillColor = data.ToString().Trim();
 				}
 
 				// connector from shape
@@ -468,17 +460,11 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 
 				// connector line color
 				data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.FromLineColor);
+				visioInfo.FromLineColor = "";
 				if (data != null)
 				{
-					sColor = VisioVariables.GetRGBColor(data.ToString().Trim().ToUpper());
-					if (!string.IsNullOrEmpty(sColor))
-					{
-						visioInfo.FromLineColor = sColor;
-					}
-				}
-				if (string.IsNullOrEmpty(visioInfo.FromLineColor))
-				{
-					visioInfo.FromLineColor = VisioVariables.GetRGBColor("BLACK");
+					// data value must be a text color name
+					visioInfo.FromLineColor = data.ToString();
 				}
 
 				//
@@ -555,18 +541,13 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 
 				// connector line color
 				data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.ToLineColor);
+				visioInfo.ToLineColor = "";
 				if (data != null)
 				{
-					sColor = VisioVariables.GetRGBColor(data.ToString().Trim().ToUpper());
-					if (!string.IsNullOrEmpty(sColor))
-					{
-						visioInfo.ToLineColor = sColor;
-					}
+					// data value should be a text color name
+					visioInfo.ToLineColor = data.ToString().Trim();
 				}
-				if (string.IsNullOrEmpty(visioInfo.ToLineColor))
-				{
-					visioInfo.ToLineColor = VisioVariables.GetRGBColor("BLACK");
-				}
+
 				device.ShapeInfo = visioInfo;
 			}
 			catch (Exception exp)
