@@ -358,8 +358,8 @@ namespace OmnicellBlueprintingTool.Visio
 			ShapeInformation lookupShapeMap = null;
 			int lookupKey = 0;
 			string arrowType = VisioVariables.sARROW_NONE;
-			string lineColor = VisioVariables.GetRGBColor("BLACK");
-			string rgbLineColor = VisioVariables.GetRGBColor("BLACK");
+			string lineColor = "Black";
+			string rgbLineColor = VisioVariables.GetRGBColor("Black");
 			double linePattern = VisioVariables.LINE_PATTERN_SOLID;
 			Visio1.Connects visconnects2 = shape.Connects;
 
@@ -393,19 +393,12 @@ namespace OmnicellBlueprintingTool.Visio
 					{
 						arrowType = VisioVariables.sARROW_END;
 					}
-					rgbLineColor = shape.get_CellsU("LineColor").FormulaU;
-					string color = VisioVariables.GetColorValueFromRGB(rgbLineColor);
-					if (string.IsNullOrEmpty(color))
+					rgbLineColor = shape.get_CellsU("LineColor").FormulaU;      // RGB color value
+					lineColor = String.Empty;
+					string sColor = VisioVariables.GetColorValueFromRGB(rgbLineColor);		// will be a color word or null if not found
+					if (!string.IsNullOrEmpty(sColor))
 					{
-						if (VisioVariables.GetColorValueFromRGB(rgbLineColor).IndexOf("RGB(") >= 0)
-						{
-							lineColor = string.Empty;
-						}
-						lineColor = VisioVariables.GetColorValueFromRGB(rgbLineColor);
-					}
-					else
-					{
-						lineColor = color;
+						lineColor = "Black";		// connector line color
 					}
 
 					linePattern = double.Parse(shape.get_CellsU("LinePattern").FormulaU);
@@ -458,7 +451,6 @@ namespace OmnicellBlueprintingTool.Visio
 
 			connectors.Add(shape.ID, sTmp2);
 			ConsoleOut.writeLine(sTmp);
-
 			ConsoleOut.writeLine(string.Format("Found shape ID:{0}-{1} in the diagram", shpInfo.ID, shpInfo.UniqueKey));
 		}
 	}

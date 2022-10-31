@@ -250,7 +250,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.StencilLabelPosition);
 				if (data != null)
 				{
-					if (data.ToString().Trim().ToUpper().Equals(VisioVariables.STINCEL_LABEL_POSITION_BOTTOM))
+					if (data.ToString().Trim().ToUpper().Equals(VisioVariables.STINCEL_LABEL_POSITION_BOTTOM.ToUpper()))
 					{
 						visioInfo.StencilLabelPosition = VisioVariables.STINCEL_LABEL_POSITION_BOTTOM; // text to add to the stencil image
 					}
@@ -412,7 +412,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.FromLinePattern);
 				if (data != null)
 				{
-					sTmp = data.ToString().Trim().ToUpper();
+					sTmp = data.ToString().Trim();
 				}
 				switch (sTmp)
 				{
@@ -440,7 +440,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.FromArrowType);
 				if (data != null)
 				{
-					sTmp = data.ToString().Trim().ToUpper();
+					sTmp = data.ToString().Trim();
 				}
 				switch (sTmp)
 				{
@@ -463,8 +463,11 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				visioInfo.FromLineColor = "";
 				if (data != null)
 				{
-					// data value must be a text color name
-					visioInfo.FromLineColor = data.ToString();
+					if (VisioVariables.GetRGBColor(data.ToString()) != null)
+					{
+						// value was found as a color
+						visioInfo.FromLineColor = data.ToString();
+					}
 				}
 
 				//
@@ -493,7 +496,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.ToLinePattern);
 				if (data != null)
 				{
-					sTmp = data.ToString().Trim().ToUpper();
+					sTmp = data.ToString().Trim();
 				}
 				switch (sTmp)
 				{
@@ -521,7 +524,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.ToArrowType);
 				if (data != null)
 				{
-					sTmp = data.ToString().Trim().ToUpper();
+					sTmp = data.ToString().Trim();
 				}
 				switch (sTmp)
 				{
@@ -544,8 +547,11 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				visioInfo.ToLineColor = "";
 				if (data != null)
 				{
-					// data value should be a text color name
-					visioInfo.ToLineColor = data.ToString().Trim();
+					if (VisioVariables.GetRGBColor(data.ToString()) != null)
+					{
+						// data color was found
+						visioInfo.ToLineColor = data.ToString().Trim();
+					}
 				}
 
 				device.ShapeInfo = visioInfo;

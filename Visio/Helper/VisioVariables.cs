@@ -39,10 +39,10 @@ namespace OmnicellBlueprintingTool.Visio
 		public const double BEGIN_ARROW = 4;      // Filled arrow
 		public const double END_ARROW = 4;        // Filled arrow
 		public const double ARROW_NONE = 0;       // None
-		public const string sARROW_NONE = "NONE";
-		public const string sARROW_START = "START";
-		public const string sARROW_END = "END";
-		public const string sARROW_BOTH = "BOTH";
+		public const string sARROW_NONE = "None";
+		public const string sARROW_START = "Start";
+		public const string sARROW_END = "End";
+		public const string sARROW_BOTH = "Both";
 
 		// connector weight (default is LINE_WEIGHT_1
 		public const string sLINE_WEIGHT_1 = "1.0 pt";
@@ -55,17 +55,17 @@ namespace OmnicellBlueprintingTool.Visio
 		// connector line pattern
 		public const double SHDW_PATTERN = 0;           // None
 
-		public const string sLINE_PATTERN_SOLID = "SOLID";
+		public const string sLINE_PATTERN_SOLID = "Solid";
 		public const double LINE_PATTERN_SOLID = 1;     // ______ solid line
-		public const string sLINE_PATTERN_DASHED = "DASHED";
+		public const string sLINE_PATTERN_DASHED = "Dashed";
 		public const double LINE_PATTERN_DASH = 2;      // _ _ _ _ dashed lined
-		public const string sLINE_PATTERN_DOTTED = "DOTTED";
+		public const string sLINE_PATTERN_DOTTED = "Dotted";
 		public const double LINE_PATTERN_DOTTED = 3;    // . . . . dotted line
-		public const string sLINE_PATTERN_DASHDOT = "DASH_DOT";
+		public const string sLINE_PATTERN_DASHDOT = "Dash_Dot";
 		public const double LINE_PATTERN_DASHDOT = 4;   // _ . _ . _ dash/dot-(t)ed line
 
-		public const string STINCEL_LABEL_POSITION_TOP = "TOP";
-		public const string STINCEL_LABEL_POSITION_BOTTOM = "BOTTOM";
+		public const string STINCEL_LABEL_POSITION_TOP = "Top";
+		public const string STINCEL_LABEL_POSITION_BOTTOM = "Bottom";
 
 		public enum FormulaUse
 		{
