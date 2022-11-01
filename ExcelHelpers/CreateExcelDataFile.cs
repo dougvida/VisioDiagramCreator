@@ -13,6 +13,7 @@ using Microsoft.Office.Interop.Excel;
 
 
 
+
 ///
 /// helper URL http://csharp.net-informations.com/excel/csharp-format-excel.htm
 /// 
@@ -84,14 +85,16 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 					return -1;
 				}
 				((Excel.Range)workSheet.Cells[row, col + 1]).Value = headerName;
-				switch(col+1)
+				switch(headerName)
 				{
-					case 1:	// Visio Page
-					case 2:	// Shape Type
-					case 3:	// Unique Key
-					case 4:	// Stencil Image
-					case 19:	// PosX
-					case 20:	// PosY
+					// these are the Excel data file column's
+					// if you change these positions you must change it here also
+					case "Visio Page":	// 1 Visio Page
+					case "Shape Type":	// 2 Shape Type
+					case "Unique Key":	// 3 Unique Key
+					case "Stencil Image":	// 4 Stencil Image
+					case "PosX":	// 19 PosX
+					case "PosY":	// PosY
 						workSheet.Cells[row, col + 1].Interior.Color = Excel.XlRgbColor.rgbRed;
 						break;
 
@@ -469,44 +472,44 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				var data = (Excel.Range)workSheet.Cells[1, nCol];
 				if (data != null)
 				{
-					string sTmp = data.Text.ToString().ToUpper();
+					string sTmp = data.Text.ToString().Tim();
 					switch (sTmp)
 					{
-						case "UNIQUE KEY":
-						case "STENCIL LABEL":
+						case "Unique Key":
+						case "Stencil Label":
 							((Excel.Range)workSheet.Cells[1, nCol]).ColumnWidth = 37.00;
 							break;
 
-						case "VISIO PAGE":
-						case "SHAPE TYPE":
-						case "STENCIL IMAGE":
+						case "Visio Page":
+						case "Shape Type":
+						case "Stencil Image":
 							((Excel.Range)workSheet.Cells[1, nCol]).ColumnWidth = 16.00;
 							break;
 
-						case "POSX":
-						case "POSY":
-						case "WIDTH":
-						case "HEIGHT":
+						case "PosX":
+						case "PosY":
+						case "Width":
+						case "Height":
 							((Excel.Range)workSheet.Cells[1, nCol]).ColumnWidth = 8.00;
 							((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.PosX]).NumberFormat = "#0.000";
 							break;
 
-						case "MACH_NAME":
-						case "MACH_ID":
-						case "SITE_ID":
-						case "SITE_NAME":
-						case "SITE_ADDRESS":
-						case "OMNIS_NAME":
-						case "OMNIS_ID":
-						case "SITEID_OMNIID":
-						case "FILL COLOR":
+						case "Mach_name":
+						case "Mach_id":
+						case "Site_id":
+						case "Site_name":
+						case "Site_address":
+						case "Omnis_name":
+						case "Omnis_id":
+						case "SiteId_OmnisId":
+						case "Fill Color":
 							((Excel.Range)workSheet.Cells[1, nCol]).ColumnWidth = 8.00;
 							break;
 
-						case "CONNECT FROM":
-						case "CONNECT TO":
-						case "FROM LINE LABEL":
-						case "TO LINE LABEL":
+						case "Connect From":
+						case "Connect To":
+						case "From Line Label":
+						case "To Line Label":
 							((Excel.Range)workSheet.Cells[1, nCol]).ColumnWidth = 20.00;
 							break;
 

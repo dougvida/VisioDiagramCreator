@@ -125,7 +125,8 @@ namespace OmnicellBlueprintingTool.Visio
 					}
 					shpInfo.StencilLabel = shape.Text.Trim();
 
-					if (shape.Style.ToUpper().IndexOf("CONNECTOR") >= 0)
+					// use the connection shape to obtain what is connected to what
+					if (shape.Style.Trim().IndexOf("Connector", StringComparison.OrdinalIgnoreCase) >= 0)
 					{
 						// get connection information
 						getShapeConnections2(doc, shape, ref allPageShapesMap, ref shpInfo);
@@ -134,11 +135,11 @@ namespace OmnicellBlueprintingTool.Visio
 						continue;
 					}
 
-					// if shape is Ethernet type don't get the connections
-					if (shpInfo.StencilImage.ToUpper().IndexOf("ETHERNET") <= 0)
+					// Do all shapes except Ethernet and Connector types
+					if (shpInfo.StencilImage.ToUpper().IndexOf("Ethernet", StringComparison.OrdinalIgnoreCase) <= 0)
 					{
 						// get shape connections
-						// getShapeConnections(doc, shape, ref allPageShapesMap, ref shpInfo);
+						//getShapeConnections(doc, shape, ref allPageShapesMap, ref shpInfo);
 					}
 
 					ConsoleOut.writeLine(string.Format("Stencil ID:{0} Key:{1}", shpInfo.ID, shpInfo.UniqueKey));
@@ -159,6 +160,8 @@ namespace OmnicellBlueprintingTool.Visio
 		/// <summary>
 		/// GetShapeConnections
 		/// this will attempt to get the connection information between stencils using stencils on the Visio Diagram
+		/// it only works on stencil shapes not connector types
+		/// problem is getting the connector information line pattern, color, label etc
 		/// </summary>
 		/// <param name="doc"></param>
 		/// <param name="shape"></param>
@@ -242,7 +245,7 @@ namespace OmnicellBlueprintingTool.Visio
 
 						// end new section
 
-						//shpInfo.ToLineColor = "Black";
+						//shpInfo.ToLineColor = VisioVariables.sCOLOR_BLACK;
 						shpInfo.ToLinePattern = VisioVariables.LINE_PATTERN_SOLID;
 						shpInfo.ToLineLabel = shape.Text;
 						connectMap.Add(sKey, sKey2);
@@ -316,7 +319,7 @@ namespace OmnicellBlueprintingTool.Visio
 						}
 						// end new section
 
-						//shpInfo.FromLineColor = "Black";
+						//shpInfo.FromLineColor = VisioVariables.sCOLOR_BLACK;
 						shpInfo.FromLinePattern = VisioVariables.LINE_PATTERN_SOLID;
 						shpInfo.FromLineLabel = shape.Text;
 						connectMap.Add(sKey, sKey2);
@@ -358,8 +361,8 @@ namespace OmnicellBlueprintingTool.Visio
 			ShapeInformation lookupShapeMap = null;
 			int lookupKey = 0;
 			string arrowType = VisioVariables.sARROW_NONE;
-			string lineColor = "Black";
-			string rgbLineColor = VisioVariables.GetRGBColor("Black");
+			string lineColor = VisioVariables.sCOLOR_BLACK;
+			string rgbLineColor = VisioVariables.GetRGBColor(VisioVariables.sCOLOR_BLACK);
 			double linePattern = VisioVariables.LINE_PATTERN_SOLID;
 			Visio1.Connects visconnects2 = shape.Connects;
 
@@ -376,8 +379,8 @@ namespace OmnicellBlueprintingTool.Visio
 
 					sTmp = string.Empty;
 					sTmp2 = string.Empty;
-					sTmp = string.Format("Connector ID:{0} Shape ID:{1}-{2} LineLabel:{3}", shape.ID, toshape.ID, toshape.NameU, shape.Text);
-					sTmp2 = string.Format("id:{0};name:{1};label:{2}", toshape.ID, toshape.Name, shape.Text);
+					sTmp = string.Format("Connector ID:'{0}' Shape ID:'{1}'-'{2}' LineLabel:'{3}'", shape.ID, toshape.ID, toshape.NameU, shape.Text);
+					sTmp2 = string.Format("id:'{0}';name:'{1}';label:'{2}'", toshape.ID, toshape.Name, shape.Text);
 
 					int startArrow = int.Parse(shape.get_CellsU("BeginArrow").FormulaU);
 					int endArrow = int.Parse(shape.get_CellsU("EndArrow").FormulaU);
@@ -398,7 +401,7 @@ namespace OmnicellBlueprintingTool.Visio
 					string sColor = VisioVariables.GetColorValueFromRGB(rgbLineColor);		// will be a color word or null if not found
 					if (!string.IsNullOrEmpty(sColor))
 					{
-						lineColor = "Black";		// connector line color
+						lineColor = VisioVariables.sCOLOR_BLACK;		// connector line color
 					}
 
 					linePattern = double.Parse(shape.get_CellsU("LinePattern").FormulaU);
@@ -440,8 +443,8 @@ namespace OmnicellBlueprintingTool.Visio
 						lookupShapeMap.ToLinePattern = linePattern;
 					}
 
-					sTmp += string.Format(" - {0} To Shape ID:{1}-{2} LineLabel:{3}", shape.ID, toshape.ID, toshape.NameU, shape.Text);
-					sTmp2 += string.Format("|id:{0};name:{1};label:{2}", toshape.ID, toshape.Name, shape.Text);
+					sTmp += string.Format(" - '{0}' To Shape ID:'{1}'-'{2}' LineLabel:'{3}'", shape.ID, toshape.ID, toshape.NameU, shape.Text);
+					sTmp2 += string.Format("|id:'{0}';name:'{1}';label:'{2}'", toshape.ID, toshape.Name, shape.Text);
 				}
 			}
 			if (lookupShapeMap != null)
@@ -451,7 +454,7 @@ namespace OmnicellBlueprintingTool.Visio
 
 			connectors.Add(shape.ID, sTmp2);
 			ConsoleOut.writeLine(sTmp);
-			ConsoleOut.writeLine(string.Format("Found shape ID:{0}-{1} in the diagram", shpInfo.ID, shpInfo.UniqueKey));
+			ConsoleOut.writeLine(string.Format("Found shape ID:'{0}'-'{1}' in the diagram", shpInfo.ID, shpInfo.UniqueKey));
 		}
 	}
 }

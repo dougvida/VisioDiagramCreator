@@ -375,7 +375,7 @@ namespace OmnicellBlueprintingTool.Visio
 				shpObj.get_CellsSRC(
 					 (short)Visio1.VisSectionIndices.visSectionObject,
 					 (short)Visio1.VisRowIndices.visRowFill,
-					 (short)Visio1.VisCellIndices.visFillBkgnd).FormulaU = VisioVariables.GetRGBColor("BLACK");
+					 (short)Visio1.VisCellIndices.visFillBkgnd).FormulaU = VisioVariables.GetRGBColor(VisioVariables.sCOLOR_BLACK);
 
 				// for an shape to be filled this needs to be set
 				shpObj.get_CellsSRC(
@@ -387,9 +387,9 @@ namespace OmnicellBlueprintingTool.Visio
 			}
 
 			// we want to keep the shape outline color Black for this Stencil
-			if (device.ShapeInfo.UniqueKey.ToUpper().StartsWith("TABLECELL"))
+			if (device.ShapeInfo.UniqueKey.Trim().StartsWith("OC_TableCell"))
 			{
-				shpObj.get_Cells("LineColor").Formula = VisioVariables.GetRGBColor("BLACK");
+				shpObj.get_Cells("LineColor").Formula = VisioVariables.GetRGBColor(VisioVariables.sCOLOR_BLACK);
 			}
 			if (!string.IsNullOrEmpty(device.ShapeInfo.StencilLabel))
 			{
@@ -689,7 +689,7 @@ namespace OmnicellBlueprintingTool.Visio
 						shpConn.get_CellsU("ShdwPattern").ResultIU = VisioVariables.SHDW_PATTERN;
 						shpConn.get_CellsU("BeginArrow").ResultIU = VisioVariables.ARROW_NONE;
 						shpConn.get_CellsU("EndArrow").ResultIU = VisioVariables.ARROW_NONE;
-						shpConn.get_CellsU("LineColor").FormulaU = VisioVariables.GetRGBColor("Black");
+						shpConn.get_CellsU("LineColor").FormulaU = VisioVariables.GetRGBColor(VisioVariables.sCOLOR_BLACK);
 						shpConn.get_CellsU("Rounding").ResultIU = VisioVariables.ROUNDING;
 						shpConn.get_CellsU("LinePattern").ResultIU = VisioVariables.LINE_PATTERN_SOLID;
 						shpConn.get_CellsU("LineWeight").FormulaU = VisioVariables.sLINE_WEIGHT_1;
@@ -732,12 +732,12 @@ namespace OmnicellBlueprintingTool.Visio
 						rgbColor = VisioVariables.GetRGBColor(lookupShapeConnection.LineColor.Trim().ToUpper());
 						if (string.IsNullOrEmpty(rgbColor))
 						{
-							rgbColor = VisioVariables.GetRGBColor("Black");
+							rgbColor = VisioVariables.GetRGBColor(VisioVariables.sCOLOR_BLACK);
 						}
 						shpConn.get_CellsU("LineColor").Formula = "="+rgbColor;
 
 						// default the connection Text color Black
-						shpConn.get_CellsU("Char.Color").FormulaU = "="+VisioVariables.GetRGBColor("Black");
+						shpConn.get_CellsU("Char.Color").FormulaU = "="+VisioVariables.GetRGBColor(VisioVariables.sCOLOR_BLACK);
 
 						//set the shape back color
 						//shpConn.get_CellsSRC((short)VisSectionIndices.visSectionObject,

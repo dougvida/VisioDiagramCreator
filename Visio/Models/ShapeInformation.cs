@@ -26,15 +26,15 @@ namespace OmnicellBlueprintingTool.Visio
 		public string ConnectFrom { get; set; } = String.Empty;       // UniqueKey value for Lookukp
 		public string FromLineLabel { get; set; } = String.Empty;
 		public double FromLinePattern { get; set; } = VisioVariables.LINE_PATTERN_SOLID; // solid line
-		public string FromLineColor { get; set; } = string.Empty; // default is VisioVariables.COLOR_BLACK;
-		public string FromArrowType { get; set; } = string.Empty; // default is VisioVariables.sARROW_NONE;
+		public string FromLineColor { get; set; } = string.Empty; // empty is same as color "Black"
+		public string FromArrowType { get; set; } = string.Empty; // empty is same as "None"
 
 		public int ConnectToID { get; set; } = 0;
 		public string ConnectTo { get; set; } = String.Empty;        // UniqueKey value for Lookup
 		public string ToLineLabel { get; set; } = String.Empty;
 		public double ToLinePattern { get; set; } = VisioVariables.LINE_PATTERN_SOLID;   // solid line
-		public string ToLineColor { get; set; } = string.Empty;  // default is VisioVariables.COLOR_BLACK;
-		public string ToArrowType { get; set; } = string.Empty;	// default is VisioVariables.sARROW_NONE;
+		public string ToLineColor { get; set; } = string.Empty;  // empty is same as color "Black"
+		public string ToArrowType { get; set; } = string.Empty;  // empty is same as "None"
 
 		public string LineWeight { get; set; } = VisioVariables.sLINE_WEIGHT_1;
 

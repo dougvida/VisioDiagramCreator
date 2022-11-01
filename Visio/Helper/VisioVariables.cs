@@ -52,6 +52,9 @@ namespace OmnicellBlueprintingTool.Visio
 		// connector corner 
 		public const double ROUNDING = 0.0625;
 
+		// color string names
+		public const string sCOLOR_BLACK = "Black";
+
 		// connector line pattern
 		public const double SHDW_PATTERN = 0;           // None
 
@@ -288,7 +291,7 @@ namespace OmnicellBlueprintingTool.Visio
 		/// <summary>
 		/// GetColorValueFromDB
 		/// return the color string based on the rgb value argument
-		/// search "RGB(0,0,0)" will return "BLACK
+		/// search "RGB(0,0,0)" will return "Black"
 		/// </summary>
 		/// <param name="rgb"></param>
 		/// <returns>string</returns>
@@ -301,7 +304,7 @@ namespace OmnicellBlueprintingTool.Visio
 			}
 			if (string.IsNullOrEmpty(rgb))
 			{
-				return null; // default to BLACK
+				return null; // default to Black
 			}
 			foreach (KeyValuePair<string, string> item in _visioColorsMap)
 			{

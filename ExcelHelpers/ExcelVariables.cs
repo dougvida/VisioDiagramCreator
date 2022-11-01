@@ -98,5 +98,17 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 			};
 			return excelHeaderNames;
 		}
+
+		public static int GetHeaderNameIndex(string headerName)
+		{
+			foreach (KeyValuePair<int, string> item in GetExcelHeaderNames())
+			{
+				if (item.Value.Equals(headerName, StringComparison.CurrentCultureIgnoreCase))
+				{
+					return item.Key;
+				}
+			}
+			return -1;
+		}
 	}
 }
