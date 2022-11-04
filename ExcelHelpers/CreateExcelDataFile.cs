@@ -472,7 +472,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				var data = (Excel.Range)workSheet.Cells[1, nCol];
 				if (data != null)
 				{
-					string sTmp = data.Text.ToString().Tim();
+					string sTmp = data.Text.ToString().Trim();
 					switch (sTmp)
 					{
 						case "Unique Key":

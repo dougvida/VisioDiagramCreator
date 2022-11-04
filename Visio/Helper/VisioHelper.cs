@@ -703,7 +703,7 @@ namespace OmnicellBlueprintingTool.Visio
 							shpConn.get_CellsU("LinePattern").ResultIU = lookupShapeConnection.LinePattern;
 						}
 
-						switch ((string)lookupShapeConnection.ArrowType.Trim().ToUpper())
+						switch ((string)lookupShapeConnection.ArrowType.Trim())
 						{
 							case VisioVariables.sARROW_START:
 								shpConn.get_CellsU("BeginArrow").ResultIU = VisioVariables.BEGIN_ARROW;
