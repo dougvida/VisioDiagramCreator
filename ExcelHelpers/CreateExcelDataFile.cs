@@ -8,11 +8,8 @@ using OmnicellBlueprintingTool.Models;
 using OmnicellBlueprintingTool.Visio;
 using Excel = Microsoft.Office.Interop.Excel;
 using Microsoft.Office.Interop.Excel;
-
-
-
-
-
+using System.Text.RegularExpressions;
+using System.Linq;
 
 ///
 /// helper URL http://csharp.net-informations.com/excel/csharp-format-excel.htm
@@ -25,6 +22,9 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 		private Excel.Application _xlApp = null;
 		private Excel.Workbook _xlWorkbook = null;
 		private Excel.Worksheet _xlWorksheet = null;
+
+		const string sIP_Only = @"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b";
+		const string sIP_Port = @"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d{1,5}\b";
 
 		public CreateExcelDataFile()
 		{
@@ -230,7 +230,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 					{
 						sTmp = "CreateExcelDataFile::PopulateExcelDataFile\n\nWriting the header";
 						MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
-						closeExcel();
+						closeExcel(false);
 						return true;
 					}
 
@@ -239,7 +239,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 					{
 						sTmp = "CreateExcelDataFile::PopulateExcelDataFile\n\nWriting the configuration section";
 						MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
-						closeExcel();
+						closeExcel(false);
 						return true;
 					}
 
@@ -249,7 +249,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 					{
 						sTmp = string.Format("CreateExcelDataFile::PopulateExcelDataFile\n\nWriting All Data:{0}",nRow);
 						MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
-						closeExcel();
+						closeExcel(false);
 						return true;
 					}
 
@@ -266,12 +266,17 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 					_xlWorkbook.DoNotPromptForConvert = true;             
 					
 					// save and close the excel file
-					saveFile(namePath);
+					if (saveFile(namePath))
+					{
+						sTmp = string.Format("MainForm::Excil data file has been created\n{0}", namePath);
+						MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Information);
+					}
 				}
 				catch(Exception ex)
 				{
 					sTmp = string.Format("Exception::PopulateExcelDataFile\n\n{0}\n{1}", ex.Message,ex.StackTrace);
 					MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
+					closeExcel(false);
 					return true;
 				}
 			}
@@ -381,7 +386,67 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.ShapeType]).Value = shape.ShapeType;
 				((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.UniqueKey]).Value = shape.UniqueKey;
 				((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.StencilImage]).Value = shape.StencilImage;
+
 				((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.StencilLabel]).Value = shape.StencilLabel;
+				((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.IP]).Value = string.Empty;
+				((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.Ports]).Value = string.Empty;
+				
+				// we need to check if an IP address in in the label name
+				// if so cut it out and place into the IP excel cell (xxx.xxx.xxx.xxx)
+				// also check if there is a PORT and place into the Port excel cell PORT: xxxxxx
+				string sLabel = shape.StencilLabel;
+
+				//Regex ip = new Regex(sIP_Port, RegexOptions.IgnoreCase);
+				//MatchCollection result = ip.Matches(sLabel);
+				//if (result.Count > 0)
+				//{
+				//	// we have something to work on
+				//	string sIP = result[0].Value.ToString().Trim();
+				//	((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.IP]).Value = sIP;
+
+				//	string[] saTmp = sIP.Split(':');
+				//	if (saTmp.Length > 0)
+				//	{
+				//		((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.IP]).Value = saTmp[0];
+				//		((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.Ports]).Value = saTmp[1];
+
+				//		// we need to strip out the IP:Port information from the label
+				//		string sLbl = sLabel;
+				//		int foundIdx = sLabel.IndexOf(sIP);
+				//		int fountLen = sIP.Length;	// should be the length of the IP:Port string
+
+				//		sTmp = sLabel.Substring(0, foundIdx-1); // get the first part of the original string minus the IP:Port
+				//		// now we need to remove the IP:Port and append the rest of the original string is there is anything
+				//		if ((foundIdx + sIP.Length) < sLabel.Length)
+				//		{
+				//			sTmp.Concat(" " + sLabel.Substring((foundIdx + sIP.Length), sLabel.Length));
+				//		}
+				//		shape.StencilLabel = sTmp;
+				//	}
+				//}
+				//else
+				//{
+				//	ip = new Regex(sIP_Only, RegexOptions.IgnoreCase);
+				//	result = ip.Matches(sLabel);
+				//	if (result.Count > 0)
+				//	{
+				//		// we have something to work on
+				//		string sIP = result[0].Value.ToString().Trim();
+				//		((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.IP]).Value = sIP;
+
+				//		// we need to strip out the IP:Port information from the label
+				//		string sLbl = sLabel;
+				//		int foundIdx = sLabel.IndexOf(sIP);
+				//		sTmp = sLabel.Substring(0, foundIdx - 1); // first part
+				//		// now we need to remove the IP:Port and append the rest of the original string is there is anything
+				//		if ((foundIdx + sIP.Length) < sLabel.Length)
+				//		{
+				//			sTmp.Concat(" " + sLabel.Substring((foundIdx + sIP.Length), sLabel.Length));
+				//		}
+				//		shape.StencilLabel = sTmp;
+				//	}
+				//}
+
 
 				// if not a comment and above the header and configurations rows fill these cells
 				if (!IsComment && rowCount > 7)
@@ -397,8 +462,6 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.Omnis_name]).Value = string.Empty;
 					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.Omnis_id]).Value = string.Empty;
 					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.SiteIdOmniId]).Value = string.Empty;
-					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.IP]).Value = string.Empty;
-					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.Ports]).Value = string.Empty;
 					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.DevicesCount]).Value = string.Empty;
 
 					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.PosX]).Value = shape.Pos_x;
@@ -413,7 +476,8 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.Height]).Value = shape.Height;
 					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.Height]).NumberFormat = "#0.000";
 
-					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.FillColor]).Value = shape.FillColor;	// should be color name
+					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.FillColor]).Value = shape.FillColor; // should be color name
+					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.rgbFillColor]).Value = shape.rgbFillColor;
 
 					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.ConnectFrom]).Value = shape.ConnectFrom;
 					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.FromLineLabel]).Value = shape.FromLineLabel;
@@ -780,38 +844,64 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 		}
 		private bool saveFile(string fileNamePath)
 		{
-			if (_xlWorkbook != null)
+			bool bSave = true;
+			try
 			{
-				//Here saving the file in xlsx
-				_xlWorkbook.SaveAs(fileNamePath, Microsoft.Office.Interop.Excel.XlFileFormat.xlOpenXMLWorkbook, Type.Missing,
-				Type.Missing, Type.Missing, Type.Missing, Microsoft.Office.Interop.Excel.XlSaveAsAccessMode.xlExclusive, Type.Missing, Type.Missing, Type.Missing, Type.Missing, Type.Missing);
+				if (_xlWorkbook != null)
+				{
+					//Here saving the file in xlsx
+					_xlWorkbook.SaveAs(fileNamePath, Microsoft.Office.Interop.Excel.XlFileFormat.xlOpenXMLWorkbook, Type.Missing,
+					Type.Missing, Type.Missing, Type.Missing, Microsoft.Office.Interop.Excel.XlSaveAsAccessMode.xlExclusive, Type.Missing, Type.Missing, Type.Missing, Type.Missing, Type.Missing);
 
-				//_xlWorkbook.SaveAs(fileNamePath, Excel.XlFileFormat.xlWorkbookNormal, Type.Missing, Type.Missing, Type.Missing, Type.Missing,
-				//						Excel.XlSaveAsAccessMode.xlExclusive, Type.Missing, Type.Missing, Type.Missing, Type.Missing, Type.Missing);
+					//_xlWorkbook.SaveAs(fileNamePath, Excel.XlFileFormat.xlWorkbookNormal, Type.Missing, Type.Missing, Type.Missing, Type.Missing,
+					//						Excel.XlSaveAsAccessMode.xlExclusive, Type.Missing, Type.Missing, Type.Missing, Type.Missing, Type.Missing);
+				}
 			}
-			closeExcel();
-
-			return false;
+			catch (Exception ep)
+			{
+				bSave = false;
+			}
+			finally
+			{
+				closeExcel(bSave);
+			}
+			return bSave;
 		}
 
-		private void closeExcel()
+		/// <summary>
+		/// closeExcel
+		/// 
+		/// </summary>
+		/// <param name="bSave">
+		/// <option>true display save prompt</option>
+		/// <option>false do not show save prompt</option>
+		/// </param>
+		private void closeExcel(bool bSave)
 		{
 			if (_xlWorkbook != null)
 			{
-				_xlWorkbook.Close(true, Type.Missing, Type.Missing);
+				_xlWorkbook.Close(bSave, Type.Missing, Type.Missing);
 			}
 			if (_xlApp != null)
 			{
 				_xlApp.Quit();
 			}
 
-			Marshal.ReleaseComObject(_xlWorksheet);
-			Marshal.ReleaseComObject(_xlWorkbook);
-			Marshal.ReleaseComObject(_xlApp);
-
-			_xlWorksheet = null;
-			_xlWorkbook = null;
-			_xlApp = null;
+			if (_xlWorkbook != null)
+			{
+				Marshal.ReleaseComObject(_xlWorksheet);
+				_xlWorksheet = null;
+			}
+			if (_xlWorksheet != null)
+			{
+				Marshal.ReleaseComObject(_xlWorkbook);
+				_xlWorkbook = null;
+			}
+			if (_xlApp != null)
+			{
+				Marshal.ReleaseComObject(_xlApp);
+				_xlApp = null;
+			}
 		}
 
 	}

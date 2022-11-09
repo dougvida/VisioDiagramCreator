@@ -393,6 +393,14 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 					visioInfo.FillColor = data.ToString().Trim();
 				}
 
+				// shape rgb fill color.  This is normally populated by processing a visio diagram into an excel data file
+				// however, if the color you want is not available you may put the RGB value here "RGB(128,128,128)"
+				data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.rgbFillColor);
+				if (data != null)
+				{
+					visioInfo.rgbFillColor = data.ToString().Trim();
+				}
+
 				// connector from shape
 				data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.ConnectFrom);
 				if (data != null)

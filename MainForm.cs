@@ -216,11 +216,6 @@ namespace OmnicellBlueprintingTool
 							sTmp = String.Format("MainForm - Error\n\nFailed to create excel data file:{0}", sPath);
 							MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
 						}
-						else
-						{
-							sTmp = string.Format("MainForm::Excil data file has been created\n{0}", sPath);
-							MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Information);
-						}
 					}
 				}
 				// Set cursor as default arrow

@@ -39,6 +39,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 			Width,               // shape width
 			Height,              // shape height
 			FillColor,           // color to fill stincel
+			rgbFillColor,			// rgb fill color of stencil  will be populated when reading a visio diagram to Excel Data file
 			
 			ConnectFrom,         // used to link this visio shape to another visio shape
 			FromLineLabel,       // Arrow Text
@@ -82,19 +83,20 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				{ 19, "PosY"},						// shape position Y
 				{ 20, "Width"},					// shape width
 				{ 21, "Height"},					// shape height
-				{ 22, "Fill Color"},          // color to fill stincel
+				{ 22, "Fill Color"},          // color to fill stencil
+				{ 23, "RGB Fill Color"},		// rgb color value of stencil
 
-				{ 23, "Connect From"},        // used to link this visio shape to another visio shape
-				{ 24, "From Line Label"},      // Arrow Text
-				{ 25, "From Line Pattern"},    // Line pattern solid = 1, 2 = dashed, 3=Dotted, 4=Dash_Dot
-				{ 26, "From Arrow Type"},      // Can contain one of these [None, Start, End, Both]
-				{ 27, "From Line Color"},      // Arrow Color
+				{ 24, "Connect From"},        // used to link this visio shape to another visio shape
+				{ 25, "From Line Label"},     // Arrow Text
+				{ 26, "From Line Pattern"},   // Line pattern solid = 1, 2 = dashed, 3=Dotted, 4=Dash_Dot
+				{ 27, "From Arrow Type"},     // Can contain one of these [None, Start, End, Both]
+				{ 28, "From Line Color"},     // Arrow Color
 
-				{ 28, "Connect To"},          // used to link this visio shape to another visio shape
-				{ 29, "To Line Label"},        // Arrow Text
-				{ 30, "To Line Pattern"},      // Line pattern solid = 1
-				{ 31, "To Arrow Type"},        // Can contain one of these [None, Start, End, Both]
-				{ 32, "To Line Color"}			// Arrow Color
+				{ 29, "Connect To"},          // used to link this visio shape to another visio shape
+				{ 30, "To Line Label"},       // Arrow Text
+				{ 31, "To Line Pattern"},     // Line pattern solid = 1
+				{ 32, "To Arrow Type"},       // Can contain one of these [None, Start, End, Both]
+				{ 33, "To Line Color"}			// Arrow Color
 			};
 			return excelHeaderNames;
 		}

@@ -8,6 +8,8 @@ using Visio1 = Microsoft.Office.Interop.Visio;
 using Microsoft.Office.Core;
 using System.Drawing;
 using Color = Microsoft.Office.Interop.Visio.Color;
+using System.Data.SqlTypes;
+using System.Text.RegularExpressions;
 
 namespace OmnicellBlueprintingTool.Visio
 {
@@ -93,18 +95,21 @@ namespace OmnicellBlueprintingTool.Visio
 					Color c = doc.Colors.Item16[(short)shape.Cells["FillBkgnd"].ResultIU];
 					shpInfo.rgbFillColor = $"RGB({c.Red},{c.Green},{c.Blue})";
 					sColor = VisioVariables.GetColorValueFromRGB(shpInfo.rgbFillColor);
-					shpInfo.FillColor = sColor;
-					if (string.IsNullOrEmpty(sColor))
+					shpInfo.FillColor = "";
+					if (!string.IsNullOrEmpty(sColor))
 					{
-						shpInfo.FillColor = "";	// color not found so don't set it
+						shpInfo.FillColor = sColor;
 					}
 
 					//short iRow = (short)VisRowIndices.visRowFirst;
 					shpInfo.Pos_x = Math.Truncate(shape.Cells["PinX"].ResultIU * 1000) / 1000;
 					shpInfo.Pos_y = Math.Truncate(shape.Cells["PinY"].ResultIU * 1000) / 1000;
-					if (shape.Name.IndexOf("Ethernet") > 0)
+					if (shape.Name.IndexOf("Ethernet", StringComparison.OrdinalIgnoreCase) > 0 || 
+						shape.Name.IndexOf("Group", StringComparison.OrdinalIgnoreCase) > 0 || 
+						shape.Name.IndexOf("Dash", StringComparison.OrdinalIgnoreCase) > 0)
 					{
 						shpInfo.Width = Math.Truncate(shape.Cells["Width"].ResultIU * 1000) / 1000;
+						shpInfo.Height = Math.Truncate(shape.Cells["Height"].ResultIU * 1000) / 1000;
 					}
 					else
 					{
@@ -123,6 +128,7 @@ namespace OmnicellBlueprintingTool.Visio
 					{
 						shpInfo.StencilImage = shape.Name.Trim();
 					}
+
 					shpInfo.StencilLabel = shape.Text.Trim();
 
 					// use the connection shape to obtain what is connected to what
@@ -151,7 +157,7 @@ namespace OmnicellBlueprintingTool.Visio
 			}
 			catch (Exception ex)
 			{
-				string sTmp = string.Format("ProcessVisioDiagramShapes::getShapeInformation - Exception\n\nForeach loop:\n{0}", ex.Message);
+				string sTmp = string.Format("ProcessVisioDiagramShapes::getShapeInformation - Exception\n\nForeach loop:\nWorking on {0}\n\n{1}", shpInfo.UniqueKey, ex.Message);
 				MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
 			}
 			return allPageShapesMap;
@@ -236,7 +242,7 @@ namespace OmnicellBlueprintingTool.Visio
 						var c = doc.Colors.Item16[(short)colorIdx];
 						shpInfo.rgbFillColor = $"RGB({c.Red},{c.Green},{c.Blue})";
 						sColor = VisioVariables.GetColorValueFromRGB(shpInfo.rgbFillColor);
-						//shpInfo.ToLineColor = "";
+						shpInfo.ToLineColor = "";
 						if (!string.IsNullOrEmpty(sColor))
 						{
 							shpInfo.ToLineColor = sColor;
@@ -312,7 +318,7 @@ namespace OmnicellBlueprintingTool.Visio
 						var c = doc.Colors.Item16[(short)colorIdx];
 						shpInfo.rgbFillColor = $"RGB({c.Red},{c.Green},{c.Blue})";
 						sColor = VisioVariables.GetColorValueFromRGB(shpInfo.rgbFillColor);
-						//shpInfo.FromLineColor = "";
+						shpInfo.FromLineColor = "";
 						if (!string.IsNullOrEmpty(sColor))
 						{
 							shpInfo.FromLineColor = sColor;
@@ -356,7 +362,7 @@ namespace OmnicellBlueprintingTool.Visio
 			//continue;
 			string sTmp = string.Empty;
 			string sTmp2 = string.Empty;
-			string lineWeight = string.Empty;
+			string lineWeight = String.Empty;
 
 			ShapeInformation lookupShapeMap = null;
 			int lookupKey = 0;
@@ -399,13 +405,17 @@ namespace OmnicellBlueprintingTool.Visio
 					rgbLineColor = shape.get_CellsU("LineColor").FormulaU;      // RGB color value
 					lineColor = String.Empty;
 					string sColor = VisioVariables.GetColorValueFromRGB(rgbLineColor);		// will be a color word or null if not found
-					if (!string.IsNullOrEmpty(sColor))
+					if (string.IsNullOrEmpty(sColor))
 					{
 						lineColor = VisioVariables.sCOLOR_BLACK;		// connector line color
 					}
 
-					linePattern = double.Parse(shape.get_CellsU("LinePattern").FormulaU);
+					linePattern = shape.get_CellsU("LinePattern").ResultIU;
 					lineWeight = shape.get_CellsU("LineWeight").FormulaU;
+					if (lineWeight.IndexOf("THERM", StringComparison.OrdinalIgnoreCase) >= 0)
+					{
+						lineWeight = VisioVariables.sLINE_WEIGHT_1;
+					}
 				}
 				else
 				{

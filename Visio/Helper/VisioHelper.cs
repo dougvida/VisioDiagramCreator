@@ -307,173 +307,208 @@ namespace OmnicellBlueprintingTool.Visio
 				// stencil not found here so lets try looking if any other stencil files have been added
 			}
 
-			if (stnObj == null)
+			try
 			{
-				// else look to see if the Stencil is part of the added stincel files
-				if (this.stencils.Count > 0)
+				if (stnObj == null)
 				{
-					foreach (Visio1.Document stencil in this.stencils)
+					// else look to see if the Stencil is part of the added stincel files
+					if (this.stencils.Count > 0)
 					{
-						try
+						foreach (Visio1.Document stencil in this.stencils)
 						{
-							stnObj = stencil.Masters[device.ShapeInfo.StencilImage];
-						}
-						catch(System.Runtime.InteropServices.COMException com)
-						{
-							// if we get this exception the item was not found so lets try searching the next stencil
-							//Console.WriteLine(string.Format("failed to locate this Stencil:{0} for this stencil file:{1}", device.ShapeInfo.StencilImage, stencil.Template));
-							continue;
-						}
-						if (stnObj != null)
-						{
-							break;   // found get out of the loop
-						}
-					}
-				}
-			}
-			if (stnObj == null)
-			{
-				string sTmp = string.Format("VisioHelper::_drawShape  Error\n\nCan't find Stencil:{0}", device.ShapeInfo.StencilImage);
-				MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
-				Console.WriteLine(sTmp);
-				return null;
-			}
-
-			Visio1.Pages pagesObj = this.appVisio.ActiveDocument.Pages;
-			// switch Visio Diagram Page if needed based on the shape data VisioPage value
-			this.appVisio.ActiveWindow.Page = pagesObj[device.ShapeInfo.VisioPage];
-
-			// draw the shape on the document
-			shpObj = this.appVisio.ActivePage.Drop(stnObj, device.ShapeInfo.Pos_x, device.ShapeInfo.Pos_y);
-			shpObj.NameU = device.ShapeInfo.UniqueKey;
-			shpObj.Name = device.ShapeInfo.StencilImage;
-
-			// normal stencils are normal (east-width and south-height)
-			if (device.ShapeInfo.Width > 0.0)
-			{
-				// we need to make wider (increase east)
-				shpObj.Resize(VisResizeDirection.visResizeDirE, device.ShapeInfo.Width, VisUnitCodes.visDrawingUnits);
-			}
-			if (device.ShapeInfo.Height > 0.0)
-			{
-				// we need to make taller (increase south)
-				shpObj.Resize(VisResizeDirection.visResizeDirS, device.ShapeInfo.Height, VisUnitCodes.visDrawingUnits);
-			}
-
-			//var linePatternCell = shpConn.get_CellsU("LinePattern");
-
-			// we should be using the FillColor to lookup the RGB color
-			string rgb = VisioVariables.GetRGBColor(device.ShapeInfo.FillColor);
-			if (!string.IsNullOrEmpty(rgb))
-			{
-				//set the shape back color
-				shpObj.get_CellsSRC(
-					(short)VisSectionIndices.visSectionObject,
-					(short)VisRowIndices.visRowFill,
-					(short)VisCellIndices.visFillForegnd).FormulaU = rgb;
-
-				shpObj.get_CellsSRC(
-					 (short)Visio1.VisSectionIndices.visSectionObject,
-					 (short)Visio1.VisRowIndices.visRowFill,
-					 (short)Visio1.VisCellIndices.visFillBkgnd).FormulaU = VisioVariables.GetRGBColor(VisioVariables.sCOLOR_BLACK);
-
-				// for an shape to be filled this needs to be set
-				shpObj.get_CellsSRC(
-					 (short)Visio1.VisSectionIndices.visSectionObject,
-					 (short)Visio1.VisRowIndices.visRowFill,
-					 (short)Visio1.VisCellIndices.visFillPattern).FormulaU = "1";
-
-				shpObj.get_Cells("LineColor").Formula = rgb;
-			}
-
-			// we want to keep the shape outline color Black for this Stencil
-			if (device.ShapeInfo.UniqueKey.Trim().StartsWith("OC_TableCell"))
-			{
-				shpObj.get_Cells("LineColor").Formula = VisioVariables.GetRGBColor(VisioVariables.sCOLOR_BLACK);
-			}
-			if (!string.IsNullOrEmpty(device.ShapeInfo.StencilLabel))
-			{
-				shpObj.Text = device.ShapeInfo.StencilLabel;
-				if (!string.IsNullOrEmpty(device.ShapeInfo.StencilLabelFontSize))
-				{
-					if (device.ShapeInfo.isStencilLabelFontBold)
-					{
-						// bold font
-						shpObj.get_CellsSRC(
-							 (short)Visio1.VisSectionIndices.visSectionCharacter,
-							 (short)0,
-							 (short)Visio1.VisCellIndices.visCharacterStyle).FormulaU = "1";
-						//shpObj.TextStyleKeepFmt = "Bold";    // Using this code would not allow the font size to be changed
-					}
-					shpObj.get_Cells("Char.Size").Formula = "=" + device.ShapeInfo.StencilLabelFontSize + " pt";
-					//shpObj.Cells("Char.Size").FormulaU = device.ShapeInfo.StencilLabelFontSize + " pt";
-					//string fontSize = shpObj.get_Cells("Char.Size").Formula;
-				}
-
-				// check if we have an IP that needs to be displayed
-				if (!string.IsNullOrEmpty(device.OmniIP))
-				{
-					shpObj.Text += " (" + device.OmniIP + ")";
-				}
-				if (!string.IsNullOrEmpty(device.OmniPorts))
-				{
-					shpObj.Text += " (" + device.OmniPorts + ")";
-				}
-				int textLen = shpObj.Text.Length;
-
-				// check if we need to move the text box to the bottom of the stencil
-				if ( (!string.IsNullOrEmpty(device.ShapeInfo.StencilLabelPosition) || device.ShapeInfo.StencilLabelPosition.Equals(VisioVariables.STINCEL_LABEL_POSITION_BOTTOM)) && textLen > 0)
-				{
-					short exists = shpObj.RowExists[(short)Visio1.VisSectionIndices.visSectionObject,
-											 (short)Visio1.VisRowIndices.visRowTextXForm,
-											 (short)Visio1.VisExistsFlags.visExistsAnywhere];
-					if (exists == 0)
-					{
-						shpObj.AddRow((short)Visio1.VisSectionIndices.visSectionObject, (short)Visio1.VisRowIndices.visRowTextXForm, (short)Visio1.VisRowTags.visTagDefault);
-					}
-
-					//	Set the text transform formulas:
-					shpObj.get_CellsU("TxtHeight").FormulaForceU = "Height*0";
-					shpObj.get_CellsU("TxtPinY").FormulaForceU = "Height*0";
-
-					//	Set the paragraph alignment formula:
-					shpObj.get_CellsU("VerticalAlign").FormulaForceU = "0";
-				}
-
-				// dont resize the text for the Title and Footer stencils or if the Stencil label font size is set to a value
-				if (string.IsNullOrEmpty(device.ShapeInfo.StencilLabelFontSize))
-				{
-					if (device.ShapeInfo.StencilImage.IndexOf("Title") <= 0 && device.ShapeInfo.StencilImage.IndexOf("Footer") <= 0)
-					{
-						int nSize = 0;
-						string[] saTmp = device.ShapeInfo.StencilLabel.Split('\n');
-						foreach (string saTmpStr in saTmp)
-						{
-							if (saTmpStr.Length > nSize)
+							try
 							{
-								nSize = saTmpStr.Length;
+								stnObj = stencil.Masters[device.ShapeInfo.StencilImage];
+							}
+							catch (System.Runtime.InteropServices.COMException com)
+							{
+								// if we get this exception the item was not found so lets try searching the next stencil
+								//Console.WriteLine(string.Format("failed to locate this Stencil:{0} for this stencil file:{1}", device.ShapeInfo.StencilImage, stencil.Template));
+								continue;
+							}
+							if (stnObj != null)
+							{
+								break;   // found get out of the loop
 							}
 						}
-						//	Set the text transform formulas:
-						//var lHeight = Math.Truncate(shpObj.get_CellsU("TxtHeight").ResultIU * 1000) / 1000;
-						//shpObj.get_CellsU("TxtPinY").FormulaForceU = "Height*0";
-						double lWidth = Math.Truncate(shpObj.get_CellsU("TxtWidth").ResultIU * 1000) / 1000;
-						double fSize = Math.Truncate(shpObj.get_CellsU("Char.Size").ResultIU * 1000) / 1000;
-						double xx = Math.Truncate(((fSize * nSize) - lWidth) * 1000) / 1000;
-						if (xx > lWidth)
+					}
+				}
+				if (stnObj == null)
+				{
+					string sTmp = string.Format("VisioHelper::_drawShape  Error\n\nCan't find Stencil:{0}", device.ShapeInfo.StencilImage);
+					MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
+					Console.WriteLine(sTmp);
+					return null;
+				}
+
+				Visio1.Pages pagesObj = this.appVisio.ActiveDocument.Pages;
+				// switch Visio Diagram Page if needed based on the shape data VisioPage value
+				this.appVisio.ActiveWindow.Page = pagesObj[device.ShapeInfo.VisioPage];
+
+				// draw the shape on the document
+				shpObj = this.appVisio.ActivePage.Drop(stnObj, device.ShapeInfo.Pos_x, device.ShapeInfo.Pos_y);
+				shpObj.NameU = device.ShapeInfo.UniqueKey;
+				shpObj.Name = device.ShapeInfo.StencilImage;
+
+				#region keep
+				// keep this section because it provides an offset when resizing shapes
+				// normal stencils are normal (east-width and south-height)
+				double WidthAdjustment = 0.0; // Math.Truncate(shpObj.get_Cells("Width").ResultIU * 1000) / 1000;
+				double HeightAdjustment = 0.0; // Math.Truncate(shpObj.get_Cells("Height").ResultIU * 1000) / 1000;
+				if (device.ShapeInfo.StencilImage.IndexOf("Group", StringComparison.OrdinalIgnoreCase) >= 0 ||
+					 device.ShapeInfo.StencilImage.IndexOf("Dash", StringComparison.OrdinalIgnoreCase) >= 0)
+				{
+					WidthAdjustment = 0.750;   // shape stencil size
+					HeightAdjustment = 0.268;  // shape stencil size
+				}
+				#endregion
+				if (device.ShapeInfo.Width > 0.0)
+				{
+					// we need to stretch East
+					shpObj.Resize(VisResizeDirection.visResizeDirE, device.ShapeInfo.Width - WidthAdjustment, VisUnitCodes.visDrawingUnits);
+				}
+				if (device.ShapeInfo.Height > 0.0)
+				{
+					// we need to stretch south
+					shpObj.Resize(VisResizeDirection.visResizeDirS, device.ShapeInfo.Height - HeightAdjustment, VisUnitCodes.visDrawingUnits);
+				}
+
+				//var linePatternCell = shpConn.get_CellsU("LinePattern");
+
+				// Look at the Fill color name to use
+				// if empty check the rgbFillColor field
+				string rgb = VisioVariables.GetRGBColor(device.ShapeInfo.FillColor);
+				if (string.IsNullOrEmpty(rgb))
+				{
+					// FillColor is empty now check if we should use the rgbFillColor
+					if (!string.IsNullOrEmpty(device.ShapeInfo.rgbFillColor))
+					{
+						// yes use the rgbFillColor
+						rgb = device.ShapeInfo.rgbFillColor;
+					}
+				}
+				if (!string.IsNullOrEmpty(rgb))
+				{
+					// visFillForegnd is used with fill object is solid fill pattern 1
+					shpObj.get_CellsSRC(
+						(short)VisSectionIndices.visSectionObject,
+						(short)VisRowIndices.visRowFill,
+						(short)VisCellIndices.visFillForegnd).FormulaU = rgb;
+
+					shpObj.get_CellsSRC(
+						 (short)Visio1.VisSectionIndices.visSectionObject,
+						 (short)Visio1.VisRowIndices.visRowFill,
+						 (short)Visio1.VisCellIndices.visFillBkgnd).FormulaU = rgb;
+
+					// for an shape to be filled this needs to be set
+					shpObj.get_CellsSRC(
+						 (short)Visio1.VisSectionIndices.visSectionObject,
+						 (short)Visio1.VisRowIndices.visRowFill,
+						 (short)Visio1.VisCellIndices.visFillPattern).FormulaU = "1";
+
+					//shpObj.get_Cells("LineColor").FormulaForceU = rgb;	// set the stencil outline color same as stencil fill color
+					// keep the stencil outline color "Black"
+					shpObj.get_Cells("LineColor").FormulaU = VisioVariables.GetRGBColor(VisioVariables.sCOLOR_BLACK);
+				}
+
+				// we want to keep the shape outline color Black for this Stencil
+				if (device.ShapeInfo.UniqueKey.Trim().StartsWith("OC_TableCell"))
+				{
+					shpObj.get_Cells("LineColor").FormulaU = VisioVariables.GetRGBColor(VisioVariables.sCOLOR_BLACK);
+				}
+				if (!string.IsNullOrEmpty(device.ShapeInfo.StencilLabel))
+				{
+					shpObj.Text = device.ShapeInfo.StencilLabel;
+					if (!string.IsNullOrEmpty(device.ShapeInfo.StencilLabelFontSize))
+					{
+						if (device.ShapeInfo.isStencilLabelFontBold)
 						{
-							//	Set the paragraph alignment formula:
-							// shpObj.get_CellsU("VerticalAlign").FormulaForceU = "0";
-							//scale = shpObj.get_CellsSRC((short)Visio1.VisSectionIndices.visSectionUser, (short)Visio1.VisRowIndices.visRowUser, (short)Visio1.VisCellIndices.visUserValue).ResultIU;
-							double scale = 0.5;
-							// Then set the font, and the TextMargins(for any that are non - zero) with the following(assuming the normal font size is 12 and the left margin is 4pt.:
-							shpObj.get_CellsSRC((short)Visio1.VisSectionIndices.visSectionCharacter, 0, (short)Visio1.VisCellIndices.visCharacterSize).FormulaU = (scale * 12).ToString() + "pt";
-							shpObj.get_CellsSRC((short)Visio1.VisSectionIndices.visSectionObject, (short)Visio1.VisRowIndices.visRowText, (short)Visio1.VisCellIndices.visTxtBlkLeftMargin).FormulaU = (scale * 2).ToString() + "pt";
+							// bold font
+							shpObj.get_CellsSRC(
+								 (short)Visio1.VisSectionIndices.visSectionCharacter,
+								 (short)0,
+								 (short)Visio1.VisCellIndices.visCharacterStyle).FormulaU = "1";
+							//shpObj.TextStyleKeepFmt = "Bold";    // Using this code would not allow the font size to be changed
+						}
+						//shpObj.get_Cells("Char.Size").Formula = "=" + device.ShapeInfo.StencilLabelFontSize + " pt";	// was
+						shpObj.get_Cells("Char.Size").FormulaU = "=" + device.ShapeInfo.StencilLabelFontSize + " pt";   // changed to
+																																						//shpObj.Cells("Char.Size").FormulaU = device.ShapeInfo.StencilLabelFontSize + " pt";
+																																						//string fontSize = shpObj.get_Cells("Char.Size").Formula;
+					}
+
+					// check if we have an IP that needs to be displayed
+					if (!string.IsNullOrEmpty(device.OmniIP))
+					{
+						shpObj.Text += "\n" + device.OmniIP;
+					}
+					if (!string.IsNullOrEmpty(device.OmniPorts))
+					{
+						shpObj.Text += ":" + device.OmniPorts;
+					}
+					int textLen = shpObj.Text.Length;
+
+					// check if we need to move the text box to the bottom of the stencil
+					if ((!string.IsNullOrEmpty(device.ShapeInfo.StencilLabelPosition) || device.ShapeInfo.StencilLabelPosition.Equals(VisioVariables.STINCEL_LABEL_POSITION_BOTTOM)) && textLen > 0)
+					{
+						short exists = shpObj.RowExists[(short)Visio1.VisSectionIndices.visSectionObject,
+												 (short)Visio1.VisRowIndices.visRowTextXForm,
+												 (short)Visio1.VisExistsFlags.visExistsAnywhere];
+						if (exists == 0)
+						{
+							shpObj.AddRow((short)Visio1.VisSectionIndices.visSectionObject, (short)Visio1.VisRowIndices.visRowTextXForm, (short)Visio1.VisRowTags.visTagDefault);
+						}
+
+						//	Set the text transform formulas:
+						shpObj.get_CellsU("TxtHeight").FormulaForceU = "Height*0";
+						shpObj.get_CellsU("TxtPinY").FormulaForceU = "Height*0";
+
+						//	Set the paragraph alignment formula:
+						shpObj.get_CellsU("VerticalAlign").FormulaForceU = "0";
+					}
+
+					// dont resize the text for the Title and Footer stencils or if the Stencil label font size is set to a value
+					if (string.IsNullOrEmpty(device.ShapeInfo.StencilLabelFontSize))
+					{
+						if (device.ShapeInfo.StencilImage.IndexOf("Title", StringComparison.OrdinalIgnoreCase) <= 0 &&
+							device.ShapeInfo.StencilImage.IndexOf("Footer", StringComparison.OrdinalIgnoreCase) <= 0)
+						{
+							int nSize = 0;
+							string[] saTmp = device.ShapeInfo.StencilLabel.Split('\n');
+							foreach (string saTmpStr in saTmp)
+							{
+								if (saTmpStr.Length > nSize)
+								{
+									nSize = saTmpStr.Length;
+								}
+							}
+							//	Set the text transform formulas:
+							//var lHeight = Math.Truncate(shpObj.get_CellsU("TxtHeight").ResultIU * 1000) / 1000;
+							//shpObj.get_CellsU("TxtPinY").FormulaForceU = "Height*0";
+							double lWidth = Math.Truncate(shpObj.get_CellsU("TxtWidth").ResultIU * 1000) / 1000;
+							double fSize = Math.Truncate(shpObj.get_CellsU("Char.Size").ResultIU * 1000) / 1000;
+							double xx = Math.Truncate(((fSize * nSize) - lWidth) * 1000) / 1000;
+							if (xx > lWidth)
+							{
+								//	Set the paragraph alignment formula:
+								// shpObj.get_CellsU("VerticalAlign").FormulaForceU = "0";
+								//scale = shpObj.get_CellsSRC((short)Visio1.VisSectionIndices.visSectionUser, (short)Visio1.VisRowIndices.visRowUser, (short)Visio1.VisCellIndices.visUserValue).ResultIU;
+								double scale = 0.5;
+								// Then set the font, and the TextMargins(for any that are non - zero) with the following(assuming the normal font size is 12 and the left margin is 4pt.:
+								shpObj.get_CellsSRC((short)Visio1.VisSectionIndices.visSectionCharacter, 0, (short)Visio1.VisCellIndices.visCharacterSize).FormulaU = (scale * 12).ToString() + "pt";
+								shpObj.get_CellsSRC((short)Visio1.VisSectionIndices.visSectionObject, (short)Visio1.VisRowIndices.visRowText, (short)Visio1.VisCellIndices.visTxtBlkLeftMargin).FormulaU = (scale * 2).ToString() + "pt";
+							}
 						}
 					}
 				}
 			}
-			ConsoleOut.writeLine("draw Stencil: " + device.ShapeInfo.StencilImage);
+			catch(Exception ep)
+			{
+				string sTmp = string.Format("VisioHelper::_drawShape.  Drawing:{0}-{1}\n\n{3}", device.ShapeInfo.StencilImage, device.ShapeInfo.UniqueKey, ep.Message);
+				MessageBox.Show(sTmp, "EXCEPTION", MessageBoxButtons.OK, MessageBoxIcon.Error);
+				ConsoleOut.writeLine(sTmp);
+				return null;
+			}
+			ConsoleOut.writeLine(String.Format("VisioHelper::_drawShape.  Drawing:{0} - {1}",device.ShapeInfo.StencilImage, device.ShapeInfo.UniqueKey));
 			return shpObj;
 		}
 
@@ -734,7 +769,8 @@ namespace OmnicellBlueprintingTool.Visio
 						{
 							rgbColor = VisioVariables.GetRGBColor(VisioVariables.sCOLOR_BLACK);
 						}
-						shpConn.get_CellsU("LineColor").Formula = "="+rgbColor;
+						//shpConn.get_CellsU("LineColor").Formula = "="+rgbColor;	// was
+						shpConn.get_CellsU("LineColor").FormulaU = "=" + rgbColor;	// changed to
 
 						// default the connection Text color Black
 						shpConn.get_CellsU("Char.Color").FormulaU = "="+VisioVariables.GetRGBColor(VisioVariables.sCOLOR_BLACK);
@@ -837,7 +873,9 @@ namespace OmnicellBlueprintingTool.Visio
 										 (short)Visio1.VisExistsFlags.visExistsAnywhere];
 				if (exists == 0)
 				{
-					shp.AddRow((short)Visio1.VisSectionIndices.visSectionObject, (short)Visio1.VisRowIndices.visRowTextXForm, (short)Visio1.VisRowTags.visTagDefault);
+					shp.AddRow((short)Visio1.VisSectionIndices.visSectionObject,
+						        (short)Visio1.VisRowIndices.visRowTextXForm,
+								  (short)Visio1.VisRowTags.visTagDefault);
 				}
 
 				//	Set the text transform formulas:
