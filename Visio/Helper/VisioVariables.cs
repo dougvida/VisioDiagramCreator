@@ -215,42 +215,42 @@ namespace OmnicellBlueprintingTool.Visio
 			//_visioColorsMap.Add("", "RGB(0,0,0)");
 			_visioColorsMap.Add("Beige", "RGB(245,245,220)");
 			_visioColorsMap.Add("Black", "RGB(0,0,0)");
-			_visioColorsMap.Add("Blue", "RGB(50,171,239)");         // blueer blue
-			_visioColorsMap.Add("Blue Light", "RGB(240,248,255)");	// do not touch good lighter background color
-			_visioColorsMap.Add("Blue Medium", "RGB(176,196,222)");  // groupbox1 color
-			_visioColorsMap.Add("Blue Bright", "RGB(0,176,240)");
-			_visioColorsMap.Add("Brown", "RGB(210,105,30)");
+			_visioColorsMap.Add("Blue Light", "RGB(220,234,252)");
+			_visioColorsMap.Add("Blue Medium", "RGB(71,141,233)");  // groupbox1 color
+			_visioColorsMap.Add("Blue Bright", "RGB(71,150,255)");
+			_visioColorsMap.Add("Blue", "RGB(17, 117, 245)");
 			_visioColorsMap.Add("Cyan", "RGB(0,255,255)");
 			_visioColorsMap.Add("Gold", "RGB(255,215,0)");
-			_visioColorsMap.Add("Gray Light", "RGB(242,242,242)");
+			_visioColorsMap.Add("Silver", "RGB(232,232,232)");
+			_visioColorsMap.Add("Gray Light", "RGB(216,216,216)");
 			_visioColorsMap.Add("Gray Medium", "RGB(216,216,216)");
 			_visioColorsMap.Add("Gray", "RGB(165,165,165)");
-			_visioColorsMap.Add("Green", "RGB(0,204,106)");
-			_visioColorsMap.Add("Green Light", "RGB(240,247,236)");
-			_visioColorsMap.Add("Green LightMedium", "RGB(226,239,217)");
-			_visioColorsMap.Add("Green Medium", "RGB(126,203,131)");
-			_visioColorsMap.Add("Green Dark", "RGB(67,167,72)");
-			_visioColorsMap.Add("Green Lime", "RGB(50,205,50)");
-			_visioColorsMap.Add("Green Sea", "RGB(60,179,113)");		// Omnicell header green
-			_visioColorsMap.Add("Khaki", "RGB(240,230,140)");
-			_visioColorsMap.Add("Dark Khaki", "RGB(189,183,107)");
-			_visioColorsMap.Add("LIME", "RGB(0,255,0)");
-			_visioColorsMap.Add("Magenta", "RGB(255,0,255)");
 			_visioColorsMap.Add("Mint", "RGB(198,224,180)");
-			_visioColorsMap.Add("Navy", "RGB(0,0,128)");
-			_visioColorsMap.Add("Olive", "RGB(128,128,0)");
-			_visioColorsMap.Add("Olive Drab", "RGB(107,142,35)");
-			_visioColorsMap.Add("Orange", "RGB(255,165,0)");
-			_visioColorsMap.Add("Orange Light", "RGB(255,192,0)");
-			_visioColorsMap.Add("Orange Medium", "RGB(777,777,777)");
-			_visioColorsMap.Add("Peach", "RGB(255,242,204)");			// BD groupbox4 color
+			_visioColorsMap.Add("Green Light", "RGB(240,247,236)");
+			_visioColorsMap.Add("Green LightMedium", "RGB(162,226,171)");
+			_visioColorsMap.Add("Green Medium", "RGB(88,183,100)");
+			_visioColorsMap.Add("Green Lime", "RGB(50,205,50)");
+			_visioColorsMap.Add("Lime", "RGB(0,255,0)");
+			_visioColorsMap.Add("Green Sea", "RGB(60,179,113)");     // Omnicell header green
+			_visioColorsMap.Add("Green Dark", "RGB(67,169,72)");
+			_visioColorsMap.Add("Green", "RGB(13,164,33)");
+			_visioColorsMap.Add("Peach", "RGB(255,242,204)");        // BD groupbox4 color
+			_visioColorsMap.Add("Tan", "RGB(210,180,140)");
+			_visioColorsMap.Add("Khaki", "RGB(240,230,140)");
+			_visioColorsMap.Add("Khaki Dark", "RGB(189,183,107)");
+			_visioColorsMap.Add("Brown", "RGB(210,105,30)");
+			_visioColorsMap.Add("Magenta", "RGB(255,0,255)");
+			_visioColorsMap.Add("Navy", "RGB(60,80,160)");
+			_visioColorsMap.Add("Olive", "RGB(120,120,0)");
+			_visioColorsMap.Add("Olive Drab", "RGB(100,140,30)");
+			_visioColorsMap.Add("Orange Light", "RGB(255,210,120)");
+			_visioColorsMap.Add("Orange Medium", "RGB(250,190,80)");
+			_visioColorsMap.Add("Orange", "RGB(255,172,4)");
+			_visioColorsMap.Add("Purple", "RGB(54,54,222)");
 			_visioColorsMap.Add("Pink Light", "RGB(255,182,193)");
-			_visioColorsMap.Add("Purple", "RGB(128,0,128)");
 			_visioColorsMap.Add("Red", "RGB(255,0,0)");
 			_visioColorsMap.Add("Salmon", "RGB(251,229,213)");
-			_visioColorsMap.Add("Silver", "RGB(232,232,232)");
-			_visioColorsMap.Add("Tan", "RGB(210,180,140)");
-			_visioColorsMap.Add("Teal", "RGB(0,128.128)");
+			_visioColorsMap.Add("Teal", "RGB(0,128,128)");
 			_visioColorsMap.Add("White", "RGB(255,255,255)");
 			_visioColorsMap.Add("White Smoke", "RGB(245,245,245)");
 			_visioColorsMap.Add("Yellow", "RGB(255,255,0)");
