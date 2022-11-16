@@ -481,35 +481,61 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 
 					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.ConnectFrom]).Value = shape.ConnectFrom;
 					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.FromLineLabel]).Value = shape.FromLineLabel;
-					
+
 					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.FromLinePattern]).Value = shape.FromLinePattern;
 					if (shape.FromLinePattern <= 1)
 					{
 						((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.FromLinePattern]).Value = "";
 					}
-					
+
 					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.FromArrowType]).Value = shape.FromArrowType;
 					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.FromLineColor]).Value = shape.FromLineColor;
-					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.FromLineWeight]).Value = shape.FromLineWeight;
-					// check if line weight is one of the following
-					if (!string.IsNullOrEmpty(shape.FromLineWeight))
+
+					// get the To Line Weight value
+					sTmp = shape.FromLineWeight;
+					if (string.IsNullOrEmpty(sTmp))
 					{
-						string weight = VisioVariables.GetConnectorLineWeight(shape.FromLineWeight);
-						((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.FromLineWeight]).Value = weight;
+						((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.FromLineWeight]).Value = "";
+					}
+					else
+					{
+						// check if value is "1 pt" is so we don't want to write to the excel file.   "" is same as "1 pt"
+						if (!shape.FromLineWeight.Equals("1 pt", StringComparison.OrdinalIgnoreCase))
+						{
+							sTmp = VisioVariables.GetConnectorLineWeight(sTmp);
+							// not "1 pt" so lets check if valid entry and if so persist it
+							((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.FromLineWeight]).Value = sTmp;
+						}
 					}
 
 					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.ConnectTo]).Value = shape.ConnectTo;
 					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.ToLineLabel]).Value = shape.ToLineLabel;
-					
+
 					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.ToLinePattern]).Value = shape.ToLinePattern;
 					if (shape.ToLinePattern <= 1)
 					{
 						((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.ToLinePattern]).Value = "";
 					}
-					
+
 					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.ToArrowType]).Value = shape.ToArrowType;
 					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.ToLineColor]).Value = shape.ToLineColor;
-					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.ToLineWeight]).Value = shape.ToLineWeight;
+
+					// get the To Line Weight value
+					sTmp = shape.ToLineWeight;
+					if (string.IsNullOrEmpty(sTmp))
+					{
+						((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.ToLineWeight]).Value = "";
+					}
+					else
+					{
+						// check if value is "1 pt" is so we don't want to write to the excel file.   "" is same as "1 pt"
+						if (!shape.ToLineWeight.Equals("1 pt", StringComparison.OrdinalIgnoreCase))
+						{
+							sTmp = VisioVariables.GetConnectorLineWeight(sTmp);
+							// not "1 pt" so lets check if valid entry and if so persist it
+							((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.ToLineWeight]).Value = sTmp;
+						}
+					}
 				}
 			}
 			catch (Exception ex)
@@ -732,14 +758,37 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				range.Borders.LineStyle = XlLineStyle.xlContinuous;
 				range.Rows.AutoFit();      // auto aize the rows
 
-				// Column N is OC_Blueprinting stencil names  (may get this from a list to make dymanic)
-				((Excel.Range)xlNewSheet.Cells[1, 14]).Value = "Default Stencil Names";
-				((Excel.Range)xlNewSheet.Cells[1, 14]).ColumnWidth = 20.00;
-				xlNewSheet.Cells[1, 11].Interior.Color = Excel.XlRgbColor.rgbDarkSeaGreen;
+				// Column M Connector Line Weight
+				((Excel.Range)xlNewSheet.Cells[1, 13]).Value = "Line Weight";
+				((Excel.Range)xlNewSheet.Cells[1, 13]).ColumnWidth = 20.00;
+				xlNewSheet.Cells[1, 13].Interior.Color = Excel.XlRgbColor.rgbDarkSeaGreen;
+				strArray = VisioVariables.GetConnectorLineWeights();
+				if (strArray.Count > 0)
+				{
+					int nRow = 2;
+					foreach (string str in strArray)
+					{
+						((Excel.Range)xlNewSheet.Cells[nRow++, 13]).Value = str;
+					}
+				}
+				range = xlNewSheet.Range[xlNewSheet.Cells[2, 13], xlNewSheet.Cells[strArray.Count + 1, 13]];
+				range.Borders.LineStyle = XlLineStyle.xlContinuous;
+				range.Rows.AutoFit();      // auto aize the rows
 
-				((Excel.Range)xlNewSheet.Cells[2, 14]).Value = "";
-
-				range = xlNewSheet.Range[xlNewSheet.Cells[2, 14], xlNewSheet.Cells[2, 14]];
+				// Column O is OC_Blueprinting stencil names  (may get this from a list to make dymanic)
+				((Excel.Range)xlNewSheet.Cells[1, 15]).Value = "Default Stencil Names";
+				((Excel.Range)xlNewSheet.Cells[1, 15]).ColumnWidth = 20.00;
+				xlNewSheet.Cells[1, 15].Interior.Color = Excel.XlRgbColor.rgbDarkSeaGreen;
+				strArray = VisioVariables.GetDefaultStencilNames();
+				if (strArray.Count > 0)
+				{
+					int nRow = 2;
+					foreach (string str in strArray)
+					{
+						((Excel.Range)xlNewSheet.Cells[nRow++, 15]).Value = str;
+					}
+				}
+				range = xlNewSheet.Range[xlNewSheet.Cells[2, 15], xlNewSheet.Cells[strArray.Count + 1, 15]];
 				range.Borders.LineStyle = XlLineStyle.xlContinuous;
 				range.Rows.AutoFit();      // auto aize the rows
 
@@ -754,6 +803,12 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 			return false;
 		}
 
+		/// <summary>
+		/// setColumnsDropdownList
+		/// this is the connection between the Tables sheet entries and the VisioData sheet columns
+		/// I need to make this more dynamic like look at the VisioData sheet for column names to get the column identifier to use here
+		/// </summary>
+		/// <param name="diagramData"></param>
 		private void setColumnsDropdownList(DiagramData diagramData)
 		{
 			Excel.Range xlRange = _xlWorksheet.UsedRange;
@@ -768,17 +823,27 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 			string tablesLinePatternColumn = String.Format("=Tables!$G${0}:$G${1}", startingRow, VisioVariables.GetConnectorLinePatterns().Count + 1);
 			string tablesLabelPositionColumn = String.Format("=Tables!$I${0}:$I${1}", startingRow, VisioVariables.GetStencilLabelPositions().Count + 1);
 			string tablesShapeTypeColumn = String.Format("=Tables!$K${0}:$K${1}", startingRow, VisioVariables.GetShapeTypes().Count + 1);
+			string tablesLineWeightColumn = String.Format("=Tables!$M${0}:$M${1}", startingRow, VisioVariables.GetConnectorLineWeights().Count + 1);
+			string tablesDefaultStencilNamesColumn = String.Format("=Tables!$O${0}:$O${1}", startingRow, VisioVariables.GetDefaultStencilNames().Count + 1);
 
 			// now lets link the data list to the excel columns on the VisioData sheet
 			// Shape Type column
-			Excel.Range xlRange1 = _xlWorksheet.get_Range(string.Format("B{0}2:B{1}", startingRow, rowCount)).EntireColumn;
+			Excel.Range xlRange1 = _xlWorksheet.get_Range(string.Format("B{0}:B{1}", startingRow, rowCount)).EntireColumn;
 			xlRange1.Validation.Delete();
 			xlRange1.Validation.Add(XlDVType.xlValidateList,Excel.XlDVAlertStyle.xlValidAlertStop,
 						Excel.XlFormatConditionOperator.xlBetween, tablesShapeTypeColumn, Type.Missing);
 			xlRange1.Validation.InCellDropdown = true;
 			xlRange1.Validation.IgnoreBlank = false;
 
-			// Stencil Label position
+			// Stencil Images column
+			xlRange1 = _xlWorksheet.get_Range(string.Format("D{0}:D{1}", startingRow, rowCount)).EntireColumn;
+			xlRange1.Validation.Delete();
+			xlRange1.Validation.Add(XlDVType.xlValidateList, Excel.XlDVAlertStyle.xlValidAlertStop,
+						Excel.XlFormatConditionOperator.xlBetween, tablesDefaultStencilNamesColumn, Type.Missing);
+			xlRange1.Validation.InCellDropdown = true;
+			xlRange1.Validation.IgnoreBlank = false;
+
+			// Stencil Label position column
 			xlRange1 = _xlWorksheet.get_Range(string.Format("F{0}:F{1}", startingRow, rowCount)).EntireColumn;
 			xlRange1.Validation.Delete();
 			xlRange1.Validation.Add(XlDVType.xlValidateList, Excel.XlDVAlertStyle.xlValidAlertStop,
@@ -786,7 +851,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 			xlRange1.Validation.InCellDropdown = true;
 			xlRange1.Validation.IgnoreBlank = false;
 
-			// Stencil Label Font Size
+			// Stencil Label Font Size column
 			xlRange1 = _xlWorksheet.get_Range(string.Format("G{0}:G{1}", startingRow,rowCount)).EntireColumn;
 			xlRange1.Validation.Delete();
 			xlRange1.Validation.Add(XlDVType.xlValidateList, Excel.XlDVAlertStyle.xlValidAlertStop,
@@ -794,7 +859,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 			xlRange1.Validation.InCellDropdown = true;
 			xlRange1.Validation.IgnoreBlank = false;
 
-			// Fill Color
+			// Fill Color column
 			xlRange1 = _xlWorksheet.get_Range(string.Format("W{0}:W{1}", startingRow, rowCount)).EntireColumn;
 			xlRange1.Validation.Delete();
 			xlRange1.Validation.Add(XlDVType.xlValidateList, Excel.XlDVAlertStyle.xlValidAlertStop,
@@ -802,51 +867,67 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 			xlRange1.Validation.InCellDropdown = true;
 			xlRange1.Validation.IgnoreBlank = false;
 
-			// From Line Pattern
-			xlRange1 = _xlWorksheet.get_Range(string.Format("Z{0}:Z{1}", startingRow, rowCount)).EntireColumn;
-			xlRange1.Validation.Delete();
-			xlRange1.Validation.Add(XlDVType.xlValidateList, Excel.XlDVAlertStyle.xlValidAlertStop,
-						Excel.XlFormatConditionOperator.xlBetween, tablesLinePatternColumn, Type.Missing);
-			xlRange1.Validation.InCellDropdown = true;
-			xlRange1.Validation.IgnoreBlank = false;
-
-			// From Arrow
+			// From Line Pattern column
 			xlRange1 = _xlWorksheet.get_Range(string.Format("AA{0}:AA{1}", startingRow, rowCount)).EntireColumn;
 			xlRange1.Validation.Delete();
 			xlRange1.Validation.Add(XlDVType.xlValidateList, Excel.XlDVAlertStyle.xlValidAlertStop,
+						Excel.XlFormatConditionOperator.xlBetween, tablesLinePatternColumn, Type.Missing);
+			xlRange1.Validation.InCellDropdown = true;
+			xlRange1.Validation.IgnoreBlank = false;
+
+			// From Arrow column
+			xlRange1 = _xlWorksheet.get_Range(string.Format("AB{0}:AB{1}", startingRow, rowCount)).EntireColumn;
+			xlRange1.Validation.Delete();
+			xlRange1.Validation.Add(XlDVType.xlValidateList, Excel.XlDVAlertStyle.xlValidAlertStop,
 						Excel.XlFormatConditionOperator.xlBetween, tablesArrowsColumn, Type.Missing);
 			xlRange1.Validation.InCellDropdown = true;
 			xlRange1.Validation.IgnoreBlank = false;
 
-			// From Line Color
-			xlRange1 = _xlWorksheet.get_Range(string.Format("AB{0}:AB{1}", startingRow, rowCount)).EntireColumn;
+			// From Line Color column
+			xlRange1 = _xlWorksheet.get_Range(string.Format("AC{0}:AC{1}", startingRow, rowCount)).EntireColumn;
 			xlRange1.Validation.Delete();
 			xlRange1.Validation.Add(XlDVType.xlValidateList, Excel.XlDVAlertStyle.xlValidAlertStop,
 						Excel.XlFormatConditionOperator.xlBetween, tablesColorColumn, Type.Missing);
 			xlRange1.Validation.InCellDropdown = true;
 			xlRange1.Validation.IgnoreBlank = false;
 
-			// To Line Pattern
-			xlRange1 = _xlWorksheet.get_Range(string.Format("AE{0}:AE{1}", startingRow, rowCount)).EntireColumn;
+			// From Line Weight column
+			xlRange1 = _xlWorksheet.get_Range(string.Format("AD{0}:AD{1}", startingRow, rowCount)).EntireColumn;
+			xlRange1.Validation.Delete();
+			xlRange1.Validation.Add(XlDVType.xlValidateList, Excel.XlDVAlertStyle.xlValidAlertStop,
+						Excel.XlFormatConditionOperator.xlBetween, tablesLineWeightColumn, Type.Missing);
+			xlRange1.Validation.InCellDropdown = true;
+			xlRange1.Validation.IgnoreBlank = false;
+
+			// To Line Pattern column
+			xlRange1 = _xlWorksheet.get_Range(string.Format("AG{0}:AG{1}", startingRow, rowCount)).EntireColumn;
 			xlRange1.Validation.Delete();
 			xlRange1.Validation.Add(XlDVType.xlValidateList, Excel.XlDVAlertStyle.xlValidAlertStop,
 						Excel.XlFormatConditionOperator.xlBetween, tablesLinePatternColumn, Type.Missing);
 			xlRange1.Validation.InCellDropdown = true;
 			xlRange1.Validation.IgnoreBlank = false;
 
-			// To Arrow
-			xlRange1 = _xlWorksheet.get_Range(string.Format("AF{0}:AF{1}",	startingRow, rowCount)).EntireColumn;
+			// To Arrow column
+			xlRange1 = _xlWorksheet.get_Range(string.Format("AH{0}:AH{1}",	startingRow, rowCount)).EntireColumn;
 			xlRange1.Validation.Delete();
 			xlRange1.Validation.Add(XlDVType.xlValidateList, Excel.XlDVAlertStyle.xlValidAlertStop,
 						Excel.XlFormatConditionOperator.xlBetween, tablesArrowsColumn, Type.Missing);
 			xlRange1.Validation.InCellDropdown = true;
 			xlRange1.Validation.IgnoreBlank = false;
 
-			// To Line Color
-			xlRange1 = _xlWorksheet.get_Range(string.Format("AG{0}:AG{1}", startingRow, rowCount)).EntireColumn;
+			// To Line Color column
+			xlRange1 = _xlWorksheet.get_Range(string.Format("AI{0}:AI{1}", startingRow, rowCount)).EntireColumn;
 			xlRange1.Validation.Delete();
 			xlRange1.Validation.Add(XlDVType.xlValidateList, Excel.XlDVAlertStyle.xlValidAlertStop,
 						Excel.XlFormatConditionOperator.xlBetween, tablesColorColumn, Type.Missing);
+			xlRange1.Validation.InCellDropdown = true;
+			xlRange1.Validation.IgnoreBlank = false;
+
+			// To Line Weight column
+			xlRange1 = _xlWorksheet.get_Range(string.Format("AJ{0}:AJ{1}", startingRow, rowCount)).EntireColumn;
+			xlRange1.Validation.Delete();
+			xlRange1.Validation.Add(XlDVType.xlValidateList, Excel.XlDVAlertStyle.xlValidAlertStop,
+						Excel.XlFormatConditionOperator.xlBetween, tablesLineWeightColumn, Type.Missing);
 			xlRange1.Validation.InCellDropdown = true;
 			xlRange1.Validation.IgnoreBlank = false;
 		}

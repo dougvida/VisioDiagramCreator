@@ -15,8 +15,9 @@ namespace OmnicellBlueprintingTool.Visio
 		private static List<string> _connectorArrows = null;
 		private static List<string> _connectorLinePatterns = null;
 		private static List<string> _stencilLabelPositions = null;
-		private static List<string> _stencilLabelFontSize = null;
-		private static List<string> _connectorLineWeight = null;
+		private static List<string> _stencilLabelFontSizes = null;
+		private static List<string> _connectorLineWeights = null;
+		private static List<string> _defaultStencilNames = null;
 
 		private static Dictionary<string, string> _visioColorsMap = null; // new Dictionary<string, string>(comparer); 
 
@@ -37,7 +38,7 @@ namespace OmnicellBlueprintingTool.Visio
 		public const string sARROW_BOTH = "Both";
 
 		// connector weight (default is LINE_WEIGHT_1
-		public const string sLINE_WEIGHT_1 = "1.0 pt";
+		public const string sLINE_WEIGHT_1 = "1 pt";
 		//public const string sLINE_WEIGHT_1_5 = "1.5 pt";
 		//public const string sLINE_WEIGHT_2 = "2 pt";
 
@@ -186,44 +187,110 @@ namespace OmnicellBlueprintingTool.Visio
 
 		public static List<string> GetStencilLabelFontSize()
 		{
-			if (_stencilLabelFontSize == null)
+			if (_stencilLabelFontSizes == null)
 			{
-				_stencilLabelFontSize = new List<string>();
-				_stencilLabelFontSize.Add("");
-				_stencilLabelFontSize.Add("6");
-				_stencilLabelFontSize.Add("6:B");
-				_stencilLabelFontSize.Add("8");
-				_stencilLabelFontSize.Add("8:B");
-				_stencilLabelFontSize.Add("9");
-				_stencilLabelFontSize.Add("9:B");
-				_stencilLabelFontSize.Add("10");
-				_stencilLabelFontSize.Add("10:B");
-				_stencilLabelFontSize.Add("11");
-				_stencilLabelFontSize.Add("11:B");
-				_stencilLabelFontSize.Add("12");
-				_stencilLabelFontSize.Add("12:B");
-				_stencilLabelFontSize.Add("14");
-				_stencilLabelFontSize.Add("14:B");
+				_stencilLabelFontSizes = new List<string>();
+				_stencilLabelFontSizes.Add("");
+				_stencilLabelFontSizes.Add("6");
+				_stencilLabelFontSizes.Add("6:B");
+				_stencilLabelFontSizes.Add("8");
+				_stencilLabelFontSizes.Add("8:B");
+				_stencilLabelFontSizes.Add("9");
+				_stencilLabelFontSizes.Add("9:B");
+				_stencilLabelFontSizes.Add("10");
+				_stencilLabelFontSizes.Add("10:B");
+				_stencilLabelFontSizes.Add("11");
+				_stencilLabelFontSizes.Add("11:B");
+				_stencilLabelFontSizes.Add("12");
+				_stencilLabelFontSizes.Add("12:B");
+				_stencilLabelFontSizes.Add("14");
+				_stencilLabelFontSizes.Add("14:B");
 			}
-			return _stencilLabelFontSize;
+			return _stencilLabelFontSizes;
 		}
-		public static List<string> GetConnectorLineWeight()
+		public static List<string> GetConnectorLineWeights()
 		{
-			if (_connectorLineWeight == null)
+			if (_connectorLineWeights == null)
 			{
-				_connectorLineWeight = new List<string>();
+				_connectorLineWeights = new List<string>();
 
-				_connectorLineWeight.Add("");
-				_connectorLineWeight.Add("1.0 pt");
-				_connectorLineWeight.Add("1.5 pt");
-				_connectorLineWeight.Add("2.0 pt");
-				_connectorLineWeight.Add("2.25 pt");
-				_connectorLineWeight.Add("2.5 pt");
-				_connectorLineWeight.Add("3.0 pt");
-				_connectorLineWeight.Add("4.0 pt");
-				_connectorLineWeight.Add("6.0 pt");
+				_connectorLineWeights.Add("");
+				_connectorLineWeights.Add("1 pt");
+				_connectorLineWeights.Add("1.5 pt");
+				_connectorLineWeights.Add("2 pt");
+				_connectorLineWeights.Add("2.25 pt");
+				_connectorLineWeights.Add("2.5 pt");
+				_connectorLineWeights.Add("3 pt");
+				_connectorLineWeights.Add("4 pt");
+				_connectorLineWeights.Add("6 pt");
 			}
-			return _connectorLineWeight;
+			return _connectorLineWeights;
+		}
+
+		public static List<string> GetDefaultStencilNames()
+		{
+			if (_defaultStencilNames == null)
+			{
+				_defaultStencilNames = new List<string>();
+
+				_defaultStencilNames.Add("");
+				_defaultStencilNames.Add("OC_AIO");
+				_defaultStencilNames.Add("OC_AWS");
+				_defaultStencilNames.Add("OC_BlisterPackager");
+				_defaultStencilNames.Add("OC_Carousel");
+				_defaultStencilNames.Add("OC_Carousel2");
+				_defaultStencilNames.Add("OC_CPM");
+				_defaultStencilNames.Add("OC_CSM");
+				_defaultStencilNames.Add("OC_CustomerService");
+				_defaultStencilNames.Add("OC_DashOutline");
+				_defaultStencilNames.Add("OC_Database");
+				_defaultStencilNames.Add("OC_Database2");
+				_defaultStencilNames.Add("OC_DB");
+				_defaultStencilNames.Add("OC_Devices");
+				_defaultStencilNames.Add("OC_EHRSystems");
+				_defaultStencilNames.Add("OC_Ethernet");
+				_defaultStencilNames.Add("OC_Ethernet2");
+				_defaultStencilNames.Add("OC_Ethernet3");
+				_defaultStencilNames.Add("OC_File");
+				_defaultStencilNames.Add("OC_File2");
+				_defaultStencilNames.Add("OC_Firewall");
+				_defaultStencilNames.Add("OC_Footer");
+				_defaultStencilNames.Add("OC_Group1");
+				_defaultStencilNames.Add("OC_Group2");
+				_defaultStencilNames.Add("OC_Group3");
+				_defaultStencilNames.Add("OC_Group4");
+				_defaultStencilNames.Add("OC_IconKey");
+				_defaultStencilNames.Add("OC_IconKey2");
+				_defaultStencilNames.Add("OC_IVX");
+				_defaultStencilNames.Add("OC_Label1");
+				_defaultStencilNames.Add("OC_LineLedgen");
+				_defaultStencilNames.Add("OC_Logo");
+				_defaultStencilNames.Add("OC_OISInterfaces");
+				_defaultStencilNames.Add("OC_PC");
+				_defaultStencilNames.Add("OC_PortsLDAP_info");
+				_defaultStencilNames.Add("OC_Process");
+				_defaultStencilNames.Add("OC_Rectangle");
+				_defaultStencilNames.Add("OC_Rectangle2");
+				_defaultStencilNames.Add("OC_Rectangle3R");
+				_defaultStencilNames.Add("OC_SeeEmbedded");
+				_defaultStencilNames.Add("OC_Server");
+				_defaultStencilNames.Add("OC_Server2");
+				_defaultStencilNames.Add("OC_Server3");
+				_defaultStencilNames.Add("OC_Site");
+				_defaultStencilNames.Add("OC_Square");
+				_defaultStencilNames.Add("OC_Square2");
+				_defaultStencilNames.Add("OC_Supply");
+				_defaultStencilNames.Add("OC_TabelCell");
+				_defaultStencilNames.Add("OC_TableCell2");
+				_defaultStencilNames.Add("OC_TagLabeler");
+				_defaultStencilNames.Add("OC_Title");
+				_defaultStencilNames.Add("OC_vSuite_EMM");
+				_defaultStencilNames.Add("OC_vSuiteCloud");
+				_defaultStencilNames.Add("OC_XR2");
+				_defaultStencilNames.Add("OC_XT");
+				_defaultStencilNames.Add("OC_YuyamaPackager");
+			}
+			return _defaultStencilNames;
 		}
 
 		private static void setupVisioColorsMap()
@@ -351,27 +418,56 @@ namespace OmnicellBlueprintingTool.Visio
 		/// search the list for the paramater
 		/// if found use that value as the To or From Line Weight value as a string
 		/// if not found null will be returned so use the default value
+		/// ignore case
 		/// </summary>
 		/// <param name="value">lookup</param>
 		/// <returns>Found value or null</returns>
 		public static string GetConnectorLineWeight(string value)
 		{
-			if (_connectorLineWeight == null)
+			if (_connectorLineWeights == null)
 			{
-				GetConnectorLineWeight();
+				GetConnectorLineWeights();
 			}
 			if (string.IsNullOrEmpty(value))
 			{
-				return null; // Use default line weight.   1.0 pt.
+				return ""; // Use default line weight.   "1 pt"
 			}
-			foreach (string item in _connectorLineWeight)
+			foreach (string item in _connectorLineWeights)
 			{
 				if (item.Equals(value.Trim(),StringComparison.OrdinalIgnoreCase))
 				{
 					return item;
 				}
 			}
-			return null;
+			return "";
 		}
+
+		/// <summary>
+		/// GetDefaultStencilName
+		/// Search if stencil name exists as a default stencil
+		/// ignore case
+		/// </summary>
+		/// <param name="name">stencil name</param>
+		/// <returns>"" if not found else the stencil name</returns>
+		public static string GetDefaultStencilName(string name)
+		{
+			if (_defaultStencilNames == null)
+			{
+				GetDefaultStencilNames();
+			}
+			if (string.IsNullOrEmpty(name))
+			{
+				return "";
+			}
+			foreach (string item in _defaultStencilNames)
+			{
+				if (item.Equals(name.Trim(), StringComparison.OrdinalIgnoreCase))
+				{
+					return item;
+				}
+			}
+			return "";
+		}
+
 	}
 }

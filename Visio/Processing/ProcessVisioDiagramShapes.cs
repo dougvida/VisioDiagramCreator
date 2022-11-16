@@ -248,7 +248,6 @@ namespace OmnicellBlueprintingTool.Visio
 							shpInfo.ToLineColor = sColor;
 						}
 
-
 						// end new section
 
 						//shpInfo.ToLineColor = VisioVariables.sCOLOR_BLACK;
@@ -324,6 +323,7 @@ namespace OmnicellBlueprintingTool.Visio
 							shpInfo.FromLineColor = sColor;
 						}
 						// end new section
+
 
 						//shpInfo.FromLineColor = VisioVariables.sCOLOR_BLACK;
 						shpInfo.FromLinePattern = VisioVariables.LINE_PATTERN_SOLID;
@@ -416,6 +416,15 @@ namespace OmnicellBlueprintingTool.Visio
 					{
 						lineWeight = VisioVariables.sLINE_WEIGHT_1;
 					}
+					else
+					{
+						// we have a valid value so lets see if we support it
+						lineWeight = VisioVariables.GetConnectorLineWeight(lineWeight);
+						if (string.IsNullOrEmpty(lineWeight))
+						{
+							lineWeight = VisioVariables.sLINE_WEIGHT_1;
+						}
+					}
 				}
 				else
 				{
@@ -437,6 +446,7 @@ namespace OmnicellBlueprintingTool.Visio
 							lookupShapeMap.FromArrowType = arrowType;
 							lookupShapeMap.FromLineColor = lineColor;
 							lookupShapeMap.FromLinePattern = linePattern;
+							lookupShapeMap.FromLineWeight = lineWeight;
 						}
 						lookupKey = toshape.ID; // keep in this order.  we use this for update the object
 					}
@@ -451,6 +461,7 @@ namespace OmnicellBlueprintingTool.Visio
 						lookupShapeMap.ToArrowType = arrowType;
 						lookupShapeMap.ToLineColor = lineColor;
 						lookupShapeMap.ToLinePattern = linePattern;
+						lookupShapeMap.ToLineWeight = lineWeight;
 					}
 
 					sTmp += string.Format(" - '{0}' To Shape ID:'{1}'-'{2}' LineLabel:'{3}'", shape.ID, toshape.ID, toshape.NameU, shape.Text);
