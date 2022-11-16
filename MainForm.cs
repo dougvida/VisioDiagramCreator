@@ -46,7 +46,7 @@ namespace OmnicellBlueprintingTool
 			///////////////////////////////////////////////////////////////////////
 			// this section is for Building the excel data file from a Visio file
 			// use todays date as part of the file name
-			tb_buildExcelFileName.Text = string.Empty; // String.Format("ExcelDataFile_{0}.xlsx", DateTime.Now.ToString("MMddyyyy"));
+			tb_buildExcelFileName.Text = string.Empty; // String.Format("_{0}.xlsx", DateTime.Now.ToString("MMddyyyy"));
 			tb_buildExcelPath.Text = excelDataPath;
 			//////////////////////////////////////////////////////////////////////
 
@@ -66,7 +66,7 @@ namespace OmnicellBlueprintingTool
 			tb_buildExcelFileName.Visible = false;
 			tb_buildExcelPath.Visible = false;
 			tb_buildVisioFilePath.Visible = false;
-#if DEBUG
+//#if DEBUG
 			// debug mode lets turn on this additional stuff for testing
 			rb_buildExcelFileFromVisio.Visible = true;
 			rb_buildExcelFileFromVisio.Enabled = true;
@@ -78,7 +78,7 @@ namespace OmnicellBlueprintingTool
 			tb_buildExcelFileName.Visible = true;
 			tb_buildExcelPath.Visible = true;
 			tb_buildVisioFilePath.Visible = true;
-#endif
+//#endif
 			btn_SetExcelPath.Enabled = false;
 			btn_VisioFileToRead.Enabled = false;
 
@@ -86,6 +86,7 @@ namespace OmnicellBlueprintingTool
 			tb_buildExcelPath.Enabled = false;
 			tb_buildVisioFilePath.Enabled = false;
 
+#if DEBUG
 			appCfg = ReadJsonFile.ReadJSONFile(sJsonConfigFile);
 			if (appCfg == null)
 			{
@@ -94,7 +95,7 @@ namespace OmnicellBlueprintingTool
 				return;
 			}
 			appCfg.Version = String.Format("v{0}", ProductVersion);
-
+#endif
 		}
 
 		private void btn_Quit_Click(object sender, EventArgs e)
@@ -119,8 +120,8 @@ namespace OmnicellBlueprintingTool
 			if (!string.IsNullOrEmpty(ExcelDataFileName))
 			{
 				SaveVisioDiagram(string.Format(@"{0}{1}.vsdx", visioFilesPath, ExcelDataFileName));
-
 				visHlp.VisioForceCloseAll();
+
 				ExcelDataFileName = string.Empty;
 			}
 
@@ -368,7 +369,15 @@ namespace OmnicellBlueprintingTool
 			}
 		}
 
-		private void SaveVisioDiagram(string fileNamePath)
+		/// <summary>
+		/// SaveVisioDiagram
+		/// Save the visio diagram
+		/// first prompt the user asking if they want to save the diagram
+		/// return prompt answer
+		/// </summary>
+		/// <param name="fileNamePath"></param>
+		/// <returns>bool - true (yes); false (no)</returns>
+		private bool SaveVisioDiagram(string fileNamePath)
 		{
 			bool bSave = false;	// dont save
 
@@ -383,6 +392,7 @@ namespace OmnicellBlueprintingTool
 				string sTmp = string.Format("WARNING:: failed to save Visio diagram to the file:'{0}'", fileNamePath);
 				MessageBox.Show(sTmp, "WARNING", MessageBoxButtons.OK, MessageBoxIcon.Error);
 			}
+			return bSave;
 		}
 
 		/// <summary>
