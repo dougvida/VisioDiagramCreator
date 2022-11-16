@@ -46,12 +46,14 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 			FromLinePattern,     // Line pattern solid = 1
 			FromArrowType,       // Can contain one of these [None, Start, End, Both]
 			FromLineColor,       // Arrow Color
+			FromLineWeight,		// connector line weight
 
 			ConnectTo,           // used to link this visio shape to another visio shape
 			ToLineLabel,         // Arrow Text
 			ToLinePattern,       // Line pattern default (solid);  Solid=1, Dash=2, Dotted=3, Dash_Dot=4
 			ToArrowType,         // Can contain one of these [None, Start, End, Both]
 			ToLineColor,         // Arrow Color
+			ToLineWeight,			// connector line weight
 		}
 
 		public static Dictionary<int, string> GetExcelHeaderNames()
@@ -91,12 +93,14 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				{ 26, "From Line Pattern"},   // Line pattern solid = 1, 2 = dashed, 3=Dotted, 4=Dash_Dot
 				{ 27, "From Arrow Type"},     // Can contain one of these [None, Start, End, Both]
 				{ 28, "From Line Color"},     // Arrow Color
+				{ 29, "From Line Weight"},    // Connector line weight
 
-				{ 29, "Connect To"},          // used to link this visio shape to another visio shape
-				{ 30, "To Line Label"},       // Arrow Text
-				{ 31, "To Line Pattern"},     // Line pattern solid = 1
-				{ 32, "To Arrow Type"},       // Can contain one of these [None, Start, End, Both]
-				{ 33, "To Line Color"}			// Arrow Color
+				{ 30, "Connect To"},          // used to link this visio shape to another visio shape
+				{ 31, "To Line Label"},       // Arrow Text
+				{ 32, "To Line Pattern"},     // Line pattern solid = 1
+				{ 33, "To Arrow Type"},       // Can contain one of these [None, Start, End, Both]
+				{ 34, "To Line Color"},			// Arrow Color
+				{ 35, "To Line Weight"}			// Connector line weight
 			};
 			return excelHeaderNames;
 		}

@@ -16,6 +16,7 @@ namespace OmnicellBlueprintingTool.Visio
 		private static List<string> _connectorLinePatterns = null;
 		private static List<string> _stencilLabelPositions = null;
 		private static List<string> _stencilLabelFontSize = null;
+		private static List<string> _connectorLineWeight = null;
 
 		private static Dictionary<string, string> _visioColorsMap = null; // new Dictionary<string, string>(comparer); 
 
@@ -37,8 +38,8 @@ namespace OmnicellBlueprintingTool.Visio
 
 		// connector weight (default is LINE_WEIGHT_1
 		public const string sLINE_WEIGHT_1 = "1.0 pt";
-		public const string sLINE_WEIGHT_1_5 = "1.5 pt";
-		public const string sLINE_WEIGHT_2 = "2 pt";
+		//public const string sLINE_WEIGHT_1_5 = "1.5 pt";
+		//public const string sLINE_WEIGHT_2 = "2 pt";
 
 		// connector corner 
 		public const double ROUNDING = 0.0625;
@@ -206,6 +207,25 @@ namespace OmnicellBlueprintingTool.Visio
 			}
 			return _stencilLabelFontSize;
 		}
+		public static List<string> GetConnectorLineWeight()
+		{
+			if (_connectorLineWeight == null)
+			{
+				_connectorLineWeight = new List<string>();
+
+				_connectorLineWeight.Add("");
+				_connectorLineWeight.Add("1.0 pt");
+				_connectorLineWeight.Add("1.5 pt");
+				_connectorLineWeight.Add("2.0 pt");
+				_connectorLineWeight.Add("2.25 pt");
+				_connectorLineWeight.Add("2.5 pt");
+				_connectorLineWeight.Add("3.0 pt");
+				_connectorLineWeight.Add("4.0 pt");
+				_connectorLineWeight.Add("6.0 pt");
+			}
+			return _connectorLineWeight;
+		}
+
 		private static void setupVisioColorsMap()
 		{
 			_visioColorsMap = new Dictionary<string, string>(comparer); 
@@ -324,6 +344,34 @@ namespace OmnicellBlueprintingTool.Visio
 				saTmp[nIdx++] = keyValue.Key.Trim();
 			}
 			return saTmp;
+		}
+
+		/// <summary>
+		/// GetConnectorLineWeight
+		/// search the list for the paramater
+		/// if found use that value as the To or From Line Weight value as a string
+		/// if not found null will be returned so use the default value
+		/// </summary>
+		/// <param name="value">lookup</param>
+		/// <returns>Found value or null</returns>
+		public static string GetConnectorLineWeight(string value)
+		{
+			if (_connectorLineWeight == null)
+			{
+				GetConnectorLineWeight();
+			}
+			if (string.IsNullOrEmpty(value))
+			{
+				return null; // Use default line weight.   1.0 pt.
+			}
+			foreach (string item in _connectorLineWeight)
+			{
+				if (item.Equals(value.Trim(),StringComparison.OrdinalIgnoreCase))
+				{
+					return item;
+				}
+			}
+			return null;
 		}
 	}
 }

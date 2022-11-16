@@ -57,6 +57,7 @@ namespace OmnicellBlueprintingTool.Visio
 								vsConnect.ArrowType = device.ShapeInfo.FromArrowType;
 								vsConnect.LinePattern = device.ShapeInfo.FromLinePattern;
 								vsConnect.LineColor = device.ShapeInfo.FromLineColor;
+								vsConnect.LineWeight = device.ShapeInfo.FromLineWeight;
 
 								vsConnect.UniqueFromKey = lookUpDevice.ShapeInfo.UniqueKey;
 								vsConnect.ShpFromObj = lookUpDevice.ShapeInfo.ShpObj;       // lookUpDevice shape Object (ConnectFrom)
@@ -92,6 +93,7 @@ namespace OmnicellBlueprintingTool.Visio
 								vsConnect.ArrowType = device.ShapeInfo.ToArrowType;
 								vsConnect.LinePattern = device.ShapeInfo.ToLinePattern;
 								vsConnect.LineColor = device.ShapeInfo.ToLineColor;
+								vsConnect.LineWeight = device.ShapeInfo.ToLineWeight;
 
 								vsConnect.UniqueFromKey = device.ShapeInfo.UniqueKey;
 								vsConnect.ShpFromObj = device.ShapeInfo.ShpObj;

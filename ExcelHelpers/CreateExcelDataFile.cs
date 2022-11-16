@@ -490,6 +490,13 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 					
 					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.FromArrowType]).Value = shape.FromArrowType;
 					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.FromLineColor]).Value = shape.FromLineColor;
+					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.FromLineWeight]).Value = shape.FromLineWeight;
+					// check if line weight is one of the following
+					if (!string.IsNullOrEmpty(shape.FromLineWeight))
+					{
+						string weight = VisioVariables.GetConnectorLineWeight(shape.FromLineWeight);
+						((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.FromLineWeight]).Value = weight;
+					}
 
 					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.ConnectTo]).Value = shape.ConnectTo;
 					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.ToLineLabel]).Value = shape.ToLineLabel;
@@ -502,6 +509,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 					
 					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.ToArrowType]).Value = shape.ToArrowType;
 					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.ToLineColor]).Value = shape.ToLineColor;
+					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.ToLineWeight]).Value = shape.ToLineWeight;
 				}
 			}
 			catch (Exception ex)

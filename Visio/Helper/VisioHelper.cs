@@ -730,9 +730,13 @@ namespace OmnicellBlueprintingTool.Visio
 						shpConn.get_CellsU("LinePattern").ResultIU = VisioVariables.LINE_PATTERN_SOLID;
 						shpConn.get_CellsU("LineWeight").FormulaU = VisioVariables.sLINE_WEIGHT_1;
 
-						if (lookupShapeConnection.device.ShapeInfo.LineWeight != VisioVariables.sLINE_WEIGHT_1)
+						//if (lookupShapeConnection.device.ShapeInfo.LineWeight != VisioVariables.sLINE_WEIGHT_1)
+						//{
+						//	shpConn.get_CellsU("LineWeight").FormulaU = lookupShapeConnection.device.ShapeInfo.LineWeight;
+						//}
+						if (lookupShapeConnection.LineWeight != VisioVariables.sLINE_WEIGHT_1)
 						{
-							shpConn.get_CellsU("LineWeight").FormulaU = lookupShapeConnection.device.ShapeInfo.LineWeight;
+							shpConn.get_CellsU("LineWeight").FormulaU = lookupShapeConnection.LineWeight;
 						}
 						if (lookupShapeConnection.LinePattern > 0)
 						{

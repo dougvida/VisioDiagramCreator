@@ -16,6 +16,7 @@ namespace OmnicellBlueprintingTool.Visio
 		public string LineLabel { get; set; } = string.Empty;
 		public double LinePattern { get; set; } = VisioVariables.LINE_PATTERN_SOLID;  // solid line
 		public string LineColor { get; set; } = VisioVariables.sCOLOR_BLACK;
+		public string LineWeight { get; set; } = VisioVariables.sLINE_WEIGHT_1;
 		public string ArrowType { get; set; } = VisioVariables.sARROW_NONE;
 
 		public Visio1.Shape ShpObj { get; set; }     // this shape object

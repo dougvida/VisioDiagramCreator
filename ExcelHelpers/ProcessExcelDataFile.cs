@@ -283,7 +283,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 							if (saTmp[1].ToUpper() == "B")
 							{
 								visioInfo.isStencilLabelFontBold = true;
-								visioInfo.LineWeight = VisioVariables.sLINE_WEIGHT_2;
+								//visioInfo.LineWeight = VisioVariables.sLINE_WEIGHT_2;
 							}
 						}
 					}
@@ -429,7 +429,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 						break;
 
 					case VisioVariables.sLINE_PATTERN_DOTTED:
-						visioInfo.LineWeight = VisioVariables.sLINE_WEIGHT_2;
+						//visioInfo.LineWeight = VisioVariables.sLINE_WEIGHT_2;
 						visioInfo.FromLinePattern = VisioVariables.LINE_PATTERN_DOTTED;
 						break;
 
@@ -478,6 +478,20 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 					}
 				}
 
+				// From connector Line weight
+				sTmp = string.Empty;
+				data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.FromLineWeight);
+				if (data != null)
+				{
+					sTmp = data.ToString().Trim();
+					sTmp = VisioVariables.GetConnectorLineWeight(sTmp);
+					if (!string.IsNullOrEmpty(sTmp))
+					{
+						visioInfo.FromLineWeight = sTmp;
+					}
+				}
+
+
 				//
 				// Get the To section
 				//
@@ -513,7 +527,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 						break;
 
 					case VisioVariables.sLINE_PATTERN_DOTTED:
-						visioInfo.LineWeight = VisioVariables.sLINE_WEIGHT_2;
+						//visioInfo.LineWeight = VisioVariables.sLINE_WEIGHT_2;
 						visioInfo.ToLinePattern = VisioVariables.LINE_PATTERN_DOTTED;
 						break;
 
@@ -562,6 +576,20 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 					}
 				}
 
+				// To connector Line weight
+				sTmp = string.Empty;
+				data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.ToLineWeight);
+				if (data != null)
+				{
+					sTmp = data.ToString().Trim();
+					sTmp = VisioVariables.GetConnectorLineWeight(sTmp);
+					if (!string.IsNullOrEmpty(sTmp))
+					{
+						visioInfo.ToLineWeight = sTmp;
+					}
+				}
+
+				// save it
 				device.ShapeInfo = visioInfo;
 			}
 			catch (Exception exp)
