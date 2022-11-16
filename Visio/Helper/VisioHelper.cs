@@ -581,7 +581,10 @@ namespace OmnicellBlueprintingTool.Visio
 				}
 				// set document has been saved
 				// this should stop the application from asking the user to save the document again
-				this.vDocument.Saved = true;
+				if (this.vDocument != null)
+				{
+					this.vDocument.Saved = true;
+				}
 			}
 			catch (System.Runtime.InteropServices.COMException ex)
 			{
