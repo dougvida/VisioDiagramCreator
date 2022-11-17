@@ -589,7 +589,7 @@ namespace OmnicellBlueprintingTool.Visio
 			catch (System.Runtime.InteropServices.COMException ex)
 			{
 				string sTmp = string.Format("VisioHelper::SaveDocument - Exception\n\nSaving Visio File:'{0}'\n\n{1}", fileNamePath, ex.Message);
-				MessageBox.Show(sTmp, "EXCEPTION", MessageBoxButtons.OK, MessageBoxIcon.Error);
+				//MessageBox.Show(sTmp, "EXCEPTION", MessageBoxButtons.OK, MessageBoxIcon.Error);
 				ConsoleOut.writeLine(sTmp);
 			}
 			return false;
@@ -634,7 +634,7 @@ namespace OmnicellBlueprintingTool.Visio
 			catch (System.Runtime.InteropServices.COMException ex)
 			{
 				string sTmp = string.Format("VisioHelper::VisioForceCloseAll - Exception\n\nUser closed the Visio document before exiting the application\n\n{0}", ex.Message);
-				MessageBox.Show(sTmp, "EXCEPTION", MessageBoxButtons.OK, MessageBoxIcon.Error);
+				//MessageBox.Show(sTmp, "EXCEPTION", MessageBoxButtons.OK, MessageBoxIcon.Error);
 				ConsoleOut.writeLine(sTmp);
 			}
 		}
@@ -840,23 +840,32 @@ namespace OmnicellBlueprintingTool.Visio
 			// can use AutoSize:false "Page Setup" in excel data file
 			//setAutoSizeDiagram(diagramData.AutoSizeVisioPages);
 
+			Console.WriteLine("\n\n");
+
 			ArrayList masterArray_0 = new ArrayList();
 			Visio1.Document doc_0 = vDocuments[1];    // Document stencil figures
 			Visio1.Document doc_1 = vDocuments[2];    // Stencil figures
 			Visio1.Masters masters_0 = doc_0.Masters;
 			Visio1.Masters masters_1 = doc_1.Masters;
+			int nCnt = 1;
 			foreach (Visio1.Master master in masters_0)
 			{
 				// Document stencil figures
 				masterArray_0.Add(master.NameU);   // THIS WILL CONTAIN DIAGRAM FIGURES
-				Console.WriteLine(string.Format("ListDocumentStencils - Master0 - ID:{0} Name:{1} NameU:{2}", master.ID, master.Name, master.NameU));
+				Console.WriteLine(string.Format("ListDocumentStencils - Master0 - {0} : ID:{1} Name:{2} NameU:{3}", nCnt++, master.ID, master.Name, master.NameU));
 			}
 			Console.WriteLine("\n\n");
+			nCnt = 1;
 			foreach (Visio1.Master master in masters_1)
 			{
 				// Document stencil figures
 				masterArray_0.Add(master.NameU);   // THIS WILL CONTAIN DIAGRAM FIGURES
-				Console.WriteLine(string.Format("ListDocumentStencils - Master1 - ID:{0} Name:{1} NameU:{2}", master.ID, master.Name, master.NameU));
+				Console.WriteLine(string.Format("ListDocumentStencils - Master1 - {0} : ID:{1} Name:{2} NameU:{3}", nCnt++, master.ID, master.Name, master.NameU));
+			}
+			Console.WriteLine("\n\n");
+			if (this.vDocument != null)
+			{
+				this.vDocument.Saved = true;
 			}
 			this.VisioForceCloseAll();
 
