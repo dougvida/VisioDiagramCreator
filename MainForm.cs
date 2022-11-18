@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
+using Application = System.Windows.Forms.Application;
 
 namespace OmnicellBlueprintingTool
 {
@@ -67,7 +68,7 @@ namespace OmnicellBlueprintingTool
 			tb_buildExcelFileName.Visible = false;
 			tb_buildExcelPath.Visible = false;
 			tb_buildVisioFilePath.Visible = false;
-//#if DEBUG
+
 			// debug mode lets turn on this additional stuff for testing
 			rb_buildExcelFileFromVisio.Visible = true;
 			rb_buildExcelFileFromVisio.Enabled = true;
@@ -79,7 +80,7 @@ namespace OmnicellBlueprintingTool
 			tb_buildExcelFileName.Visible = true;
 			tb_buildExcelPath.Visible = true;
 			tb_buildVisioFilePath.Visible = true;
-//#endif
+
 			btn_SetExcelPath.Enabled = false;
 			btn_VisioFileToRead.Enabled = false;
 
@@ -87,7 +88,6 @@ namespace OmnicellBlueprintingTool
 			tb_buildExcelPath.Enabled = false;
 			tb_buildVisioFilePath.Enabled = false;
 
-#if DEBUG
 			appCfg = ReadJsonFile.ReadJSONFile(sJsonConfigFile);
 			if (appCfg == null)
 			{
@@ -96,7 +96,6 @@ namespace OmnicellBlueprintingTool
 				return;
 			}
 			appCfg.Version = String.Format("v{0}", ProductVersion);
-#endif
 		}
 
 		private void btn_Quit_Click(object sender, EventArgs e)
