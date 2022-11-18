@@ -1,4 +1,5 @@
-﻿using OmnicellBlueprintingTool.Configuration;
+﻿using Microsoft.Office.Interop.Excel;
+using OmnicellBlueprintingTool.Configuration;
 using OmnicellBlueprintingTool.ExcelHelpers;
 using OmnicellBlueprintingTool.Extensions;
 using OmnicellBlueprintingTool.Models;
@@ -148,8 +149,9 @@ namespace OmnicellBlueprintingTool
 					diagramData = new ProcessExcelDataFile().parseExcelFile(tb_excelDataFile.Text.Trim(), diagramData);
 					if (diagramData == null)
 					{
-						//string sTmp = "MainForm - ERROR\n\nReturn from ProcessExcelDataFile returned null\nNo shapes will be drawn";
+						string sTmp = "MainForm - ERROR\n\nReturn from ProcessExcelDataFile returned null\nNo shapes will be drawn";
 						//MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
+						Console.WriteLine(sTmp);
 						visHlp.VisioForceCloseAll();
 						this.Close();
 					}
@@ -169,6 +171,15 @@ namespace OmnicellBlueprintingTool
 
 							// Lets make the connections 
 							bool bAns = visHlp.ConnectShapes(diagramData);
+							if (bAns)
+							{
+								// there was an exception so we need to get out
+								visHlp.VisioForceCloseAll(true);
+								// close the application
+								this.Close();
+								return;
+							}
+
 
 							// set focus to first page
 							int maxPages = visHlp.GetNumberOfPages();

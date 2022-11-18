@@ -389,26 +389,37 @@ namespace OmnicellBlueprintingTool.Visio
 				}
 				if (!string.IsNullOrEmpty(rgb))
 				{
-					// visFillForegnd is used with fill object is solid fill pattern 1
-					shpObj.get_CellsSRC(
+					if (device.ShapeInfo.UniqueKey.Trim().IndexOf("OC_DashOutline") >= 0)
+					{
+						// handle this shape differently.
+						// Only the line color should be set.  No fill
+						shpObj.get_Cells("LineColor").FormulaU = rgb;
+					}
+					else
+					{
+						// visFillForegnd is used with fill object is solid fill pattern 1
+						shpObj.get_CellsSRC(
 						(short)VisSectionIndices.visSectionObject,
 						(short)VisRowIndices.visRowFill,
 						(short)VisCellIndices.visFillForegnd).FormulaU = rgb;
 
-					shpObj.get_CellsSRC(
-						 (short)Visio1.VisSectionIndices.visSectionObject,
-						 (short)Visio1.VisRowIndices.visRowFill,
-						 (short)Visio1.VisCellIndices.visFillBkgnd).FormulaU = rgb;
+						shpObj.get_CellsSRC(
+							 (short)Visio1.VisSectionIndices.visSectionObject,
+							 (short)Visio1.VisRowIndices.visRowFill,
+							 (short)Visio1.VisCellIndices.visFillBkgnd).FormulaU = rgb;
 
-					// for an shape to be filled this needs to be set
-					shpObj.get_CellsSRC(
-						 (short)Visio1.VisSectionIndices.visSectionObject,
-						 (short)Visio1.VisRowIndices.visRowFill,
-						 (short)Visio1.VisCellIndices.visFillPattern).FormulaU = "1";
+						// for an shape to be filled this needs to be set
+						shpObj.get_CellsSRC(
+							 (short)Visio1.VisSectionIndices.visSectionObject,
+							 (short)Visio1.VisRowIndices.visRowFill,
+							 (short)Visio1.VisCellIndices.visFillPattern).FormulaU = "1";
 
-					//shpObj.get_Cells("LineColor").FormulaForceU = rgb;	// set the stencil outline color same as stencil fill color
-					// keep the stencil outline color "Black"
-					shpObj.get_Cells("LineColor").FormulaU = VisioVariables.GetRGBColor(VisioVariables.sCOLOR_BLACK);
+						//shpObj.get_Cells("LineColor").FormulaForceU = rgb; // set the stencil outline color same as stencil fill color
+						//shpObj.get_Cells("LineColor").FormulaU = rgb;		// set the stencil outline color same as stencil fill color
+
+						// we normally want an outline on most of the shapes so set this to BLACK
+						shpObj.get_Cells("LineColor").FormulaU = VisioVariables.GetRGBColor(VisioVariables.sCOLOR_BLACK);
+					}
 				}
 
 				// we want to keep the shape outline color Black for this Stencil
@@ -416,6 +427,7 @@ namespace OmnicellBlueprintingTool.Visio
 				{
 					shpObj.get_Cells("LineColor").FormulaU = VisioVariables.GetRGBColor(VisioVariables.sCOLOR_BLACK);
 				}
+
 				if (!string.IsNullOrEmpty(device.ShapeInfo.StencilLabel))
 				{
 					shpObj.Text = device.ShapeInfo.StencilLabel;
@@ -602,8 +614,9 @@ namespace OmnicellBlueprintingTool.Visio
 		/// if a file name is present Visio will save using the path and file name
 		/// User has the ability to not save, Cancel or Save
 		/// </summary>
-		/// <param name="fileNamePath">if null prompt the user, else save using this path and name</param>
-		public void VisioForceCloseAll()
+		/// <param bSave>bool</param>
+		/// <values>Default is false (save) if true dont save</values>
+		public void VisioForceCloseAll(bool bSave = false)
 		{
 			try
 			{
@@ -614,7 +627,10 @@ namespace OmnicellBlueprintingTool.Visio
 					while (this.vDocuments.Count > 0)
 					{
 						// set document has been saved
-						//this.vDocument.Saved = true;
+						if (bSave)
+						{
+							this.vDocument.Saved = true;
+						}
 						
 						this.vDocument.Close();
 						//this.vDocuments.Application.ActiveDocument.Close();
@@ -784,9 +800,14 @@ namespace OmnicellBlueprintingTool.Visio
 						shpConn.get_CellsU("Char.Color").FormulaU = "="+VisioVariables.GetRGBColor(VisioVariables.sCOLOR_BLACK);
 
 						//set the shape back color
+						shpConn.get_CellsSRC((short)VisSectionIndices.visSectionObject,
+					 							(short)VisRowIndices.visRowFill,
+												(short)VisCellIndices.visFillForegnd).FormulaU = "="+rgbColor;
+
+						
 						//shpConn.get_CellsSRC((short)VisSectionIndices.visSectionObject,
 					 	//						(short)VisRowIndices.visRowFill,
-						//						(short)VisCellIndices.visFillForegnd).FormulaU = "="+rgbColor;
+						//						(short)VisCellIndices.visFillBkgnd).FormulaU = "=" + rgbColor;
 						//
 						//shpConn.get_CellsSRC((short)Visio1.VisSectionIndices.visSectionObject,
 						//							(short)Visio1.VisRowIndices.visRowCharacter,
@@ -814,9 +835,16 @@ namespace OmnicellBlueprintingTool.Visio
 			}
 			catch (Exception ex)
 			{
-				throw new Exception(string.Format("VisioHelper::ConnectShapes - Exception\n\n{0}\n{1}", ex.Message, ex.StackTrace));
+				if (ex.Message.ToString().IndexOf("Inappropriate target", StringComparison.OrdinalIgnoreCase) != -1)
+				{
+					string sTmp = "Exception occured\n\nPlease check you Excel data file column 'Visio Page' values.\nYou may have a page value in the wrong location\n\nYou can't have page number Intermingled";
+					MessageBox.Show(sTmp, "EXCEPTION", MessageBoxButtons.OK, MessageBoxIcon.Error);
+					ConsoleOut.writeLine(sTmp);
+					return true;		// error
+				}
+				//throw new Exception(string.Format("VisioHelper::ConnectShapes - Exception\n\n{0}\n{1}", ex.Message, ex.StackTrace));
 			}
-			return false;
+			return false;	// success
 		}
 
 		/// <summary>
