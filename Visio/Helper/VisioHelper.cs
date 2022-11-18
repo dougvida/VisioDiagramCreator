@@ -460,7 +460,7 @@ namespace OmnicellBlueprintingTool.Visio
 					int textLen = shpObj.Text.Length;
 
 					// check if we need to move the text box to the bottom of the stencil
-					if ((!string.IsNullOrEmpty(device.ShapeInfo.StencilLabelPosition) || device.ShapeInfo.StencilLabelPosition.Equals(VisioVariables.STINCEL_LABEL_POSITION_BOTTOM)) && textLen > 0)
+					if ((!string.IsNullOrEmpty(device.ShapeInfo.StencilLabelPosition) || (device.ShapeInfo.StencilLabelPosition.IndexOf(VisioVariables.STINCEL_LABEL_POSITION_BOTTOM)>= 0)) && textLen > 0)
 					{
 						short exists = shpObj.RowExists[(short)Visio1.VisSectionIndices.visSectionObject,
 												 (short)Visio1.VisRowIndices.visRowTextXForm,
