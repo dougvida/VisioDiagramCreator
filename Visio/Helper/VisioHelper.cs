@@ -389,7 +389,7 @@ namespace OmnicellBlueprintingTool.Visio
 				}
 				if (!string.IsNullOrEmpty(rgb))
 				{
-					if (device.ShapeInfo.UniqueKey.Trim().IndexOf("OC_DashOutline") >= 0)
+					if (device.ShapeInfo.StencilImage.Trim().IndexOf("OC_DashOutline") >= 0)
 					{
 						// handle this shape differently.
 						// Only the line color should be set.  No fill
