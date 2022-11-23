@@ -6,7 +6,6 @@ bin*
 *.zip
 *.exe
 /packages
-Installer/
-/Installer/
+Installer*
 
 
