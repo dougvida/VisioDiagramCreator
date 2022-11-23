@@ -24,7 +24,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 		/// <returns>DiagramData</returns>
 		/// <exception cref="ArgumentNullException"></exception>
 		/// <exception cref="Exception"></exception>
-		public DiagramData parseExcelFile(string file, DiagramData diagData)
+		public DiagramData parseExcelFile(string file, DiagramData diagData, VisioHelper visioHelper)
 		{
 			if (string.IsNullOrEmpty(file))
 			{
@@ -155,7 +155,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 								break;
 
 							case "SHAPE":             // stencils to create on the document.  pass myArray object, row # and column count
-								device = _parseExcelData(myArray, row);
+								device = _parseExcelData(visioHelper, myArray, row);
 								if (device != null)
 								{
 									devices.Add(device);
@@ -210,7 +210,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 		/// <param name="myArray">excel data</param>
 		/// <param name="row">array row to index on</param>
 		/// <returns>Device</returns>
-		private Device _parseExcelData(System.Array myArray, int row)
+		private Device _parseExcelData(VisioHelper visioHelper, System.Array myArray, int row)
 		{
 			//string sColor = string.Empty;
 			Device device = new Device();
@@ -471,7 +471,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				visioInfo.FromLineColor = "";
 				if (data != null)
 				{
-					if (VisioVariables.GetRGBColor(data.ToString()) != null)
+					if (!string.IsNullOrEmpty(visioHelper.GetRGBColor(data.ToString())))
 					{
 						// value was found as a color
 						visioInfo.FromLineColor = data.ToString();
@@ -484,7 +484,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				if (data != null)
 				{
 					sTmp = data.ToString().Trim();
-					sTmp = VisioVariables.GetConnectorLineWeight(sTmp);
+					sTmp = visioHelper.FindConnectorLineWeight(sTmp);
 					if (!string.IsNullOrEmpty(sTmp))
 					{
 						visioInfo.FromLineWeight = sTmp;
@@ -569,7 +569,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				visioInfo.ToLineColor = "";
 				if (data != null)
 				{
-					if (VisioVariables.GetRGBColor(data.ToString()) != null)
+					if (!string.IsNullOrEmpty(visioHelper.GetRGBColor(data.ToString())))
 					{
 						// data color was found
 						visioInfo.ToLineColor = data.ToString().Trim();
@@ -582,7 +582,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				if (data != null)
 				{
 					sTmp = data.ToString().Trim();
-					sTmp = VisioVariables.GetConnectorLineWeight(sTmp);
+					sTmp = visioHelper.FindConnectorLineWeight(sTmp);
 					if (!string.IsNullOrEmpty(sTmp))
 					{
 						visioInfo.ToLineWeight = sTmp;

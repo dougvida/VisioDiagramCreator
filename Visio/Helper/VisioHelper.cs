@@ -10,6 +10,9 @@ using static OmnicellBlueprintingTool.Visio.VisioVariables;
 using OmnicellBlueprintingTool.Properties;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.TrayNotify;
 using System.Drawing;
+using Microsoft.Office.Interop.Excel;
+using System.Text.RegularExpressions;
+using Color = System.Drawing.Color;
 
 namespace OmnicellBlueprintingTool.Visio
 {
@@ -20,6 +23,21 @@ namespace OmnicellBlueprintingTool.Visio
 		public Visio1.Document vDocument = null;
 
 		List<Visio1.Document> stencils = new List<Visio1.Document>();
+
+		//** *********************************************************************************************************** **//
+		// this section from json file for excel table entries for Visio
+		private static StringComparer comparer = StringComparer.OrdinalIgnoreCase;
+		private static List<string> _shapeTypes = null;
+		private static List<string> _connectorArrows = null;
+		private static List<string> _connectorLinePatterns = null;
+		private static List<string> _stencilLabelPositions = null;
+		private static List<string> _stencilLabelFontSizes = null;
+		private static List<string> _connectorLineWeights = null;
+		private static List<string> _defaultStencilNames = null;
+		private static Dictionary<string, string> _visioColorsMap = null; // new Dictionary<string, string>(comparer); 
+		Dictionary<string, Color> _appColorsMap = null;
+
+		//** *********************************************************************************************************** **//
 
 		public VisioHelper()
 		{
@@ -375,9 +393,8 @@ namespace OmnicellBlueprintingTool.Visio
 
 				//var linePatternCell = shpConn.get_CellsU("LinePattern");
 
-				// Look at the Fill color name to use
-				// if empty check the rgbFillColor field
-				string rgb = VisioVariables.GetRGBColor(device.ShapeInfo.FillColor);
+				// Look at the Fill color name to use.  if empty check the rgbFillColor field
+				string rgb = GetRGBColor(device.ShapeInfo.FillColor);
 				if (string.IsNullOrEmpty(rgb))
 				{
 					// FillColor is empty now check if we should use the rgbFillColor
@@ -385,6 +402,15 @@ namespace OmnicellBlueprintingTool.Visio
 					{
 						// yes use the rgbFillColor
 						rgb = device.ShapeInfo.rgbFillColor;
+
+						// we don't want to fill these objects
+						// (Logo, Footer, Title)
+						if (device.ShapeInfo.StencilImage.IndexOf("Logo") >= 0 ||
+							device.ShapeInfo.StencilImage.IndexOf("Title") >= 0 ||
+							device.ShapeInfo.StencilImage.IndexOf("Footer") >= 0 )
+						{
+							rgb = "";
+						}
 					}
 				}
 				if (!string.IsNullOrEmpty(rgb))
@@ -418,14 +444,14 @@ namespace OmnicellBlueprintingTool.Visio
 						//shpObj.get_Cells("LineColor").FormulaU = rgb;		// set the stencil outline color same as stencil fill color
 
 						// we normally want an outline on most of the shapes so set this to BLACK
-						shpObj.get_Cells("LineColor").FormulaU = VisioVariables.GetRGBColor(VisioVariables.sCOLOR_BLACK);
+						shpObj.get_Cells("LineColor").FormulaU = GetRGBColor(VisioVariables.sCOLOR_BLACK);
 					}
 				}
 
 				// we want to keep the shape outline color Black for this Stencil
 				if (device.ShapeInfo.UniqueKey.Trim().StartsWith("OC_TableCell"))
 				{
-					shpObj.get_Cells("LineColor").FormulaU = VisioVariables.GetRGBColor(VisioVariables.sCOLOR_BLACK);
+					shpObj.get_Cells("LineColor").FormulaU = GetRGBColor(VisioVariables.sCOLOR_BLACK);
 				}
 
 				if (!string.IsNullOrEmpty(device.ShapeInfo.StencilLabel))
@@ -744,7 +770,7 @@ namespace OmnicellBlueprintingTool.Visio
 						shpConn.get_CellsU("ShdwPattern").ResultIU = VisioVariables.SHDW_PATTERN;
 						shpConn.get_CellsU("BeginArrow").ResultIU = VisioVariables.ARROW_NONE;
 						shpConn.get_CellsU("EndArrow").ResultIU = VisioVariables.ARROW_NONE;
-						shpConn.get_CellsU("LineColor").FormulaU = VisioVariables.GetRGBColor(VisioVariables.sCOLOR_BLACK);
+						shpConn.get_CellsU("LineColor").FormulaU = GetRGBColor(VisioVariables.sCOLOR_BLACK);
 						shpConn.get_CellsU("Rounding").ResultIU = VisioVariables.ROUNDING;
 						shpConn.get_CellsU("LinePattern").ResultIU = VisioVariables.LINE_PATTERN_SOLID;
 						shpConn.get_CellsU("LineWeight").FormulaU = VisioVariables.sLINE_WEIGHT_1;
@@ -788,16 +814,16 @@ namespace OmnicellBlueprintingTool.Visio
 
 						//var linePatternCell = shpConn.get_CellsU("LinePattern");
 						string rgbColor = string.Empty;
-						rgbColor = VisioVariables.GetRGBColor(lookupShapeConnection.LineColor.Trim().ToUpper());
+						rgbColor = GetRGBColor(lookupShapeConnection.LineColor.Trim().ToUpper());
 						if (string.IsNullOrEmpty(rgbColor))
 						{
-							rgbColor = VisioVariables.GetRGBColor(VisioVariables.sCOLOR_BLACK);
+							rgbColor = GetRGBColor(VisioVariables.sCOLOR_BLACK);
 						}
 						//shpConn.get_CellsU("LineColor").Formula = "="+rgbColor;	// was
 						shpConn.get_CellsU("LineColor").FormulaU = "=" + rgbColor;	// changed to
 
 						// default the connection Text color Black
-						shpConn.get_CellsU("Char.Color").FormulaU = "="+VisioVariables.GetRGBColor(VisioVariables.sCOLOR_BLACK);
+						shpConn.get_CellsU("Char.Color").FormulaU = "=" + GetRGBColor(VisioVariables.sCOLOR_BLACK);
 
 						//set the shape back color
 						shpConn.get_CellsSRC((short)VisSectionIndices.visSectionObject,
@@ -931,6 +957,565 @@ namespace OmnicellBlueprintingTool.Visio
 				shp.get_CellsU("VerticalAlign").FormulaForceU = "0";
 			}
 		}
+
+
+		/** ************************************************************************************** **/
+
+		public bool SetShapeTypesMap(List<string> values)
+		{
+			if (values == null || values.Count <= 0)
+			{
+				return true;   // error
+			}
+			if (_shapeTypes == null)
+			{
+				_shapeTypes = new List<string>();
+			}
+			foreach (string value in values)
+			{
+				_shapeTypes.Add(value);
+			}
+			return false;  // success
+		}
+
+		public List<string> GetShapeTypes()
+		{
+			if (_shapeTypes == null)
+			{
+				return null;
+			}
+			return _shapeTypes;
+		}
+
+		public string FindShapeTypes(string value)
+		{
+			if (_shapeTypes == null)
+			{
+				return "";  // Use default value
+			}
+			if (string.IsNullOrEmpty(value))
+			{
+				return ""; // Use default value
+			}
+			foreach (string item in _shapeTypes)
+			{
+				if (item.Equals(value.Trim(), StringComparison.OrdinalIgnoreCase))
+				{
+					return item;
+				}
+			}
+			return "";  // Use default value
+		}
+
+		/** ************************************************************************************** **/
+
+		public bool SetConnectorArrowsMap(List<string> values)
+		{
+			if (values == null || values.Count <= 0)
+			{
+				return true;   // error
+			}
+			if (_connectorArrows == null)
+			{
+				_connectorArrows = new List<string>();
+			}
+			foreach (string value in values)
+			{
+				_connectorArrows.Add(value);
+			}
+			return false;  // success
+		}
+
+		public List<string> GetConnectorArrows()
+		{
+			if (_connectorArrows == null)
+			{
+				return null;
+			}
+			return _connectorArrows;
+		}
+
+		public string FindConnectorArrows(string value)
+		{
+			if (_connectorArrows == null)
+			{
+				return "";  // Use default value
+			}
+			if (string.IsNullOrEmpty(value))
+			{
+				return ""; // Use default value
+			}
+			foreach (string item in _connectorArrows)
+			{
+				if (item.Equals(value.Trim(), StringComparison.OrdinalIgnoreCase))
+				{
+					return item;
+				}
+			}
+			return "";  // Use default value
+		}
+
+		/** ************************************************************************************** **/
+
+		public bool SetConnectorLinePatterns(List<string> values)
+		{
+			if (values == null || values.Count <= 0)
+			{
+				return true;   // error
+			}
+
+			if (_connectorLinePatterns == null)
+			{
+				_connectorLinePatterns = new List<string>();
+			}
+			foreach (string value in values)
+			{
+				_connectorLinePatterns.Add(value);
+			}
+			return false;  // success
+		}
+
+		public List<string> GetConnectorLinePatterns()
+		{
+			if (_connectorLinePatterns == null)
+			{
+				return null;
+			}
+			return _connectorLinePatterns;
+		}
+
+		/// <summary>
+		/// GetConnectorLinePatternText
+		/// Because Visio uses a numeric value for line patterns we need
+		/// to convert to text when writing to Excel
+		/// </summary>
+		/// <param name="value"></param>
+		/// <returns></returns>
+		public string GetConnectorLinePatternText(double value)
+		{
+			if (_connectorLinePatterns == null)
+			{
+				return "";  // Use default value
+			}
+			if (value < 1)
+			{
+				return ""; // Use default value
+			}
+
+			// convert value to int (use as an index)
+			switch(value)
+			{
+				case 2:
+					return VisioVariables.sLINE_PATTERN_DASHED;
+				case 3:
+					return VisioVariables.sLINE_PATTERN_DOTTED;
+				case 4:
+					return VisioVariables.sLINE_PATTERN_DASHDOT;
+				case 1:  // Solid
+				default:	// solid
+					return VisioVariables.sLINE_PATTERN_SOLID;
+			}
+		}
+
+		public string FindConnectorLinePatterns(string value)
+		{
+			if (_connectorLinePatterns == null)
+			{
+				return "";  // Use default value
+			}
+			if (string.IsNullOrEmpty(value))
+			{
+				return ""; // Use default value
+			}
+			foreach (string item in _connectorLinePatterns)
+			{
+				if (item.Equals(value.Trim(), StringComparison.OrdinalIgnoreCase))
+				{
+					return item;
+				}
+			}
+			return "";  // Use default value
+		}
+
+		/** ************************************************************************************** **/
+
+		public bool SetStencilLabelPositionsMap(List<string> values)
+		{
+			if (values == null || values.Count <= 0)
+			{
+				return true;   // error
+			}
+			if (_stencilLabelPositions == null)
+			{
+				_stencilLabelPositions = new List<string>();
+			}
+			foreach (string value in values)
+			{
+				_stencilLabelPositions.Add(value);
+			}
+
+			return false;  // success
+		}
+
+		public List<string> GetStencilLabelPositions()
+		{
+			if (_stencilLabelPositions == null)
+			{
+				return null;
+			}
+			return _stencilLabelPositions;
+		}
+
+		public string FindStencilLabelPositions(string value)
+		{
+			if (_stencilLabelPositions == null)
+			{
+				return "";  // Use default value
+			}
+			if (string.IsNullOrEmpty(value))
+			{
+				return ""; // Use default value
+			}
+			foreach (string item in _stencilLabelPositions)
+			{
+				if (item.Equals(value.Trim(), StringComparison.OrdinalIgnoreCase))
+				{
+					return item;
+				}
+			}
+			return "";  // Use default value
+		}
+
+		/** ************************************************************************************** **/
+
+		public bool SetStencilLabelFontSizeMap(List<string> values)
+		{
+			if (values == null || values.Count <= 0)
+			{
+				return true;   // error
+			}
+			if (_stencilLabelFontSizes == null)
+			{
+				_stencilLabelFontSizes = new List<string>();
+			}
+			foreach (string value in values)
+			{
+				_stencilLabelFontSizes.Add(value);
+			}
+			return false;  // success
+		}
+
+		public List<string> GetStencilLabelFontSize()
+		{
+			if (_stencilLabelFontSizes == null)
+			{
+				return null;
+			}
+			return _stencilLabelFontSizes;
+		}
+
+		public string FindStencilLabelFontSize(string value)
+		{
+			if (_stencilLabelFontSizes == null)
+			{
+				return "";  // Use default value
+			}
+			if (string.IsNullOrEmpty(value))
+			{
+				return ""; // Use default value
+			}
+			foreach (string item in _connectorLineWeights)
+			{
+				if (item.Equals(value.Trim(), StringComparison.OrdinalIgnoreCase))
+				{
+					return item;
+				}
+			}
+			return "";  // Use default value
+		}
+
+		/** ************************************************************************************** **/
+
+		public bool SetConnectorLineWeightsMap(List<string> values)
+		{
+			if (values == null || values.Count <= 0)
+			{
+				return true;   // error
+			}
+			if (_connectorLineWeights == null)
+			{
+				_connectorLineWeights = new List<string>();
+			}
+			foreach (string value in values)
+			{
+				_connectorLineWeights.Add(value);
+			}
+			return false;  // success
+		}
+
+		public List<string> GetConnectorLineWeights()
+		{
+			if (_connectorLineWeights == null)
+			{
+				return null;
+			}
+			return _connectorLineWeights;
+		}
+
+		/// <summary>
+		/// FindConnectorLineWeight
+		/// search the list for the paramater
+		/// if found use that value as the To or From Line Weight value as a string
+		/// if not found null will be returned so use the default value
+		/// ignore case
+		/// </summary>
+		/// <param name="value">lookup</param>
+		/// <returns>Found value or null</returns>
+		public string FindConnectorLineWeight(string value)
+		{
+			if (_connectorLineWeights == null)
+			{
+				return "";  // use default value
+			}
+			if (string.IsNullOrEmpty(value))
+			{
+				return "";  // Use default value
+			}
+			foreach (string item in _connectorLineWeights)
+			{
+				if (item.Equals(value.Trim(), StringComparison.OrdinalIgnoreCase))
+				{
+					return item;
+				}
+			}
+			return "";  // use default value
+		}
+
+		/** ************************************************************************************** **/
+
+		public bool SetDefaultStencilNamesMap(List<string> names)
+		{
+			if (names == null || names.Count <= 0)
+			{
+				return true;   // error
+			}
+			if (_defaultStencilNames == null)
+			{
+				_defaultStencilNames = new List<string>();
+			}
+			foreach (string name in names)
+			{
+				_defaultStencilNames.Add(name);
+			}
+			return false;  // success
+		}
+
+		public List<string> GetDefaultStencilNames()
+		{
+			if (_defaultStencilNames == null)
+			{
+				return null;
+			}
+			return _defaultStencilNames;
+		}
+
+
+		/// <summary>
+		/// FindDefaultStencilName
+		/// Search if stencil map for the name value argument
+		/// ignore case
+		/// </summary>
+		/// <param name="name">search name</param>
+		/// <returns>null - if not found else the stencil name</returns>
+		public string FindDefaultStencilName(string name)
+		{
+			if (_defaultStencilNames == null)
+			{
+				return "";  // use default value
+			}
+			if (string.IsNullOrEmpty(name))
+			{
+				return "";  // use default value
+			}
+			foreach (string item in _defaultStencilNames)
+			{
+				if (item.Equals(name.Trim(), StringComparison.OrdinalIgnoreCase))
+				{
+					return item;
+				}
+			}
+			return "";  // use default value
+		}
+
+		/** ************************************************************************************** **/
+
+		public bool SetColorsMap(Dictionary<string, string> colorsMap)
+		{
+			if (colorsMap == null || colorsMap.Count <= 0)
+			{
+				return true;   // error
+			}
+			if (_visioColorsMap == null)
+			{
+				_visioColorsMap = new Dictionary<string,string>();
+			}
+			foreach (KeyValuePair<string,string> item in colorsMap)
+			{
+				_visioColorsMap.Add(item.Key, item.Value);
+			}
+
+			setColorNameColorMap();
+			
+			return false;  // success
+		}
+
+		public Dictionary<string,string> GetColorsMap()
+		{
+			if (_visioColorsMap == null)
+			{
+				_visioColorsMap = new Dictionary<string, string>();
+			}
+			return _visioColorsMap;
+		}
+
+		/// <summary>
+		/// GetRGBColor
+		/// return the RGB color value based on the color string argument
+		/// color argument "Black" will return "RGB(0,0,0)"
+		/// </summary>
+		/// <param name="color">search value</param>
+		/// <returns>"RGB(???,???,???)"</returns>
+		public string GetRGBColor(string color)
+		{
+			string value = string.Empty;
+			if (string.IsNullOrEmpty(color) || _visioColorsMap == null)
+			{
+				return "";
+			}
+
+			foreach (KeyValuePair<string, string> kvp in _visioColorsMap)
+			{
+				if (string.Equals(kvp.Key, color, StringComparison.OrdinalIgnoreCase))
+				{
+					return kvp.Value.Trim().ToString();
+				}
+			}
+			return "";
+		}
+
+		/// <summary>
+		/// FindColorValueFromRGB
+		/// return the color string based on the rgb value argument
+		/// search "RGB(0,0,0)" will return "Black"
+		/// </summary>
+		/// <param name="rgb"></param>
+		/// <returns>string</returns>
+		/// <text>color name</text>
+		public string GetColorValueFromRGB(string rgb)
+		{
+			if (string.IsNullOrEmpty(rgb) || _visioColorsMap == null)
+			{
+				return "";
+			}
+			foreach (KeyValuePair<string, string> item in _visioColorsMap)
+			{
+				if (item.Value.Equals(rgb.Trim()))
+				{
+					return item.Key;
+				}
+			}
+			return "";
+		}
+
+		/// <summary>
+		/// GetAllColorNames
+		/// return a list of color names
+		/// </summary>
+		/// <returns>List<string></returns>
+		public List<string> GetAllColorNames()
+		{
+			List<string> saTmp2 = new List<string>();	
+			foreach (KeyValuePair<string, string> keyValue in _visioColorsMap)
+			{
+				// adjust the index to be minus 1 bacause we added a row outside the array
+				saTmp2.Add(keyValue.Key.Trim());
+			}
+			return saTmp2;
+		}
+
+		/// <summary>
+		/// GetAllRGBValues
+		/// Return a list of RGB values
+		/// </summary>
+		/// <returns>List<string></returns>
+		public List<string> GetAllRGBValues()
+		{
+			List<string> saTmp2 = new List<string>();
+			foreach (KeyValuePair<string, string> keyValue in _visioColorsMap)
+			{
+				// adjust the index to be minus 1 bacause we added a row outside the array
+				saTmp2.Add(keyValue.Value.Trim());
+			}
+			return saTmp2;
+		}
+
+		public string FindColorbyName(string name)
+		{
+			string value = string.Empty;
+			if (string.IsNullOrEmpty(name) || _visioColorsMap == null)
+			{
+				return "";
+			}
+
+			foreach (KeyValuePair<string, string> kvp in _visioColorsMap)
+			{
+				if (string.Equals(kvp.Key, name, StringComparison.OrdinalIgnoreCase))
+				{
+					return kvp.Key.Trim().ToString();
+				}
+			}
+			return "";
+		}
+
+
+		/// <summary>
+		/// SetColorNameColorMap
+		/// populate the map after the the base color map has been created
+		/// </summary>
+		private void setColorNameColorMap()
+		{
+			_appColorsMap = new Dictionary<string, Color>();
+
+			Regex regex = new Regex(@"^RGB\((?<r>\d{1,3}),(?<g>\d{1,3}),(?<b>\d{1,3})\)");
+			foreach (KeyValuePair<string, string> item in GetColorsMap())
+			{
+				string nStr = item.Value.Replace(", ", ",");    // remove any spaces after the ',' character
+				Match match = regex.Match(nStr.ToUpper());
+				int r = int.Parse(match.Groups["r"].Value);
+				int g = int.Parse(match.Groups["g"].Value);
+				int b = int.Parse(match.Groups["b"].Value);
+				_appColorsMap.Add(item.Key, Color.FromArgb(255, r, g, b));
+			}
+		}
+
+		/// <summary>
+		/// GetColorNameColor
+		/// return a Dictionary<string,Color>
+		/// this is used to help determine a valid color based on an rgb color
+		/// </summary>
+		/// <returns>Dictionary<string,Color></returns>
+		public Dictionary<string, Color> GetColorNameColorsMap()
+		{
+			if (_appColorsMap == null)
+			{
+				setColorNameColorMap();
+			}
+			return _appColorsMap;
+		}
+
+
+		/** ************************************************************************************** **/
+
 	}
 }
 

@@ -13,7 +13,6 @@ namespace OmnicellBlueprintingTool.Models
 		public string VisioFilesPath = string.Empty;
 		public string ExcelDataFileName = string.Empty;
 
-		public AppConfiguration AppConfig { get; set; }
 		public VisioVariables.VisioPageOrientation VisioPageOrientation { get; set; } = VisioVariables.VisioPageOrientation.Portrait;
 		public VisioVariables.VisioPageSize VisioPageSize { get; set; } = VisioVariables.VisioPageSize.Letter;
 		public bool AutoSizeVisioPages { get; set; } = false;	// don't autosize the Visio pages

@@ -1,58 +1,185 @@
-{ 
-	"Omnicell":{
-		"BlueprintingTool":{
+{
+	"Omnicell": {
+		"BlueprintingTool": {
 			"Version": "1.0.2.2",
 			"Tables": {
 				"Colors": [
-					"",
-					"Beige",
-					"Black",
-					"Blue",
-					"Blue Light",
-					"Blue Medium",
-					"Blue Bright",
-					"Brown",
-					"Cyan",
-					"Gold",
-					"Gray",
-					"Gray Light",
-					"Gray Medium",
-					"Green",
-					"Green Light",
-					"Green LightMedium",
-					"Green Medium",
-					"Green Dark",
-					"Green Lime",
-					"Green Sea",
-					"Khaki",
-					"Khaki Dark",
-					"Lime",
-					"Magenta",
-					"Mint",
-					"Navy",
-					"Olive",
-					"Olive Drab",
-					"Orange",
-					"Orange Light",
-					"Orange Medium",
-					"Peach",
-					"Pink Light",
-					"Purple",
-					"Red",
-					"Salmon",
-					"Silver",
-					"Tan",
-					"Teal",
-					"White",
-					"White Smoke",
-					"Yellow" ],
+					{
+						"key": "",
+						"value": "RGB(0,0,0)"
+					},
+					{
+						"key": "Beige",
+						"value": "RGB(245,245,220)"
+					},
+					{
+						"key": "Black",
+						"value": "RGB(0,0,0)"
+					},
+					{
+						"key": "Blue Light",
+						"value": "RGB(220,234,252)"
+					},
+					{
+						"key": "Blue Medium",
+						"value": "RGB(71,141,233)"
+					},
+					{
+						"key": "Blue Bright",
+						"value": "RGB(71,150,255)"
+					},
+					{
+						"key": "Blue",
+						"value": "RGB(17,117,245)"
+					},
+					{
+						"key": "Cyan",
+						"value": "RGB(0,255,255)"
+					},
+					{
+						"key": "Gold",
+						"value": "RGB(255,215,0)"
+					},
+					{
+						"key": "Silver",
+						"value": "RGB(232,232,232)"
+					},
+					{
+						"key": "Gray Light",
+						"value": "RGB(216,216,216)"
+					},
+					{
+						"key": "Gray Medium",
+						"value": "RGB(216,216,216)"
+					},
+					{
+						"key": "Gray",
+						"value": "RGB(165,165,165)"
+					},
+					{
+						"key": "Mint",
+						"value": "RGB(198,224,180)"
+					},
+					{
+						"key": "Green Light",
+						"value": "RGB(240,247,236)"
+					},
+					{
+						"key": "Green LightMedium",
+						"value": "RGB(162,226,171)"
+					},
+					{
+						"key": "Green Medium",
+						"value": "RGB(88,183,100)"
+					},
+					{
+						"key": "Green Lime",
+						"value": "RGB(50,205,50)"
+					},
+					{
+						"key": "Lime",
+						"value": "RGB(0,255,0)"
+					},
+					{
+						"key": "Green Sea",
+						"value": "RGB(60,179,113)"
+					},
+					{
+						"key": "Green Dark",
+						"value": "RGB(67,169,72)"
+					},
+					{
+						"key": "Green",
+						"value": "RGB(13,164,33)"
+					},
+					{
+						"key": "Peach",
+						"value": "RGB(255,242,204)"
+					},
+					{
+						"key": "Tan",
+						"value": "RGB(210,180,140)"
+					},
+					{
+						"key": "Khaki",
+						"value": "RGB(240,230,140)"
+					},
+					{
+						"key": "Khaki Dark",
+						"value": "RGB(189,183,107)"
+					},
+					{
+						"key": "Brown",
+						"value": "RGB(210,105,30)"
+					},
+					{
+						"key": "Magenta",
+						"value": "RGB(255,0,255)"
+					},
+					{
+						"key": "Navy",
+						"value": "RGB(60,80,160)"
+					},
+					{
+						"key": "Olive",
+						"value": "RGB(120,120,0)"
+					},
+					{
+						"key": "Olive Drab",
+						"value": "RGB(100,140,30)"
+					},
+					{
+						"key": "Orange Light",
+						"value": "RGB(255,210,120)"
+					},
+					{
+						"key": "Orange Medium",
+						"value": "RGB(250,190,80)"
+					},
+					{
+						"key": "Orange",
+						"value": "RGB(255,172,4)"
+					},
+					{
+						"key": "Purple",
+						"value": "RGB(54,54,222)"
+					},
+					{
+						"key": "Pink Light",
+						"value": "RGB(255,182,193)"
+					},
+					{
+						"key": "Red",
+						"value": "RGB(255,0,0)"
+					},
+					{
+						"key": "Salmon",
+						"value": "RGB(251,229,213)"
+					},
+					{
+						"key": "Teal",
+						"value": "RGB(0,128,128)"
+					},
+					{
+						"key": "White",
+						"value": "RGB(255,255,255)"
+					},
+					{
+						"key": "White Smoke",
+						"value": "RGB(245,245,245)"
+					},
+					{
+						"key": "Yellow",
+						"value": "RGB(255,255,0)"
+					}
+				],
 				"Arrows": [ "", "None", "Start", "End", "Both" ],
-				"Label Font Sizes": [ "", "6", "6:B", "8", "8:B", "9", "9:B", "10", "10:B", "11", "11:B", "12", "12:B", "14", "14:B" ],
+				"Shape Label Font Sizes": [ "", "6", "6:B", "8", "8:B", "9", "9:B", "10", "10:B", "11", "11:B", "12", "12:B", "14", "14:B" ],
 				"Line Patterns": [ "", "Solid", "Dashed", "Dotted", "Dash_Dot" ],
-				"Stencil Label Positions": [ "", "Top", "Bottom", "Left", "Right" ],
+				"Stencil Label Positions": [ "", "Top", "Bottom" ],
 				"Shape Types": [ "", "Template", "Stencil", "Page Setup", "Shape" ],
 				"Line Weights": [ "", "1.5 pt", "2 pt", "2.25 pt", "3 pt", "4 pt", "6 pt" ],
-				"Default Stencil Names": [
+				"Stencil Image Names": [
 					"",
 					"OC_AIO",
 					"OC_AWS",
@@ -108,7 +235,8 @@
 					"OC_vSuiteCloud",
 					"OC_XR2",
 					"OC_XT",
-					"OC_YuyamaPackager" ]
+					"OC_YuyamaPackager"
+				]
 			}
 		}
 	}

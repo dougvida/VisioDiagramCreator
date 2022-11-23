@@ -17,8 +17,8 @@ namespace OmnicellBlueprintingTool
 	{
 		DiagramData diagramData = null;
 		Boolean _bBuildVisioFromExcelDataFile = true;
-		VisioHelper visHlp = new VisioHelper();
-		AppConfiguration appCfg = null;
+		VisioHelper visioHelper = new VisioHelper();
+		//AppConfiguration appCfg = null;
 
 		string ExcelDataFileName = string.Empty;	// if this is populated it will single the close operation to prompt the user to save the visio file
 
@@ -88,14 +88,18 @@ namespace OmnicellBlueprintingTool
 			tb_buildExcelPath.Enabled = false;
 			tb_buildVisioFilePath.Enabled = false;
 
-			appCfg = ReadJsonFile.ReadJSONFile(sJsonConfigFile);
-			if (appCfg == null)
+			if(ReadJsonFile.ReadJSONFile(sJsonConfigFile, ref visioHelper))
 			{
+				string sTmp = "MainForm - ERROR\n\nOmnicellBlueprintingTool.json file not found";
+				MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
+				Console.WriteLine(sTmp);
+
 				// close the application
 				this.Close();
 				return;
 			}
-			appCfg.Version = String.Format("v{0}", ProductVersion);
+			// parse the data file and draw the visio diagram
+			diagramData = new DiagramData();
 		}
 
 		private void btn_Quit_Click(object sender, EventArgs e)
@@ -104,7 +108,7 @@ namespace OmnicellBlueprintingTool
 			if (!string.IsNullOrEmpty(ExcelDataFileName))
 			{
 				SaveVisioDiagram(string.Format(@"{0}{1}.vsdx", visioFilesPath, ExcelDataFileName));
-				visHlp.VisioForceCloseAll();
+				visioHelper.VisioForceCloseAll();
 			}
 			ExcelDataFileName = string.Empty;
 			
@@ -120,7 +124,7 @@ namespace OmnicellBlueprintingTool
 			if (!string.IsNullOrEmpty(ExcelDataFileName))
 			{
 				SaveVisioDiagram(string.Format(@"{0}{1}.vsdx", visioFilesPath, ExcelDataFileName));
-				visHlp.VisioForceCloseAll();
+				visioHelper.VisioForceCloseAll();
 
 				ExcelDataFileName = string.Empty;
 			}
@@ -133,8 +137,6 @@ namespace OmnicellBlueprintingTool
 			diagramData.ExcelDataPath = excelDataPath;
 			diagramData.VisioFilesPath = visioFilesPath;
 
-			diagramData.AppConfig = appCfg;
-
 			try
 			{
 				if (_bBuildVisioFromExcelDataFile)
@@ -145,13 +147,13 @@ namespace OmnicellBlueprintingTool
 					// build visio file form data file
 					ConsoleOut.writeLine(String.Format("MainForm - Build Visio file from an excel data file:{0}", tb_excelDataFile.Text));
 					ExcelDataFileName = FileExtension.GetFileNameOnly(tb_excelDataFile.Text);
-					diagramData = new ProcessExcelDataFile().parseExcelFile(tb_excelDataFile.Text.Trim(), diagramData);
+					diagramData = new ProcessExcelDataFile().parseExcelFile(tb_excelDataFile.Text.Trim(), diagramData, visioHelper);
 					if (diagramData == null)
 					{
 						string sTmp = "MainForm - ERROR\n\nReturn from ProcessExcelDataFile returned null\nNo shapes will be drawn";
 						//MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
 						Console.WriteLine(sTmp);
-						visHlp.VisioForceCloseAll();
+						visioHelper.VisioForceCloseAll();
 						this.Close();
 					}
 
@@ -159,21 +161,21 @@ namespace OmnicellBlueprintingTool
 					Cursor.Current = Cursors.Default;
 
 					// for testing to view all the stencils in the document
-					// visHlp.ListDocumentStencils(diagramData, VisioVariables.ShowDiagram.Show);
+					// visioHelper.ListDocumentStencils(diagramData, VisioVariables.ShowDiagram.Show);
 
 					if (diagramData != null)
 					{
-						if (!visHlp.DrawAllShapes(diagramData, VisioVariables.ShowDiagram.Show))
+						if (!visioHelper.DrawAllShapes(diagramData, VisioVariables.ShowDiagram.Show))
 						{
 							// build the shape connection map to be used to establish connections between shapes on the diagrams
 							diagramData.ShapeConnectionsMap = new ProcessVisioShapeConnections().BuildShapeConnections(diagramData);
 
 							// Lets make the connections 
-							bool bAns = visHlp.ConnectShapes(diagramData);
+							bool bAns = visioHelper.ConnectShapes(diagramData);
 							if (bAns)
 							{
 								// there was an exception so we need to get out
-								visHlp.VisioForceCloseAll(true);
+								visioHelper.VisioForceCloseAll(true);
 								// close the application
 								this.Close();
 								return;
@@ -181,8 +183,8 @@ namespace OmnicellBlueprintingTool
 
 
 							// set focus to first page
-							int maxPages = visHlp.GetNumberOfPages();
-							visHlp.SetActivePage(1);
+							int maxPages = visioHelper.GetNumberOfPages();
+							visioHelper.SetActivePage(1);
 						}
 					}
 				}
@@ -202,11 +204,11 @@ namespace OmnicellBlueprintingTool
 					Cursor.Current = Cursors.WaitCursor;
 
 					// for testing to view all the stencils in the document
-					//visHlp.ListDocumentStencils(diagramData, VisioVariables.ShowDiagram.Show);
+					//visioHelper.ListDocumentStencils(diagramData, VisioVariables.ShowDiagram.Show);
 
 					// buid data file from existing Visio file
 					ConsoleOut.writeLine("build excel data file from a Visio file");
-					Dictionary<int, ShapeInformation> shapesMap = new ProcessVisioDiagramShapes().GetAllShapesProperties(tb_buildVisioFilePath.Text.Trim(), VisioVariables.ShowDiagram.Show);
+					Dictionary<int, ShapeInformation> shapesMap = new ProcessVisioDiagramShapes().GetAllShapesProperties(visioHelper, tb_buildVisioFilePath.Text.Trim(), VisioVariables.ShowDiagram.Show);
 					if (shapesMap == null)
 					{
 						sTmp = "MainForm\n\nNo shapes found on the Visio Diagram";
@@ -222,7 +224,7 @@ namespace OmnicellBlueprintingTool
 						}
 						CreateExcelDataFile createExcelDataFile = new CreateExcelDataFile();
 						string sPath = string.Format(@"{0}{1}", tb_buildExcelPath.Text.Trim(), tb_buildExcelFileName.Text.Trim());
-						if (createExcelDataFile.PopulateExcelDataFile(diagramData, shapesMap, sPath) )
+						if (createExcelDataFile.PopulateExcelDataFile(diagramData, visioHelper, shapesMap, sPath) )
 						{
 							sTmp = String.Format("MainForm - Error\n\nFailed to create excel data file:{0}", sPath);
 							MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -397,7 +399,7 @@ namespace OmnicellBlueprintingTool
 				bSave = true;
 			}
 			// must always call SaveDocuments
-			if (visHlp.SaveDocument(fileNamePath, bSave))
+			if (visioHelper.SaveDocument(fileNamePath, bSave))
 			{
 				string sTmp = string.Format("WARNING:: failed to save Visio diagram to the file:'{0}'", fileNamePath);
 				MessageBox.Show(sTmp, "WARNING", MessageBoxButtons.OK, MessageBoxIcon.Error);

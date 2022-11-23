@@ -1,30 +1,24 @@
-﻿using OmnicellBlueprintingTool.Models;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
-using System;
-using System.Runtime.Remoting.Lifetime;
 using System.Linq;
-using Microsoft.Office.Interop.Excel;
-
-using System.Text;
-using System.Runtime.Serialization;
-using System.Runtime.Serialization.Json;
 using System.Web.Script.Serialization;
-using OmnicellBlueprintingTool.Extensions;
 using System.Windows.Forms;
+using OmnicellBlueprintingTool.Visio;
 
 namespace OmnicellBlueprintingTool.Configuration
 {
 	public static class ReadJsonFile
 	{
-		public static AppConfiguration ReadJSONFile(string fileNamePath)
+		public static bool ReadJSONFile(string fileNamePath, ref VisioHelper visioHelper)
 		{
-			AppConfiguration appConfig = new AppConfiguration();
+			//AppConfiguration appConfig = new AppConfiguration();
 
 			try
 			{
+
 				using (StreamReader r = new StreamReader(fileNamePath))
 				{
+
 					string json = r.ReadToEnd();
 					JavaScriptSerializer serializer = new JavaScriptSerializer();
 					dynamic jsonObject = serializer.Deserialize<dynamic>(json);
@@ -33,32 +27,58 @@ namespace OmnicellBlueprintingTool.Configuration
 					dynamic app = root["BlueprintingTool"]; // result is asdf
 					dynamic tables = app["Tables"]; // result is asdf
 
+					List<string> colors = new List<string>();
+					Dictionary<string, string> colorMap = new Dictionary<string, string>();
 					object[] values = tables["Colors"]; // result is asdf
-					appConfig.Colors = values.Select(i => i.ToString()).ToList();
+      
+					foreach (Dictionary<string,object> pair in values)
+					{
+						string key = pair.ElementAtOrDefault(0).Value.ToString().Trim();
+						string value = pair.ElementAtOrDefault(1).Value.ToString().Trim();
+						if (key.Equals("Blank"))
+						{
+							colors.Add("");
+							colorMap.Add("\"\"", value);
+						}
+						else
+						{
+							colors.Add(key);
+							colorMap.Add(key, value);
+						}
+					}
+					visioHelper.SetColorsMap(colorMap);
+					//visioHelper.Colors = colors;
+					//var xxx = values.Select(i => i.ToString()).ToList();
 
-					values = tables["Arrows"]; // result is asdf
-					appConfig.Arrows = values.Select(i => i.ToString()).ToList();
+					values = tables["Arrows"];
+					visioHelper.SetConnectorArrowsMap(values.Select(i => i.ToString()).ToList());
 
-					values = tables["Shape Types"]; // result is asdf
-					appConfig.ShapeTypes = values.Select(i => i.ToString()).ToList();
+					values = tables["Shape Types"];
+					visioHelper.SetShapeTypesMap(values.Select(i => i.ToString()).ToList());
 
-					values = tables["Line Patterns"]; // result is asdf
-					appConfig.LinePatterns = values.Select(i => i.ToString()).ToList();
+					values = tables["Line Patterns"];
+					visioHelper.SetConnectorLinePatterns(values.Select(i => i.ToString()).ToList());
 
-					values = tables["Stencil Label Positions"]; // result is asdf
-					appConfig.StencilLabelPosition = values.Select(i => i.ToString()).ToList();
+					values = tables["Line Weights"];
+					visioHelper.SetConnectorLineWeightsMap(values.Select(i => i.ToString()).ToList());
 
-					values = tables["Label Font Sizes"]; // result is asdf
-					appConfig.LabelFontSizes = values.Select(i => i.ToString()).ToList();
+					values = tables["Stencil Label Positions"];
+					visioHelper.SetStencilLabelPositionsMap(values.Select(i => i.ToString()).ToList());
+
+					values = tables["Shape Label Font Sizes"];
+					visioHelper.SetStencilLabelFontSizeMap(values.Select(i => i.ToString()).ToList());
+
+					values = tables["Stencil Image Names"];
+					visioHelper.SetDefaultStencilNamesMap(values.Select(i => i.ToString()).ToList());
 				}
 			}
 			catch(FileNotFoundException fne)
 			{
 				string sTmp = string.Format("ReadJsonFile - Exception\n\nApplication JSON configuration file not found:{0}\nPlease ensure the 'OmnicellBlueprintingTool.json' file is in the same folder as the application\n\n{1}", fileNamePath, fne.Message);
 				MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
-				appConfig = null;
+				return true;	// error
 			}
-			return appConfig;
+			return false;	// success
 		}
 	}
 }

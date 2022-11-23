@@ -107,7 +107,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 			return row;
 		}
 
-		private int writeConfiguration(Excel.Worksheet workSheet, DiagramData diagramData, int cellIndex, int nRow)
+		private int writeConfiguration(Excel.Worksheet workSheet, DiagramData diagramData, VisioHelper visioHelper,int cellIndex, int nRow)
 		{
 			ShapeInformation shpObj = null;
 			string sTmp = string.Empty;
@@ -119,7 +119,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				shpObj.ShapeType = "Configuration";
 				shpObj.UniqueKey = String.Empty;
 				shpObj.StencilLabel = String.Empty;
-				if (writeData(workSheet, shpObj, nRow, true))
+				if (_writeData(workSheet, visioHelper, shpObj, nRow, true))
 				{
 					 sTmp = "CreateExeclDataFile::writeConfiguration \n\nFailed to write Comment data";
 					MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -134,7 +134,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				shpObj.ShapeType = "Template";
 				shpObj.UniqueKey = string.Format(@"{0}", diagramData.VisioTemplateFilePath + VisioVariables.DefaultBlueprintingTemplateFile);
 				shpObj.StencilLabel = string.Format("Use the Blueprinting Visio Template.  Already contains the {0}", VisioVariables.DefaultBlueprintingTemplateFile);
-				if (writeData(workSheet, shpObj, nRow, true))
+				if (_writeData(workSheet, visioHelper, shpObj, nRow, true))
 				{
 					sTmp = "CreateExeclDataFile::writeConfiguration Error\n\nFailed to write Template data";
 					MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -148,7 +148,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				shpObj.ShapeType = "Stencil";
 				shpObj.UniqueKey = string.Format(@"{0}", diagramData.VisioStencilFilePaths[0] + VisioVariables.DefaultBlueprintingStencilFile);
 				shpObj.StencilLabel = string.Format("Use the Blueprinting Visio Stencil.  Already contains the Stencil file:{0}", VisioVariables.DefaultBlueprintingStencilFile);
-				if (writeData(workSheet, shpObj, nRow, false))
+				if (_writeData(workSheet, visioHelper, shpObj, nRow, false))
 				{
 					sTmp = "CreateExeclDataFile::writeConfiguration Error\n\nFailed to write Stincel data";
 					MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -162,7 +162,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				shpObj.ShapeType = "Page Setup";
 				shpObj.UniqueKey = VisioVariables.VisioPageOrientation.Portrait + ":" + VisioVariables.VisioPageSize.Legal;
 				shpObj.StencilLabel = "• Orientation: Landscape or Portrait (default)\r\n• Size: Letter (default), Tabloid, Ledger, Legal, A3, A4";
-				if (writeData(workSheet, shpObj, nRow, true))
+				if (_writeData(workSheet, visioHelper, shpObj, nRow, true))
 				{
 					sTmp = "CreateExeclDataFile::writeConfiguration Error\n\nFailed to Setup Page data";
 					MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -175,7 +175,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				shpObj.ShapeType = "Page Setup";
 				shpObj.UniqueKey = "Autosize:true";
 				shpObj.StencilLabel = "• true - Autosize all pages\r\n• false - (default) don't Autosize the pages";
-				if (writeData(workSheet, shpObj, nRow, true))
+				if (_writeData(workSheet, visioHelper, shpObj, nRow, true))
 				{
 					sTmp = "CreateExeclDataFile::writeConfiguration Error\n\nFailed to Setup Page data";
 					MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -189,7 +189,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				shpObj.ShapeType = "Visio Section";
 				shpObj.UniqueKey = string.Empty;
 				shpObj.StencilLabel = String.Empty;
-				if (writeData(workSheet, shpObj, nRow, true))
+				if (_writeData(workSheet, visioHelper, shpObj, nRow, true))
 				{
 					sTmp = "CreateExeclDataFile::writeConfiguration Error\n\nFailed to write Visio Section Comment data";
 					MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -205,7 +205,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 		}
 
 
-		public bool PopulateExcelDataFile(DiagramData diagramData, Dictionary<int, ShapeInformation> shapesMap, string namePath)
+		public bool PopulateExcelDataFile(DiagramData diagramData, VisioHelper visioHelper, Dictionary<int, ShapeInformation> shapesMap, string namePath)
 		{
 			int nRow = 1;
 			string sTmp = string.Empty;
@@ -234,7 +234,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 						return true;
 					}
 
-					nRow = writeConfiguration(_xlWorksheet, diagramData, ExcelVariables.GetHeaderCount(), ++nRow);
+					nRow = writeConfiguration(_xlWorksheet, diagramData, visioHelper, ExcelVariables.GetHeaderCount(), ++nRow);
 					if (nRow < 0)
 					{
 						sTmp = "CreateExcelDataFile::PopulateExcelDataFile\n\nWriting the configuration section";
@@ -244,7 +244,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 					}
 
 					// write the Stencil data
-					nRow = writeAllData(_xlWorksheet, shapesMap, ++nRow);
+					nRow = writeAllData(_xlWorksheet, visioHelper, shapesMap, ++nRow);
 					if (nRow < 0)
 					{
 						sTmp = string.Format("CreateExcelDataFile::PopulateExcelDataFile\n\nWriting All Data:{0}",nRow);
@@ -257,10 +257,10 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 					formatVisioDataSheet(_xlWorksheet);
 
 					// populate the Tables sheet
-					writeTableSheet(diagramData);
+					writeTableSheet(diagramData, visioHelper);
 
 					// some column use a dropdown list so we need to setup it up
-					setColumnsDropdownList(diagramData);
+					setColumnsDropdownList(diagramData, visioHelper);
 
 					// this should stop the check Compatibility diaglog from poping up
 					_xlWorkbook.DoNotPromptForConvert = true;             
@@ -347,7 +347,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 		/// <text>if > 0 total number of rows in the excel data file</text>
 		/// <text>if <= 0 an error has occured</text>
 		/// </returns>
-		private int writeAllData(Excel.Worksheet workSheet, Dictionary<int, ShapeInformation> shapesMap, int rowCount)
+		private int writeAllData(Excel.Worksheet workSheet, VisioHelper visioHelper, Dictionary<int, ShapeInformation> shapesMap, int rowCount)
 		{
 			try
 			{
@@ -357,8 +357,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 					{
 						keyValue.Value.ShapeType = "Shape";
 					}
-					writeData(workSheet, keyValue.Value, rowCount++, false);
-					//rowCount++;
+					_writeData(workSheet, visioHelper, keyValue.Value, rowCount++, false);
 				}
 			}
 			catch(Exception ex)
@@ -370,7 +369,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 			return rowCount;
 		}
 
-		private bool writeData(Excel.Worksheet workSheet, ShapeInformation shape, int rowCount, bool IsComment)
+		private bool _writeData(Excel.Worksheet workSheet, VisioHelper visioHelper, ShapeInformation shape, int rowCount, bool IsComment)
 		{
 			try
 			{
@@ -477,17 +476,28 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.Height]).NumberFormat = "#0.000";
 
 					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.FillColor]).Value = shape.FillColor; // should be color name
-					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.rgbFillColor]).Value = shape.rgbFillColor;
+					if (string.IsNullOrEmpty(shape.FillColor))
+					{
+						// we don't want a fill color for OC_Logo, OC_Title or OC_Footer if the FillColor is empty
+						if (shape.StencilImage.IndexOf("OC_Logo") < 0 && shape.StencilImage.IndexOf("OC_Title") < 0 && shape.StencilImage.IndexOf("OC_Footer") < 0)
+						{
+							((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.rgbFillColor]).Value = shape.rgbFillColor;
+						}
+					}
 
 					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.ConnectFrom]).Value = shape.ConnectFrom;
 					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.FromLineLabel]).Value = shape.FromLineLabel;
 
-					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.FromLinePattern]).Value = shape.FromLinePattern;
-					if (shape.FromLinePattern <= 1)
+					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.FromLinePattern]).Value = "";  // default to solid
+					// we only want to populate this field if we are connected to another shape
+					if (!string.IsNullOrEmpty(shape.ConnectFrom))
 					{
-						((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.FromLinePattern]).Value = "";
+						sTmp = visioHelper.GetConnectorLinePatternText(shape.FromLinePattern);
+						if (!string.IsNullOrEmpty(sTmp))
+						{
+							((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.FromLinePattern]).Value = sTmp;
+						}
 					}
-
 					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.FromArrowType]).Value = shape.FromArrowType;
 					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.FromLineColor]).Value = shape.FromLineColor;
 
@@ -502,7 +512,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 						// check if value is "1 pt" is so we don't want to write to the excel file.   "" is same as "1 pt"
 						if (!shape.FromLineWeight.Equals("1 pt", StringComparison.OrdinalIgnoreCase))
 						{
-							sTmp = VisioVariables.GetConnectorLineWeight(sTmp);
+							sTmp = visioHelper.FindConnectorLineWeight(sTmp);
 							// not "1 pt" so lets check if valid entry and if so persist it
 							((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.FromLineWeight]).Value = sTmp;
 						}
@@ -511,12 +521,16 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.ConnectTo]).Value = shape.ConnectTo;
 					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.ToLineLabel]).Value = shape.ToLineLabel;
 
-					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.ToLinePattern]).Value = shape.ToLinePattern;
-					if (shape.ToLinePattern <= 1)
+					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.ToLinePattern]).Value = ""; // default to solid
+					// we only want to populate this field if we are connected to another shape
+					if (!string.IsNullOrEmpty(shape.ConnectTo))
 					{
-						((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.ToLinePattern]).Value = "";
+						sTmp = visioHelper.GetConnectorLinePatternText(shape.ToLinePattern);
+						if (!string.IsNullOrEmpty(sTmp))
+						{
+							((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.ToLinePattern]).Value = sTmp;
+						}
 					}
-
 					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.ToArrowType]).Value = shape.ToArrowType;
 					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.ToLineColor]).Value = shape.ToLineColor;
 
@@ -531,7 +545,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 						// check if value is "1 pt" is so we don't want to write to the excel file.   "" is same as "1 pt"
 						if (!shape.ToLineWeight.Equals("1 pt", StringComparison.OrdinalIgnoreCase))
 						{
-							sTmp = VisioVariables.GetConnectorLineWeight(sTmp);
+							sTmp = visioHelper.FindConnectorLineWeight(sTmp);
 							// not "1 pt" so lets check if valid entry and if so persist it
 							((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.ToLineWeight]).Value = sTmp;
 						}
@@ -650,7 +664,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 		/// the user can use this sheet as list to the excel file
 		/// </summary>
 		/// <returns></returns>
-		private bool writeTableSheet(DiagramData diagramData)
+		private bool writeTableSheet(DiagramData diagramData, VisioHelper visioHelper)
 		{
 			int startingRow = 1;
 			Excel.Worksheet xlNewSheet = selectWorkSheet("Tables");
@@ -661,12 +675,12 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				((Excel.Range)xlNewSheet.Cells[1, 1]).Value = "Color";
 				((Excel.Range)xlNewSheet.Cells[1, 1]).ColumnWidth = 20.00;
 				xlNewSheet.Cells[startingRow++, 1].Interior.Color = Excel.XlRgbColor.rgbDarkSeaGreen;
-				string[] saTmp = VisioVariables.GetAllColorKeyValues();
-				if (saTmp.Length > 0)
+				List<string> lTmp = visioHelper.GetAllColorNames();
+				if (lTmp != null && lTmp.Count > 0)
 				{
-					for (int nIdx = 0; nIdx < saTmp.Length; nIdx++)
+					foreach (var item in lTmp)
 					{
-						((Excel.Range)xlNewSheet.Cells[startingRow++, 1]).Value = saTmp[nIdx];
+						((Excel.Range)xlNewSheet.Cells[startingRow++, 1]).Value = item;
 					}
 				}
 				Excel.Range range = xlNewSheet.Range[xlNewSheet.Cells[2, 1], xlNewSheet.Cells[startingRow - 1, 1]];
@@ -677,7 +691,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				((Excel.Range)xlNewSheet.Cells[1, 3]).Value = "Arrows";
 				((Excel.Range)xlNewSheet.Cells[1, 3]).ColumnWidth = 20.00;
 				xlNewSheet.Cells[1, 3].Interior.Color = Excel.XlRgbColor.rgbDarkSeaGreen;
-				List<string> strArray = VisioVariables.GetConnectorArrows();
+				List<string> strArray = visioHelper.GetConnectorArrows();
 				if (strArray.Count > 0)
 				{
 					int nRow = 2;
@@ -694,7 +708,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				((Excel.Range)xlNewSheet.Cells[1, 5]).Value = "Stencil Label Font Size";
 				((Excel.Range)xlNewSheet.Cells[1, 5]).ColumnWidth = 20.00;
 				xlNewSheet.Cells[1, 5].Interior.Color = Excel.XlRgbColor.rgbDarkSeaGreen;
-				strArray = VisioVariables.GetStencilLabelFontSize();
+				strArray = visioHelper.GetStencilLabelFontSize();
 				if (strArray.Count > 0)
 				{
 					int nRow = 2;
@@ -711,7 +725,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				((Excel.Range)xlNewSheet.Cells[1, 7]).Value = "Line Pattern";
 				((Excel.Range)xlNewSheet.Cells[1, 7]).ColumnWidth = 20.00;
 				xlNewSheet.Cells[1, 7].Interior.Color = Excel.XlRgbColor.rgbDarkSeaGreen;
-				strArray = VisioVariables.GetConnectorLinePatterns();
+				strArray = visioHelper.GetConnectorLinePatterns();
 				if (strArray.Count > 0)
 				{
 					int nRow = 2;
@@ -728,7 +742,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				((Excel.Range)xlNewSheet.Cells[1, 9]).Value = "Stencil Label Position";
 				((Excel.Range)xlNewSheet.Cells[1, 9]).ColumnWidth = 20.00;
 				xlNewSheet.Cells[1, 9].Interior.Color = Excel.XlRgbColor.rgbDarkSeaGreen;
-				strArray = VisioVariables.GetStencilLabelPositions();
+				strArray = visioHelper.GetStencilLabelPositions();
 				if (strArray.Count > 0)
 				{
 					int nRow = 2;
@@ -745,7 +759,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				((Excel.Range)xlNewSheet.Cells[1, 11]).Value = "Shape Type";
 				((Excel.Range)xlNewSheet.Cells[1, 11]).ColumnWidth = 20.00;
 				xlNewSheet.Cells[1, 11].Interior.Color = Excel.XlRgbColor.rgbDarkSeaGreen;
-				 strArray = VisioVariables.GetShapeTypes();
+				 strArray = visioHelper.GetShapeTypes();
 				if (strArray.Count > 0)
 				{
 					int nRow = 2;
@@ -762,7 +776,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				((Excel.Range)xlNewSheet.Cells[1, 13]).Value = "Line Weight";
 				((Excel.Range)xlNewSheet.Cells[1, 13]).ColumnWidth = 20.00;
 				xlNewSheet.Cells[1, 13].Interior.Color = Excel.XlRgbColor.rgbDarkSeaGreen;
-				strArray = VisioVariables.GetConnectorLineWeights();
+				strArray = visioHelper.GetConnectorLineWeights();
 				if (strArray.Count > 0)
 				{
 					int nRow = 2;
@@ -779,7 +793,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				((Excel.Range)xlNewSheet.Cells[1, 15]).Value = "Default Stencil Names";
 				((Excel.Range)xlNewSheet.Cells[1, 15]).ColumnWidth = 20.00;
 				xlNewSheet.Cells[1, 15].Interior.Color = Excel.XlRgbColor.rgbDarkSeaGreen;
-				strArray = VisioVariables.GetDefaultStencilNames();
+				strArray = visioHelper.GetDefaultStencilNames();
 				if (strArray.Count > 0)
 				{
 					int nRow = 2;
@@ -809,7 +823,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 		/// I need to make this more dynamic like look at the VisioData sheet for column names to get the column identifier to use here
 		/// </summary>
 		/// <param name="diagramData"></param>
-		private void setColumnsDropdownList(DiagramData diagramData)
+		private void setColumnsDropdownList(DiagramData diagramData, VisioHelper visioHelper)
 		{
 			Excel.Range xlRange = _xlWorksheet.UsedRange;
 			int startingRow = 2;
@@ -817,14 +831,14 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 			int colCount = xlRange.Columns.Count;
 
 			// the count will be dynamic based on the json data in the OmnicellBlueprintingTool.json.json file
-			string tablesColorColumn = String.Format("=Tables!$A${0}:$A${1}", startingRow, VisioVariables.GetAllColorKeyValues().Length + 1);
-			string tablesArrowsColumn = String.Format("=Tables!$C${0}:$C${1}", startingRow, VisioVariables.GetConnectorArrows().Count + 1);
-			string tablesLabelFontSizeColumn = String.Format("=Tables!$E${0}:$E${1}", startingRow, VisioVariables.GetStencilLabelFontSize().Count + 1);
-			string tablesLinePatternColumn = String.Format("=Tables!$G${0}:$G${1}", startingRow, VisioVariables.GetConnectorLinePatterns().Count + 1);
-			string tablesLabelPositionColumn = String.Format("=Tables!$I${0}:$I${1}", startingRow, VisioVariables.GetStencilLabelPositions().Count + 1);
-			string tablesShapeTypeColumn = String.Format("=Tables!$K${0}:$K${1}", startingRow, VisioVariables.GetShapeTypes().Count + 1);
-			string tablesLineWeightColumn = String.Format("=Tables!$M${0}:$M${1}", startingRow, VisioVariables.GetConnectorLineWeights().Count + 1);
-			string tablesDefaultStencilNamesColumn = String.Format("=Tables!$O${0}:$O${1}", startingRow, VisioVariables.GetDefaultStencilNames().Count + 1);
+			string tablesColorColumn = String.Format("=Tables!$A${0}:$A${1}", startingRow, visioHelper.GetAllColorNames().Count + 1);
+			string tablesArrowsColumn = String.Format("=Tables!$C${0}:$C${1}", startingRow, visioHelper.GetConnectorArrows().Count + 1);
+			string tablesLabelFontSizeColumn = String.Format("=Tables!$E${0}:$E${1}", startingRow, visioHelper.GetStencilLabelFontSize().Count + 1);
+			string tablesLinePatternColumn = String.Format("=Tables!$G${0}:$G${1}", startingRow, visioHelper.GetConnectorLinePatterns().Count + 1);
+			string tablesLabelPositionColumn = String.Format("=Tables!$I${0}:$I${1}", startingRow, visioHelper.GetStencilLabelPositions().Count + 1);
+			string tablesShapeTypeColumn = String.Format("=Tables!$K${0}:$K${1}", startingRow, visioHelper.GetShapeTypes().Count + 1);
+			string tablesLineWeightColumn = String.Format("=Tables!$M${0}:$M${1}", startingRow, visioHelper.GetConnectorLineWeights().Count + 1);
+			string tablesDefaultStencilNamesColumn = String.Format("=Tables!$O${0}:$O${1}", startingRow, visioHelper.GetDefaultStencilNames().Count + 1);
 
 			// now lets link the data list to the excel columns on the VisioData sheet
 			// Shape Type column
