@@ -99,11 +99,21 @@ namespace OmnicellBlueprintingTool.Visio
 					Microsoft.Office.Interop.Visio.Color c =  doc.Colors.Item16[(short)shape.Cells["FillBkgnd"].ResultIU];
 					shpInfo.rgbFillColor = $"RGB({c.Red},{c.Green},{c.Blue})";
 					sColor = visioHelper.GetColorValueFromRGB(shpInfo.rgbFillColor);
+					if (string.IsNullOrEmpty(sColor))
+					{
+						// no color found lets try to find the best match
+						sColor = GetColorNameFromRGB(visioHelper, c.Red, c.Green, c.Blue);
+					}
 					shpInfo.FillColor = "";
 					if (!string.IsNullOrEmpty(sColor))
 					{
 						shpInfo.FillColor = sColor;
 					}
+					if (shpInfo.rgbFillColor.IndexOf(VisioVariables.RGB_COLOR_2SKIP) >= 0)  // found
+					{
+						shpInfo.rgbFillColor = "";	// we don't want to right this color value to the Excel file
+					}
+
 
 					//short iRow = (short)VisRowIndices.visRowFirst;
 					shpInfo.Pos_x = Math.Truncate(shape.Cells["PinX"].ResultIU * 1000) / 1000;
@@ -154,11 +164,11 @@ namespace OmnicellBlueprintingTool.Visio
 					}
 
 					// Do all shapes except Ethernet and Connector types
-					if (shpInfo.StencilImage.ToUpper().IndexOf("OC_Ethernet", StringComparison.OrdinalIgnoreCase) < 0)
-					{
+					//if (shpInfo.StencilImage.ToUpper().IndexOf("OC_Ethernet", StringComparison.OrdinalIgnoreCase) < 0)
+					//{
 						// get shape connections
 						//getShapeConnections(doc, shape, ref allPageShapesMap, ref shpInfo);
-					}
+					//}
 
 					ConsoleOut.writeLine(string.Format("Stencil ID:{0} Key:{1}", shpInfo.ID, shpInfo.UniqueKey));
 					if (!allPageShapesMap.ContainsKey(shape.ID))		// && !allPageShapesMap.ContainsKey(sKey2)) // cnnShape.ID
@@ -427,7 +437,6 @@ namespace OmnicellBlueprintingTool.Visio
 					shpInfo.ToLineColor = "";
 					if (!string.IsNullOrEmpty(sColor))
 					{
-						//shpInfo.ToLineColor = sColor;
 						lineColor = sColor;
 					}
 

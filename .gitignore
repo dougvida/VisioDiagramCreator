@@ -4,3 +4,5 @@ obj*
 bin*
 *.piz
 /packages
+/Installer*
+

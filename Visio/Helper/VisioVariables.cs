@@ -49,6 +49,9 @@ namespace OmnicellBlueprintingTool.Visio
 		public const string STINCEL_LABEL_POSITION_TOP = "Top";
 		public const string STINCEL_LABEL_POSITION_BOTTOM = "Bottom";
 
+		public const string RGB_COLOR_2SKIP = "RGB(77,77,77)";	// when reading a Visio diagram and writing an Excel file this is a color that is added.
+																					// it's dark gray so we want to ignore this one
+
 		public enum FormulaUse
 		{
 			Value,
