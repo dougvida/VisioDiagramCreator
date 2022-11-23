@@ -3,7 +3,10 @@ Archive*
 obj*
 bin*
 *.piz
+*.zip
+*.exe
 /packages
 Installer/
+/Installer/
 
 
