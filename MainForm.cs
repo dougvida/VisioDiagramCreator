@@ -20,15 +20,15 @@ namespace OmnicellBlueprintingTool
 		VisioHelper visioHelper = new VisioHelper();
 		//AppConfiguration appCfg = null;
 
-		string ExcelDataFileName = string.Empty;	// if this is populated it will single the close operation to prompt the user to save the visio file
+		string ExcelDataFileName = string.Empty;  // if this is populated it will single the close operation to prompt the user to save the visio file
 
 #if DEBUG
-		static string baseWorkingDir = @"C:\Omnicell_Blueprinting_tool";
+		readonly string baseWorkingDir = @"C:\Omnicell_Blueprinting_tool";
 #else
-		static string baseWorkingDir = Application.StartupPath;	// System.IO.Directory.GetCurrentDirectory();
+		static string baseWorkingDir = Application.StartupPath;  // System.IO.Directory.GetCurrentDirectory();
 #endif
 
-		string sJsonConfigFile = string.Format(@"{0}\OmnicellBlueprintingTool.json", baseWorkingDir);
+		readonly string sJsonConfigFile = string.Format(@"{0}\OmnicellBlueprintingTool.json", baseWorkingDir);
 
 		static string scriptDataPath = baseWorkingDir + @"\data\ScriptData\";
 		private static string visioTemplateFilesPath = baseWorkingDir + @"\data\Templates\";
@@ -88,7 +88,14 @@ namespace OmnicellBlueprintingTool
 			tb_buildExcelPath.Enabled = false;
 			tb_buildVisioFilePath.Enabled = false;
 
-			if(ReadJsonFile.ReadJSONFile(sJsonConfigFile, ref visioHelper))
+			/*
+			 * Lets read the application json file
+			 * this file contains the variables used in the Excel Data file "Tables" sheet
+			 * it allows the application to be more dynamic
+			 * these entries are the dropdowns used in the Excel data file
+			 * Stencils names, Colors, Arrows etc.
+			 */
+			if (ReadJsonFile.ReadJSONFile(sJsonConfigFile, ref visioHelper))
 			{
 				string sTmp = "MainForm - ERROR\n\nOmnicellBlueprintingTool.json file not found";
 				MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -111,7 +118,7 @@ namespace OmnicellBlueprintingTool
 				visioHelper.VisioForceCloseAll();
 			}
 			ExcelDataFileName = string.Empty;
-			
+
 			// close the application
 			this.Close();
 		}
@@ -143,7 +150,7 @@ namespace OmnicellBlueprintingTool
 				{
 					// Set cursor as hourglass
 					Cursor.Current = Cursors.WaitCursor;
-					
+
 					// build visio file form data file
 					ConsoleOut.writeLine(String.Format("MainForm - Build Visio file from an excel data file:{0}", tb_excelDataFile.Text));
 					ExcelDataFileName = FileExtension.GetFileNameOnly(tb_excelDataFile.Text);
@@ -193,9 +200,9 @@ namespace OmnicellBlueprintingTool
 					diagramData.VisioTemplateFilePath = visioTemplateFilesPath;
 					diagramData.VisioStencilFilePaths.Add(visioStencilFilesPath);
 
-					string sTmp = string.Format("This process will build an Excel data file from a Visio file.\n\n"+
-						"Note: This process may take a few minutes so please be patient.\n\n"+
-						"Use the excel data file with this tool to rebuild the Visio diagram.\nWhen making modifications / additions make it to the Excel Data file.\n\n"+
+					string sTmp = string.Format("This process will build an Excel data file from a Visio file.\n\n" +
+						"Note: This process may take a few minutes so please be patient.\n\n" +
+						"Use the excel data file with this tool to rebuild the Visio diagram.\nWhen making modifications / additions make it to the Excel Data file.\n\n" +
 						"You may need to modify stencils positions as well as connections");
 
 					//MessageBox.Show(this, sTmp, "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -224,7 +231,7 @@ namespace OmnicellBlueprintingTool
 						}
 						CreateExcelDataFile createExcelDataFile = new CreateExcelDataFile();
 						string sPath = string.Format(@"{0}{1}", tb_buildExcelPath.Text.Trim(), tb_buildExcelFileName.Text.Trim());
-						if (createExcelDataFile.PopulateExcelDataFile(diagramData, visioHelper, shapesMap, sPath) )
+						if (createExcelDataFile.PopulateExcelDataFile(diagramData, visioHelper, shapesMap, sPath))
 						{
 							sTmp = String.Format("MainForm - Error\n\nFailed to create excel data file:{0}", sPath);
 							MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -391,7 +398,7 @@ namespace OmnicellBlueprintingTool
 		/// <returns>bool - true (yes); false (no)</returns>
 		private bool SaveVisioDiagram(string fileNamePath)
 		{
-			bool bSave = false;	// dont save
+			bool bSave = false;  // dont save
 
 			// ask user if want to save diagram
 			if (MessageBox.Show(string.Format("Do you want to save the Visio document ({0}) ?", fileNamePath), "Save Visio Diagram", MessageBoxButtons.YesNo) == DialogResult.Yes)
