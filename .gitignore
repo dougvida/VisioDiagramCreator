@@ -6,6 +6,5 @@ bin*
 *.zip
 *.exe
 /packages
-Installer*
-
-
+/Installer/*
+/Installer/Omnicell_Blueprinting_Tool.zip
