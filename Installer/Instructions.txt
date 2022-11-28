@@ -1,5 +1,6 @@
 Rename to .zip
-extract the zip file to the following folder
+extract the zip file into a folder at the root.
+You can extract into a folder as named below
 c:\Omnicell_Blueprinting_Tool
 
 in the Docs folder is the user guide
@@ -8,4 +9,6 @@ Under the Data folder
 	 Stencils folder contains a the master stencil file with the stencils described in the user guide
 	 Templates folder contains a Visio template file that included the master stencils
 	 
-Root filder contains the application to run
+VisioFiles folder contains an example Visio file that can be used to build an Excel data file from a Visio diagram file
+
+Root folder contains the application to run as well as the application json file that is required to run

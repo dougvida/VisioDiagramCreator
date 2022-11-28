@@ -111,6 +111,13 @@ namespace OmnicellBlueprintingTool
 			diagramData = new DiagramData();
 		}
 
+		/// <summary>
+		/// btn_Quit_Click
+		/// this function will prompt the user to save any file that has been created
+		/// then exit the application
+		/// </summary>
+		/// <param name="sender"></param>
+		/// <param name="e"></param>
 		private void btn_Quit_Click(object sender, EventArgs e)
 		{
 			// close the Visio diagram if open
@@ -130,6 +137,13 @@ namespace OmnicellBlueprintingTool
 			//this.Close();
 		}
 
+		/// <summary>
+		/// btn_Submit_Click
+		/// this function does all the work.   
+		/// Building a Visio Diagram from an Excel file or Building an Excel data file from a Visio Diagram
+		/// </summary>
+		/// <param name="sender"></param>
+		/// <param name="e"></param>
 		private void btn_Submit_Click(object sender, EventArgs e)
 		{
 			// close the Visio diagram if open
@@ -264,6 +278,10 @@ namespace OmnicellBlueprintingTool
 				if (diagramData != null)
 				{
 					diagramData.Reset();
+
+					/** removed setting the object to null
+					 * we need to have the object still when saving the document if the cancel button was pressed
+					 */
 					//diagramData = null;
 				}
 			}
@@ -283,6 +301,15 @@ namespace OmnicellBlueprintingTool
 				Cursor.Current = Cursors.Default;
 			}
 		}
+
+		/// <summary>
+		/// rb_buildFromDataFile_CheckedChanged
+		/// Radio button - If checked will build visio diagram from Excel data file
+		///              - else build excel data file from a Visio diagram file
+		/// Default is checked
+		/// </summary>
+		/// <param name="sender"></param>
+		/// <param name="e"></param>
 		private void rb_buildFromDataFile_CheckedChanged(object sender, EventArgs e)
 		{
 			if (rb_buildFromExcelFile.Checked)
@@ -296,6 +323,14 @@ namespace OmnicellBlueprintingTool
 				btn_VisioFileToRead.Enabled = false;
 			}
 		}
+
+		/// <summary>
+		/// rb_buildDataFileFromVisio_CheckedChanged
+		/// Radio button - if checked build an Excel data file from a Visio diagram file
+		/// Defaujlt is unchecked
+		/// </summary>
+		/// <param name="sender"></param>
+		/// <param name="e"></param>
 		private void rb_buildDataFileFromVisio_CheckedChanged(object sender, EventArgs e)
 		{
 			if (rb_buildExcelFileFromVisio.Checked)
@@ -309,6 +344,14 @@ namespace OmnicellBlueprintingTool
 				btn_readExcelfile.Enabled = false;
 			}
 		}
+
+		/// <summary>
+		/// tb_buildExcelFileName_TextChanged
+		/// Textbox - Capture the value the user has entered for the Excel file name.
+		///           build an Excel file from a Visio Diagram file
+		/// </summary>
+		/// <param name="sender"></param>
+		/// <param name="e"></param>
 		private void tb_buildExcelFileName_TextChanged(object sender, EventArgs e)
 		{
 			// check if a valid file name
@@ -321,6 +364,15 @@ namespace OmnicellBlueprintingTool
 				btn_Submit.Enabled = false;
 			}
 		}
+
+		/// <summary>
+		/// btn_openExcelkPath_Clock
+		/// this function will open a folder dialog 
+		/// allowing the user to select a folder to deposite the newly created Excel file
+		/// both variables "_excelDataPath" and "tb_buildExcelPath.Text" will be set to the folder path
+		/// </summary>
+		/// <param name="sender"></param>
+		/// <param name="e"></param>
 		private void btn_openExcelPath_Click(object sender, EventArgs e)
 		{
 			string folder = string.Empty;
@@ -347,6 +399,14 @@ namespace OmnicellBlueprintingTool
 				}
 			}
 		}
+
+		/// <summary>
+		/// btn_VisioFileToRead_Click
+		/// this function will open a file dialog allowing the user to select the Visio file to open and process
+		/// the variable "tb_buildVisioFilePath.Text" will be populated with the path & file name selected by the user
+		/// </summary>
+		/// <param name="sender"></param>
+		/// <param name="e"></param>
 		private void btn_VisioFileToRead_Click(object sender, EventArgs e)
 		{
 			string filePath = string.Empty;
@@ -393,6 +453,15 @@ namespace OmnicellBlueprintingTool
 				diagramData.VisioFilesPath = Path.GetDirectoryName(filePath);
 			}
 		}
+
+		/// <summary>
+		/// btn_readExcelfile_Click
+		/// this function will prompt the user with a file dialog to select the 
+		/// Excel file to open for read
+		/// the variable "tb_excelDataFile.Text" will be set to the file name & path selected by the user
+		/// </summary>
+		/// <param name="sender"></param>
+		/// <param name="e"></param>
 		private void btn_readExcelfile_Click(object sender, EventArgs e)
 		{
 			string filePath = string.Empty;
