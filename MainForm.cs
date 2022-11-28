@@ -54,12 +54,11 @@ namespace OmnicellBlueprintingTool
 			_bBuildVisioFromExcelDataFile = true;
 			rb_buildFromExcelFile.Checked = true;
 
-			rb_buildExcelFileFromVisio.Visible = false;     // underconstruction so don't enable this option
-			rb_buildExcelFileFromVisio.Enabled = false;     // underconstruction so don't enable this option
+			rb_buildExcelFileFromVisio.Visible = false;
+			rb_buildExcelFileFromVisio.Enabled = false;
 
 			btn_Submit.Enabled = false;
 
-			// turn all this off.   Under construction at this time
 			gb_BuildDataFile.Visible = false;
 			gb_SelectOperation.Visible = false;
 			btn_SetExcelPath.Visible = false;
@@ -68,7 +67,6 @@ namespace OmnicellBlueprintingTool
 			tb_buildExcelPath.Visible = false;
 			tb_buildVisioFilePath.Visible = false;
 
-			// debug mode lets turn on this additional stuff for testing
 			rb_buildExcelFileFromVisio.Visible = true;
 			rb_buildExcelFileFromVisio.Enabled = true;
 
