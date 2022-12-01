@@ -222,26 +222,14 @@
       <DependentUpon>Resources.resx</DependentUpon>
       <DesignTime>True</DesignTime>
     </Compile>
-    <None Include="Data\ScriptData\Advocate_ArchitectData.xlsx" />
-    <None Include="Data\ScriptData\Advocate_ArchitectDataBlueprinting.xlsx" />
-    <None Include="Data\ScriptData\ArchitectShapesData.xlsx" />
-    <None Include="Data\ScriptData\CHS_ArchitechDiagram_10172022.xlsx" />
-    <None Include="Data\ScriptData\MGH_ArchitectBlueprint.xlsx" />
-    <None Include="Data\ScriptData\MGH_InterfaceFlowBlueprinting.xlsx" />
     <None Include="Data\ScriptData\OC_ArchitectBlueprintingData_ColorTesting.xlsm" />
     <None Include="Data\ScriptData\OC_ArchitectBlueprintingData_ColorTesting.xlsx" />
     <None Include="Data\ScriptData\OC_ArchitectBlueprintingData_Template.xlsm" />
     <None Include="Data\ScriptData\OC_ArchitectBlueprintingData_Template.xlsx" />
-    <None Include="Data\ScriptData\OC_BlueprintingDataFile_Template.xlsm" />
-    <None Include="Data\ScriptData\OC_BlueprintingDataFile_Template.xlsx" />
-    <None Include="Data\Stencils\Advocate_CustomStencils.vssx" />
-    <None Include="Data\Stencils\OC_ArchitectStencils.vssx" />
+    <None Include="Data\Stencils\CS_CustomStencils.vssx" />
     <None Include="Data\Stencils\OC_BlueprintingStencils.vssx" />
     <None Include="Data\Stencils\Visio_BasicShapesUS.vssx" />
-    <None Include="Data\Templates\OC_ArchitectDiagramTemplate.vstx" />
-    <None Include="Data\Templates\OC_ArchitectDiagramTemplateNoStencil.vstx" />
     <None Include="Data\Templates\OC_BlueprintingTemplate.vstx" />
-    <None Include="Data\Templates\Template_ArchitectDataFile.xlsx" />
     <None Include="Docs\OC_BlueprintingTool_Guide.docx" />
     <None Include="Installer\OC_BlueprintingTool_Installer.zip" />
     <None Include="packages.config" />

@@ -116,7 +116,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				// Write comment section named "Configuration"
 				shpObj = new ShapeInformation();
 				shpObj.VisioPage = 0;
-				shpObj.ShapeType = "Configuration";
+				shpObj.ShapeType = "Visio Configuration";
 				shpObj.UniqueKey = String.Empty;
 				shpObj.StencilLabel = String.Empty;
 				if (_writeData(workSheet, visioHelper, shpObj, nRow, true))
@@ -127,19 +127,20 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 					return -1;
 				}
 
+				// the Template file is no longer used.  the stencil is out of date
 				// Write Template section
-				shpObj = new ShapeInformation();
-				nRow++;
-				shpObj.VisioPage = 0;
-				shpObj.ShapeType = "Template";
-				shpObj.UniqueKey = string.Format(@"{0}", diagramData.VisioTemplateFilePath + VisioVariables.DefaultBlueprintingTemplateFile);
-				shpObj.StencilLabel = string.Format("Use the Blueprinting Visio Template.  Already contains the {0}", VisioVariables.DefaultBlueprintingTemplateFile);
-				if (_writeData(workSheet, visioHelper, shpObj, nRow, true))
-				{
-					sTmp = "CreateExeclDataFile::writeConfiguration Error\n\nFailed to write Template data";
-					MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
-					return -2;
-				}
+				//shpObj = new ShapeInformation();
+				//nRow++;
+				//shpObj.VisioPage = 0;
+				//shpObj.ShapeType = "Template";
+				//shpObj.UniqueKey = string.Format(@"{0}", diagramData.VisioTemplateFilePath + VisioVariables.DefaultBlueprintingTemplateFile);
+				//shpObj.StencilLabel = string.Format("Use the Blueprinting Visio Template.  Already contains the {0}", VisioVariables.DefaultBlueprintingTemplateFile);
+				//if (_writeData(workSheet, visioHelper, shpObj, nRow, true))
+				//{
+				//	sTmp = "CreateExeclDataFile::writeConfiguration Error\n\nFailed to write Template data";
+				//	MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
+				//	return -2;
+				//}
 
 				// Write the Stencil data
 				shpObj = new ShapeInformation();
@@ -147,12 +148,26 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				shpObj.VisioPage = 0;
 				shpObj.ShapeType = "Stencil";
 				shpObj.UniqueKey = string.Format(@"{0}", diagramData.VisioStencilFilePaths[0] + VisioVariables.DefaultBlueprintingStencilFile);
-				shpObj.StencilLabel = string.Format("Use the Blueprinting Visio Stencil.  Already contains the Stencil file:{0}", VisioVariables.DefaultBlueprintingStencilFile);
+				shpObj.StencilLabel = string.Format("• Omnicell Blueprinting tool Stencil \"{0}\"\r\n• File Location should be where the application is installed, in the subfolder \"Data\\Stencils\"", VisioVariables.DefaultBlueprintingStencilFile);
 				if (_writeData(workSheet, visioHelper, shpObj, nRow, false))
 				{
 					sTmp = "CreateExeclDataFile::writeConfiguration Error\n\nFailed to write Stincel data";
 					MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
 					return -3;
+				}
+
+				// Write the Custom Stencil data
+				shpObj = new ShapeInformation();
+				nRow++;
+				shpObj.VisioPage = 0;
+				shpObj.ShapeType = "Stencil";
+				shpObj.UniqueKey = string.Format(@"{0}CS_CustomStencils.vssx", diagramData.VisioStencilFilePaths[0]);
+				shpObj.StencilLabel = string.Format("• Custom Stencil specific to an account\r\n• Enter the full path and file name in the Unique Key where custom stencil is located");
+				if (_writeData(workSheet, visioHelper, shpObj, nRow, false))
+				{
+					sTmp = "CreateExeclDataFile::writeConfiguration Error\n\nFailed to write Custom Stincel data";
+					MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
+					return -4;
 				}
 
 				// Write Page setup Section
@@ -166,7 +181,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				{
 					sTmp = "CreateExeclDataFile::writeConfiguration Error\n\nFailed to Setup Page data";
 					MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
-					return -4;
+					return -5;
 				}
 
 				shpObj = new ShapeInformation();
@@ -175,14 +190,14 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				shpObj.ShapeType = "Page Setup";
 				shpObj.UniqueKey = "Autosize:true";
 				shpObj.StencilLabel = "• true - Autosize all pages\r\n• false - (default) don't Autosize the pages";
-				if (_writeData(workSheet, visioHelper, shpObj, nRow, true))
+				if (_writeData(workSheet, visioHelper, shpObj, nRow, false))
 				{
 					sTmp = "CreateExeclDataFile::writeConfiguration Error\n\nFailed to Setup Page data";
 					MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
-					return -5;
+					return -6;
 				}
 
-				// Write comment section named "Visio Shapes"
+				// Write comment section named "Visio Section for shapes"
 				shpObj = new ShapeInformation();
 				nRow++;
 				shpObj.VisioPage = 0;
@@ -193,7 +208,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				{
 					sTmp = "CreateExeclDataFile::writeConfiguration Error\n\nFailed to write Visio Section Comment data";
 					MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
-					return -6;
+					return -7;
 				}
 			}
 			catch(Exception ex)
@@ -395,57 +410,62 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				// also check if there is a PORT and place into the Port excel cell PORT: xxxxxx
 				string sLabel = shape.StencilLabel;
 
-				//Regex ip = new Regex(sIP_Port, RegexOptions.IgnoreCase);
-				//MatchCollection result = ip.Matches(sLabel);
-				//if (result.Count > 0)
-				//{
-				//	// we have something to work on
-				//	string sIP = result[0].Value.ToString().Trim();
-				//	((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.IP]).Value = sIP;
+				if (!string.IsNullOrEmpty(shape.StencilImage))
+				{
+					if (shape.StencilImage.IndexOf("Server", StringComparison.CurrentCultureIgnoreCase) >= 0)
+					{
+						Regex ip = new Regex(sIP_Port, RegexOptions.IgnoreCase);
+						MatchCollection result = ip.Matches(sLabel);
+						if (result.Count > 0)
+						{
+							// we have something to work on
+							string sIP = result[0].Value.ToString().Trim();
+							((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.IP]).Value = sIP;
 
-				//	string[] saTmp = sIP.Split(':');
-				//	if (saTmp.Length > 0)
-				//	{
-				//		((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.IP]).Value = saTmp[0];
-				//		((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.Ports]).Value = saTmp[1];
+							string[] saTmp = sIP.Split(':');
+							if (saTmp.Length > 0)
+							{
+								((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.IP]).Value = saTmp[0];
+								((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.Ports]).Value = saTmp[1];
 
-				//		// we need to strip out the IP:Port information from the label
-				//		string sLbl = sLabel;
-				//		int foundIdx = sLabel.IndexOf(sIP);
-				//		int fountLen = sIP.Length;	// should be the length of the IP:Port string
+								// we need to strip out the IP:Port information from the label
+								string sLbl = sLabel;
+								int foundIdx = sLabel.IndexOf(sIP);
+								int fountLen = sIP.Length; // should be the length of the IP:Port string
 
-				//		sTmp = sLabel.Substring(0, foundIdx-1); // get the first part of the original string minus the IP:Port
-				//		// now we need to remove the IP:Port and append the rest of the original string is there is anything
-				//		if ((foundIdx + sIP.Length) < sLabel.Length)
-				//		{
-				//			sTmp.Concat(" " + sLabel.Substring((foundIdx + sIP.Length), sLabel.Length));
-				//		}
-				//		shape.StencilLabel = sTmp;
-				//	}
-				//}
-				//else
-				//{
-				//	ip = new Regex(sIP_Only, RegexOptions.IgnoreCase);
-				//	result = ip.Matches(sLabel);
-				//	if (result.Count > 0)
-				//	{
-				//		// we have something to work on
-				//		string sIP = result[0].Value.ToString().Trim();
-				//		((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.IP]).Value = sIP;
+								sTmp = sLabel.Substring(0, foundIdx - 1); // get the first part of the original string minus the IP:Port
+																						// now we need to remove the IP:Port and append the rest of the original string is there is anything
+								if ((foundIdx + sIP.Length) < sLabel.Length)
+								{
+									sTmp.Concat(" " + sLabel.Substring((foundIdx + sIP.Length), sLabel.Length));
+								}
+								shape.StencilLabel = sTmp;
+							}
+						}
+						else
+						{
+							ip = new Regex(sIP_Only, RegexOptions.IgnoreCase);
+							result = ip.Matches(sLabel);
+							if (result.Count > 0)
+							{
+								// we have something to work on
+								string sIP = result[0].Value.ToString().Trim();
+								((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.IP]).Value = sIP;
 
-				//		// we need to strip out the IP:Port information from the label
-				//		string sLbl = sLabel;
-				//		int foundIdx = sLabel.IndexOf(sIP);
-				//		sTmp = sLabel.Substring(0, foundIdx - 1); // first part
-				//		// now we need to remove the IP:Port and append the rest of the original string is there is anything
-				//		if ((foundIdx + sIP.Length) < sLabel.Length)
-				//		{
-				//			sTmp.Concat(" " + sLabel.Substring((foundIdx + sIP.Length), sLabel.Length));
-				//		}
-				//		shape.StencilLabel = sTmp;
-				//	}
-				//}
-
+								// we need to strip out the IP:Port information from the label
+								string sLbl = sLabel;
+								int foundIdx = sLabel.IndexOf(sIP);
+								sTmp = sLabel.Substring(0, foundIdx - 1); // first part
+																						// now we need to remove the IP:Port and append the rest of the original string is there is anything
+								if ((foundIdx + sIP.Length) < sLabel.Length)
+								{
+									sTmp.Concat(" " + sLabel.Substring((foundIdx + sIP.Length), sLabel.Length));
+								}
+								shape.StencilLabel = sTmp;
+							}
+						}
+					}
+				}
 
 				// if not a comment and above the header and configurations rows fill these cells
 				if (!IsComment && rowCount > 7)

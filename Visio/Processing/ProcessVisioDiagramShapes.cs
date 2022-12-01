@@ -119,7 +119,8 @@ namespace OmnicellBlueprintingTool.Visio
 					shpInfo.Pos_x = Math.Truncate(shape.Cells["PinX"].ResultIU * 1000) / 1000;
 					shpInfo.Pos_y = Math.Truncate(shape.Cells["PinY"].ResultIU * 1000) / 1000;
 					if (shape.Name.IndexOf("OC_Ethernet", StringComparison.OrdinalIgnoreCase) >= 0 || 
-						shape.Name.IndexOf("OC_Group", StringComparison.OrdinalIgnoreCase) >= 0 || 
+						shape.Name.IndexOf("OC_Group", StringComparison.OrdinalIgnoreCase) >= 0 ||
+						shape.Name.IndexOf("OC_Footer", StringComparison.OrdinalIgnoreCase) >= 0 ||
 						shape.Name.IndexOf("OC_Dash", StringComparison.OrdinalIgnoreCase) >= 0)
 					{
 						shpInfo.Width = Math.Truncate(shape.Cells["Width"].ResultIU * 1000) / 1000;
@@ -130,7 +131,13 @@ namespace OmnicellBlueprintingTool.Visio
 						}
 						else
 						{
-							shpInfo.Height = Math.Truncate(shape.Cells["Height"].ResultIU * 1000) / 1000;
+							double dHeight = Math.Truncate(shape.Cells["Height"].ResultIU * 1000) / 1000;
+							if (shape.Name.IndexOf("OC_Footer", StringComparison.OrdinalIgnoreCase) >= 0)
+							{
+								dHeight = dHeight - 0.25;
+								shpInfo.Width = 0;		// we don't want to save the width because it's already a page with in size
+							}
+							shpInfo.Height = dHeight;
 						}
 					}
 					else
