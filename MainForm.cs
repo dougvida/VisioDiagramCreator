@@ -49,6 +49,11 @@ namespace OmnicellBlueprintingTool
 			// use todays date as part of the file name
 			tb_buildExcelFileName.Text = string.Empty; // String.Format("_{0}.xlsx", DateTime.Now.ToString("MMddyyyy"));
 			tb_buildExcelPath.Text = _excelDataPath;
+			if (!Directory.Exists(_excelDataPath))
+			{
+				Directory.CreateDirectory(_excelDataPath);
+			}
+
 			//////////////////////////////////////////////////////////////////////
 
 			_bBuildVisioFromExcelDataFile = true;
