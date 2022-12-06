@@ -1,14 +1,39 @@
-Rename to .zip
-extract the zip file into a folder at the root.
-You can extract into a folder as named below
+Rename to .zip if the extension is .piz
+
+Extract the zip file into a folder at the root drive or a location where you want to run the application.
+
+Right mouse click on the zip file
+click on Extract All 
+you will be provided a path to extract to
+Modify this path to a location you will run the application from
+I.E.
 c:\Omnicell_Blueprinting_Tool
+or 
+C:\temp\Omnicell_Blueprinting_Tool
 
-in the Docs folder is the user guide
-Under the Data folder
-     ScriptDate folder contains an example excel template file to use 
-	 Stencils folder contains a the master stencil file with the stencils described in the user guide
-	 Templates folder contains a Visio template file that included the master stencils
+To Run the application migrate to the folder where the application exists
+click on the exe
+
+Extracted folders used by the application
+Folder contents
+Data
+	ScriptDate
+		Contains an example excel template file to use
+		File "OC_ArchitectBlueprintingData_ColorTesting.xlsx" will draw all the available stencils, supported Colors and Lines
+		File "OC_ArchitectBlueprintingData_Template.xlsx" example file that can be used as a starting point
+		
+	Stencils
+		Contains the master stencil file and a Custom stencil file
+		File "OC_BlueprintingStencils.vssx" contains a base of common stencils
+		File "CS_CustomStencils.vssx" custom stencil example.
+			You can make a custom stencil for your project.  Place it into your project folder
+
+	Templates
+		Contains a Visio template file that included the master stencils
+		(No longer needed)
 	 
-VisioFiles folder contains an example Visio file that can be used to build an Excel data file from a Visio diagram file
-
-Root folder contains the application to run as well as the application json file that is required to run
+Doc
+	User guide
+	
+VisioFiles
+	contains an example Visio file that can be used to build an Excel data file from a Visio diagram file
