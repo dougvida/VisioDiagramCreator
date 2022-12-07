@@ -51,7 +51,7 @@
 				"Shape Label Font Sizes": [ "", "6", "6:B", "8", "8:B", "9", "9:B", "10", "10:B", "11", "11:B", "12", "12:B", "14", "14:B" ],
 				"Line Patterns": [ "", "Solid", "Dashed", "Dotted", "Dash_Dot" ],
 				"Stencil Label Positions": [ "", "Top", "Bottom" ],
-				"Shape Types": [ "", "Template", "Stencil", "Page Setup", "Shape" ],
+				"Shape Types": [ "", "Stencil", "Page Setup", "Shape" ],
 				"Line Weights": [ "", "1.5 pt", "2 pt", "2.25 pt", "3 pt", "4 pt", "6 pt" ],
 				"Stencil Image Names": [
 					"",
