@@ -231,7 +231,7 @@
     <None Include="Data\Stencils\Visio_BasicShapesUS.vssx" />
     <None Include="Data\Templates\OC_BlueprintingTemplate.vstx" />
     <None Include="Docs\OC_BlueprintingTool_Guide.docx" />
-    <None Include="Installer\OC_BlueprintingTool_Installer.zip" />
+    <None Include="Installer\Omnicell_Blueprinting_Tool.zip" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -249,6 +249,7 @@
   <ItemGroup>
     <Content Include="Data\ExcelMacros\OC_BlueprintingToolMacro_BuildShapeKey.bas" />
     <Content Include="Data\ExcelMacros\OC_BlueprintingToolMacro_BuildShapeKey.cls" />
+    <Content Include="Installer\Instructions.txt" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.7.2">
