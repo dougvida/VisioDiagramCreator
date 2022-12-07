@@ -120,6 +120,9 @@ namespace OmnicellBlueprintingTool.Visio
 					//short iRow = (short)VisRowIndices.visRowFirst;
 					shpInfo.Pos_x = Math.Truncate(shape.Cells["PinX"].ResultIU * 1000) / 1000;
 					shpInfo.Pos_y = Math.Truncate(shape.Cells["PinY"].ResultIU * 1000) / 1000;
+
+					shpInfo.Width = 0;
+					shpInfo.Height = 0;
 					if (shape.Name.IndexOf("OC_Ethernet", StringComparison.OrdinalIgnoreCase) >= 0 || 
 						shape.Name.IndexOf("OC_Group", StringComparison.OrdinalIgnoreCase) >= 0 ||
 						shape.Name.IndexOf("OC_Footer", StringComparison.OrdinalIgnoreCase) >= 0 ||
@@ -144,8 +147,22 @@ namespace OmnicellBlueprintingTool.Visio
 					}
 					else
 					{
-						shpInfo.Width = 0;
-						shpInfo.Height = 0;
+						string sTmp = shape.Name;
+						if (sTmp.Equals("OC_PC") || sTmp.Equals("OC_Server") || sTmp.Equals("OC_EHRSystems") || sTmp.Equals("OC_Devices"))
+						{
+							shpInfo.Width = (Math.Truncate(shape.Cells["Width"].ResultIU * 1000) / 1000) - 0.500;
+							shpInfo.Height = (Math.Truncate(shape.Cells["Height"].ResultIU * 1000) / 1000) - 0.500;
+						}
+						else if (sTmp.Equals("OC_IconKey"))
+						{
+							shpInfo.Width = (Math.Truncate(shape.Cells["Width"].ResultIU * 1000) / 1000) - 1.633;
+							shpInfo.Height = (Math.Truncate(shape.Cells["Height"].ResultIU * 1000) / 1000) - 1.966;
+						}
+						else if (sTmp.Equals("OC_Site"))
+						{
+							shpInfo.Width = (Math.Truncate(shape.Cells["Width"].ResultIU * 1000) / 1000) - 0.600;
+							shpInfo.Height = (Math.Truncate(shape.Cells["Height"].ResultIU * 1000) / 1000) - 0.350;
+						}
 					}
 
 					// this will return a string name:ID
