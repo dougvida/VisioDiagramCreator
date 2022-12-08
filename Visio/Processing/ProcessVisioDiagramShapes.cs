@@ -112,10 +112,10 @@ namespace OmnicellBlueprintingTool.Visio
 					{
 						shpInfo.FillColor = sColor;
 					}
-					if (shpInfo.rgbFillColor.IndexOf(VisioVariables.RGB_COLOR_2SKIP) >= 0)  // found
-					{
-						shpInfo.rgbFillColor = "";	// we don't want to right this color value to the Excel file
-					}
+					//if (shpInfo.rgbFillColor.IndexOf(VisioVariables.RGB_COLOR_2SKIP) >= 0)  // found
+					//{
+					//	shpInfo.rgbFillColor = "";	// we don't want to right this color value to the Excel file
+					//}
 
 					//short iRow = (short)VisRowIndices.visRowFirst;
 					shpInfo.Pos_x = Math.Truncate(shape.Cells["PinX"].ResultIU * 1000) / 1000;
@@ -165,11 +165,11 @@ namespace OmnicellBlueprintingTool.Visio
 						}
 					}
 
+
 					// this will return a string name:ID
 					string shpName = getShapeUniqueKeyName(shape);
-					string[] saStr = shpName.Split(':');		// need to just get the Name
+					string[] saStr = shpName.Split(':');      // need to just get the Name
 					shpInfo.StencilImage = saStr[0].Trim();
-
 					shpInfo.StencilLabel = shape.Text.Trim();
 
 					// use the connection shape to obtain what is connected to what
@@ -293,21 +293,38 @@ namespace OmnicellBlueprintingTool.Visio
 			// get the connector information
 			connectorLabel = connShp.Text;
 
-			int startArrow = int.Parse(connShp.get_CellsU("BeginArrow").FormulaU);
-			int endArrow = int.Parse(connShp.get_CellsU("EndArrow").FormulaU);
-			if (startArrow > 0 && endArrow > 0) // both
+			// testing
+			String beginArrow1 = connShp.get_CellsSRC(
+				(short)VisSectionIndices.visSectionObject, 
+				(short)VisRowIndices.visRowLine, 
+				(short)VisCellIndices.visLineBeginArrow).Formula;
+
+			String endArrow1 = connShp.get_CellsSRC(
+			(short)VisSectionIndices.visSectionObject,
+			(short)VisRowIndices.visRowLine,
+			(short)VisCellIndices.visLineEndArrow).Formula;
+			// end testing
+
+
+
+			string data = connShp.get_CellsU("BeginArrow").FormulaU;
+			if (data.IndexOf("THEMEVAL") < 0)
 			{
-				arrowType = VisioVariables.sARROW_BOTH;
+				int startArrow = int.Parse(connShp.get_CellsU("BeginArrow").FormulaU);
+				int endArrow = int.Parse(connShp.get_CellsU("EndArrow").FormulaU);
+				if (startArrow > 0 && endArrow > 0) // both
+				{
+					arrowType = VisioVariables.sARROW_BOTH;
+				}
+				else if (startArrow > 0 && endArrow == 0)
+				{
+					arrowType = VisioVariables.sARROW_START;
+				}
+				else if (startArrow == 0 && endArrow > 0)
+				{
+					arrowType = VisioVariables.sARROW_END;
+				}
 			}
-			else if (startArrow > 0 && endArrow == 0)
-			{
-				arrowType = VisioVariables.sARROW_START;
-			}
-			else if (startArrow == 0 && endArrow > 0)
-			{
-				arrowType = VisioVariables.sARROW_END;
-			}
-			
 			var colorIdx = connShp.CellsU["LineColor"].ResultIU;
 			Microsoft.Office.Interop.Visio.Color c = doc.Colors.Item16[(short)colorIdx];
 			shpInfo.rgbFillColor = $"RGB({c.Red},{c.Green},{c.Blue})";
@@ -528,7 +545,7 @@ namespace OmnicellBlueprintingTool.Visio
 
 		/// <summary>
 		/// GetShapeConnections
-		/// this will attempt to get the connection information between stencils using stencils on the Visio Diagram
+		/// this will attempt to get the connection information between stencilsList using stencilsList on the Visio Diagram
 		/// it only works on stencil shapes not connector types
 		/// problem is getting the connector information line pattern, color, label etc
 		/// </summary>
