@@ -12,26 +12,26 @@ namespace OmnicellBlueprintingTool.Configuration
 		public static bool ReadJSONFile(string fileNamePath, ref VisioHelper visioHelper)
 		{
 			//AppConfiguration appConfig = new AppConfiguration();
-
 			try
 			{
-
 				using (StreamReader r = new StreamReader(fileNamePath))
 				{
-
 					string json = r.ReadToEnd();
 					JavaScriptSerializer serializer = new JavaScriptSerializer();
 					dynamic jsonObject = serializer.Deserialize<dynamic>(json);
 
-					dynamic root = jsonObject["Omnicell"]; // Root
-					dynamic app = root["BlueprintingTool"]; // result is asdf
-					dynamic tables = app["Tables"]; // result is asdf
+					dynamic root = jsonObject["Omnicell"];		// Root
+					dynamic app = root["BlueprintingTool"];   // sub-root	
+
+					// process the Json data for the Default Application configuration file
+
+					dynamic tables = app["Tables"];           // Blueprinting tool Excel data file Tables sheet
 
 					List<string> colors = new List<string>();
 					Dictionary<string, string> colorMap = new Dictionary<string, string>();
 					object[] values = tables["Colors"]; // result is asdf
-      
-					foreach (Dictionary<string,object> pair in values)
+
+					foreach (Dictionary<string, object> pair in values)
 					{
 						string key = pair.ElementAtOrDefault(0).Value.ToString().Trim();
 						string value = pair.ElementAtOrDefault(1).Value.ToString().Trim();
@@ -47,34 +47,33 @@ namespace OmnicellBlueprintingTool.Configuration
 						}
 					}
 					visioHelper.SetColorsMap(colorMap);
-					//visioHelper.Colors = colors;
-					//var xxx = values.Select(i => i.ToString()).ToList();
 
 					values = tables["Arrows"];
-					visioHelper.SetConnectorArrowsMap(values.Select(i => i.ToString()).ToList());
+					visioHelper.SetConnectorArrowsList(values.Select(i => i.ToString()).ToList());
 
 					values = tables["Shape Types"];
-					visioHelper.SetShapeTypesMap(values.Select(i => i.ToString()).ToList());
+					visioHelper.SetShapeTypesList(values.Select(i => i.ToString()).ToList());
 
 					values = tables["Line Patterns"];
-					visioHelper.SetConnectorLinePatterns(values.Select(i => i.ToString()).ToList());
+					visioHelper.SetConnectorLinePatternsList(values.Select(i => i.ToString()).ToList());
 
 					values = tables["Line Weights"];
-					visioHelper.SetConnectorLineWeightsMap(values.Select(i => i.ToString()).ToList());
+					visioHelper.SetConnectorLineWeightsList(values.Select(i => i.ToString()).ToList());
 
 					values = tables["Stencil Label Positions"];
-					visioHelper.SetStencilLabelPositionsMap(values.Select(i => i.ToString()).ToList());
+					visioHelper.SetStencilLabelPositionsList(values.Select(i => i.ToString()).ToList());
 
 					values = tables["Shape Label Font Sizes"];
-					visioHelper.SetStencilLabelFontSizeMap(values.Select(i => i.ToString()).ToList());
+					visioHelper.SetStencilLabelFontSizeList(values.Select(i => i.ToString()).ToList());
 
 					values = tables["Stencil Image Names"];
-					visioHelper.SetDefaultStencilNamesMap(values.Select(i => i.ToString()).ToList());
+					visioHelper.SetDefaultStencilNamesList(values.Select(i => i.ToString()).ToList());
 				}
 			}
 			catch(FileNotFoundException fne)
 			{
-				string sTmp = string.Format("ReadJsonFile - Exception\n\nApplication JSON configuration file not found:{0}\nPlease ensure the 'OmnicellBlueprintingTool.json' file is in the same folder as the application\n\n{1}", fileNamePath, fne.Message);
+				string sTmp = string.Empty;
+				sTmp = string.Format("ReadJsonFile - Exception\n\nThe Custom Config JSON file '{0}' was not found\n\nPlease ensure this file in the folder specified within the Excel Data file", fileNamePath);
 				MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
 				return true;	// error
 			}
