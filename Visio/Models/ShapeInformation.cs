@@ -5,7 +5,7 @@ namespace OmnicellBlueprintingTool.Visio
 {
 	public class ShapeInformation
 	{
-		public int VisioPage { get; set; } = 1;   // Visio Page to place object.  default to Page 1
+		public string VisioPage { get; set; } = "1";   // Visio Page can be just 1 or an actual text value 'Page-1'
 		public int ID { get; set; } = 0;          // shape ID
 		public string ShapeType { get; set; }     // 
 		public string UniqueKey { get; set; }     // this is used to uniquly identify each shape that has been droped in the document.   used as key for Dictionary

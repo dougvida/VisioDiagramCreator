@@ -28,7 +28,8 @@ namespace OmnicellBlueprintingTool.Models
 
 		public List<string> VisioStencilFilePaths = new List<string>();
 
-		public int MaxVisioPages { get; set; } = 1;     // default is 1 page visio document
+		public int MaxVisioPages { get; set; } = 1;     // default is 1 page visio document.
+
 		public List<Device> Devices { get; set; }
 
 		public void Reset()

@@ -27,7 +27,8 @@ namespace OmnicellBlueprintingTool
 		private static string _baseWorkingDir = Application.StartupPath;  // System.IO.Directory.GetCurrentDirectory();
 #endif
 
-		private readonly string _sJsonConfigFile = string.Format(@"{0}\OmnicellBlueprintingTool.json", _baseWorkingDir);
+		private static string _appConfigurationJsonFile = string.Format(@"{0}\{1}", _baseWorkingDir, VisioVariables.DefaultAppConfigJsonFile);
+		//private static string _visioCustomConfigJsonFile = string.Format(@"{0}\{1}", _baseWorkingDir, VisioVariables.CustomConfigJsonFile);
 
 		private static string _scriptDataPath = _baseWorkingDir + @"\data\ScriptData\";
 		private static string _visioTemplateFilesPath = _baseWorkingDir + @"\data\Templates\";
@@ -97,17 +98,11 @@ namespace OmnicellBlueprintingTool
 			 * these entries are the dropdowns used in the Excel data file
 			 * Stencils names, Colors, Arrows etc.
 			 */
-			if (ReadJsonFile.ReadJSONFile(_sJsonConfigFile, ref visioHelper))
+			if (ReadJsonFile.ReadJSONFile(_appConfigurationJsonFile, ref visioHelper))
 			{
-				string sTmp = "MainForm - ERROR\n\nOmnicellBlueprintingTool.json file not found";
-				MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
-				Console.WriteLine(sTmp);
-
 				// The user wants to exit the application. Close everything down.
 				Application.Exit();
 
-				// close the application
-				// this.Close();
 				return;
 			}
 			// parse the data file and draw the visio diagram
@@ -135,9 +130,6 @@ namespace OmnicellBlueprintingTool
 
 			// The user wants to exit the application. Close everything down.
 			Application.Exit();
-
-			// close the application
-			//this.Close();
 		}
 
 		/// <summary>
@@ -155,7 +147,6 @@ namespace OmnicellBlueprintingTool
 			if (!string.IsNullOrEmpty(ExcelDataFileName))
 			{
 				SaveVisioDiagram(string.Format(@"{0}{1}.vsdx", diagramData.VisioFilesPath, ExcelDataFileName));
-				//SaveVisioDiagram(string.Format(@"{0}{1}.vsdx", _visioFilesPath, ExcelDataFileName));
 				visioHelper.VisioForceCloseAll();
 
 				ExcelDataFileName = string.Empty;
@@ -167,6 +158,7 @@ namespace OmnicellBlueprintingTool
 			diagramData.BaseWorkingDir = _baseWorkingDir;
 			diagramData.ScriptDataPath = _scriptDataPath;
 			diagramData.ExcelDataPath = _excelDataPath;
+
 			if (string.IsNullOrEmpty(diagramData.VisioFilesPath))
 			{	
 				// value has not been set so use the defaiult
@@ -185,24 +177,22 @@ namespace OmnicellBlueprintingTool
 					// build visio file form data file
 					ConsoleOut.writeLine(String.Format("MainForm - Build Visio file from an excel data file:{0}", tb_excelDataFile.Text));
 					ExcelDataFileName = FileExtension.GetFileNameOnly(tb_excelDataFile.Text);
-					diagramData = new ProcessExcelDataFile().parseExcelFile(tb_excelDataFile.Text.Trim(), diagramData, visioHelper);
+					diagramData = new ProcessExcelDataFile().parseExcelFile(tb_excelDataFile.Text.Trim(), diagramData, ref visioHelper);
 					if (diagramData == null)
 					{
 						sTmp = "MainForm - ERROR\n\nReturn from ProcessExcelDataFile returned null\nNo shapes will be drawn";
 						//MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
-						Console.WriteLine(sTmp);
+						ConsoleOut.writeLine(sTmp);
 						visioHelper.VisioForceCloseAll();
 
 						// The user wants to exit the application. Close everything down.
 						Application.Exit();
-
-						//this.Close();
 					}
 
 					// Set cursor as default arrow
 					Cursor.Current = Cursors.Default;
 
-					// for testing to view all the stencils in the document
+					// for testing to view all the stencilsList in the document
 					// visioHelper.ListDocumentStencils(diagramData, VisioVariables.ShowDiagram.Show);
 
 					if (diagramData != null)
@@ -222,14 +212,12 @@ namespace OmnicellBlueprintingTool
 								// The user wants to exit the application. Close everything down.
 								Application.Exit();
 
-								// close the application
-								//this.Close();
 								return;
 							}
 
 
 							// set focus to first page
-							int maxPages = visioHelper.GetNumberOfPages();
+							int maxPages = visioHelper.GetNumberOfVisioPages();
 							visioHelper.SetActivePage(1);
 						}
 					}
@@ -242,13 +230,13 @@ namespace OmnicellBlueprintingTool
 					// sTmp = string.Format("This process will build an Excel data file from a Visio file.\n\n" +
 					//	"Note: This process may take a few minutes so please be patient.\n\n" +
 					//	"Use the excel data file with this tool to rebuild the Visio diagram.\nWhen making modifications / additions make it to the Excel Data file.\n\n" +
-					//	"You may need to modify stencils positions as well as connections");
+					//	"You may need to modify stencilsList positions as well as connections");
 					//MessageBox.Show(this, sTmp, "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
 					// Set cursor as hourglass
 					Cursor.Current = Cursors.WaitCursor;
 
-					// for testing to view all the stencils in the document
+					// for testing to view all the stencilsList in the document
 					//visioHelper.ListDocumentStencils(diagramData, VisioVariables.ShowDiagram.Show);
 
 					// buid data file from existing Visio file
@@ -281,16 +269,11 @@ namespace OmnicellBlueprintingTool
 				if (diagramData != null)
 				{
 					diagramData.Reset();
-
-					/** removed setting the object to null
-					 * we need to have the object still when saving the document if the cancel button was pressed
-					 */
-					//diagramData = null;
 				}
 			}
 			catch (IOException ioe)
 			{
-				sTmp = string.Format("MainForm - IOEException\n{0}\n", ioe.Message, ioe.StackTrace);
+				sTmp = string.Format("MainForm - IOException\n{0}\n", ioe.Message, ioe.StackTrace);
 				MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
 			}
 			catch (Exception ex)

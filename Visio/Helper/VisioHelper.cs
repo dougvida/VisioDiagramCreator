@@ -13,6 +13,8 @@ using System.Drawing;
 using Microsoft.Office.Interop.Excel;
 using System.Text.RegularExpressions;
 using Color = System.Drawing.Color;
+using System.Drawing.Imaging;
+using System.Linq;
 
 namespace OmnicellBlueprintingTool.Visio
 {
@@ -22,19 +24,22 @@ namespace OmnicellBlueprintingTool.Visio
 		public Visio1.Documents vDocuments = null;
 		public Visio1.Document vDocument = null;
 
-		List<Visio1.Document> stencils = new List<Visio1.Document>();
+		List<Visio1.Document> stencilsList = new List<Visio1.Document>();
 
 		//** *********************************************************************************************************** **//
 		// this section from json file for excel table entries for Visio
 		private static StringComparer comparer = StringComparer.OrdinalIgnoreCase;
-		private static List<string> _shapeTypes = null;
-		private static List<string> _connectorArrows = null;
-		private static List<string> _connectorLinePatterns = null;
-		private static List<string> _stencilLabelPositions = null;
-		private static List<string> _stencilLabelFontSizes = null;
-		private static List<string> _connectorLineWeights = null;
+		private static List<string> _shapeTypesList = null;
+		private static List<string> _connectorArrowsList = null;
+		private static List<string> _connectorLinePatternsList = null;
+		private static List<string> _stencilLabelPositionsList = null;
+		private static List<string> _stencilLabelFontSizesList = null;
+		private static List<string> _connectorLineWeightsList = null;
 		private static List<string> _defaultStencilNames = null;
+		private static List<string> _visioPageNamesList = null;
+
 		private static Dictionary<string, string> _visioColorsMap = null; // new Dictionary<string, string>(comparer); 
+
 		Dictionary<string, Color> _appColorsMap = null;
 
 		//** *********************************************************************************************************** **//
@@ -166,7 +171,7 @@ namespace OmnicellBlueprintingTool.Visio
 				}
 				else
 				{
-					// create a new blank document
+					// create a new blank Visio document without a Template file
 					this.vDocument = appVisio.Documents.Add("");
 				}
 			}
@@ -179,26 +184,23 @@ namespace OmnicellBlueprintingTool.Visio
 			string sStencil = string.Empty;
 			try
 			{
-				// this gives a count of all the stencils on the status bar
+				// this gives a count of all the stencilsList on the status bar
 				int countStencils = vDocument.Masters.Count;
 
 				// get the current draw page
 				Visio1.Page currentPage = vDocument.Pages[1];
 
-				// lets add stencils to the template if they don't alredy exist using the Excel Data File
+				// lets add stencilsList to the template if they don't alredy exist using the Excel Data File
 				foreach (var stencil in diagramData.VisioStencilFilePaths)
 				{
-					if (this.vDocuments != null)  // do we have any stencils attached to this template?
+					if (this.vDocuments != null)  // do we have any stencilsList attached to this template?
 					{
 						var vPage = vDocument.Application.ActivePage;
 
 						// Load the stencil we want
 						sStencil = stencil.ToString();
 						Visio1.Document nStencil = vDocuments.OpenEx(stencil, (short)Visio1.VisOpenSaveArgs.visOpenDocked);
-						stencils.Add(nStencil);
-
-						// show the stencil window
-						//Visio1.Window stencilWindow = currentPage.Document.OpenStencilWindow();
+						stencilsList.Add(nStencil);
 					}
 					else
 					{
@@ -218,8 +220,14 @@ namespace OmnicellBlueprintingTool.Visio
 
 			// The new document will have one page, get the a reference to it.
 			Visio1.Page page1 = vDocument.Pages[1];
-			page1.Name = "Page-1";
-			//page1.AutoSize = true;
+
+			// check if we have pages in the configuration
+			List<string> visioPageNames = this.GetVisioPageNames();
+			if (visioPageNames.Count > 0)
+			{
+				diagramData.MaxVisioPages = visioPageNames.Count;
+				page1.Name= visioPageNames[0];	// Rename the first page
+			}
 
 			//Assuming 'No theme' is set for the page, no arrow will be shown so change theme to see connector arrow
 			page1.SetTheme("Office Theme");
@@ -230,17 +238,22 @@ namespace OmnicellBlueprintingTool.Visio
 				double xPosition = page1.PageSheet.get_CellsU("PageWidth").ResultIU;
 				double yPosition = page1.PageSheet.get_CellsU("PageHeight").ResultIU;
 				var pageOrientation = page1.PageSheet.get_CellsU("PrintPageOrientation").ResultIU;
-				ConsoleOut.writeLine(string.Format("page:{0}, Height:{1}, Width:{2} and Orientation:{3}", page1.Name, yPosition, xPosition, diagramData.VisioPageOrientation));
+				ConsoleOut.writeLine(string.Format("Adding Visio page:'{0}', Height:{1}, Width:{2} and Orientation:'{3}'", page1.Name, yPosition, xPosition, diagramData.VisioPageOrientation));
 			}
 
 			int cnt = this.vDocuments.Count;
+
 			// this section is if we want to add more than one page to the document
-			// At this point page-1 has already been created
+			// At this point a page has already been created above so you need to adjust the count by 1
+			Visio1.Page page = null;        
 			for (int i = 0; i < diagramData.MaxVisioPages - 1; i++)
 			{
-				Visio1.Page page = vDocument.Pages.Add();
-				// Name the pages. This is what is shown in the page tabs.
-				page.Name = "Page-" + (i + 2);
+				page = vDocument.Pages.Add();
+				if (visioPageNames.Count > 0)
+				{
+					// use the names from the list
+					page.Name = visioPageNames[i + 1];
+				}
 
 				//Assuming 'No theme' is set for the page, no arrow will be shown so change theme to see connector arrow
 				page.SetTheme("Office Theme");
@@ -251,12 +264,11 @@ namespace OmnicellBlueprintingTool.Visio
 					double xPosition = page.PageSheet.get_CellsU("PageWidth").ResultIU;
 					double yPosition = page.PageSheet.get_CellsU("PageHeight").ResultIU;
 					var pageOrientation = page.PageSheet.get_CellsU("PrintPageOrientation").ResultIU;
-					ConsoleOut.writeLine(string.Format("page:{0}, Height:{1}, Width:{2} and Orientation:{3}", page.Name, yPosition, xPosition, diagramData.VisioPageOrientation));
+					ConsoleOut.writeLine(string.Format("Adding Visio page:'{0}', Height:{1}, Width:{2} and Orientation:'{3}'", page.Name, yPosition, xPosition, diagramData.VisioPageOrientation));
 				}
 			}
 
 			// set the active page to the first page
-			//this.appVisio.ActiveWindow.Page = pagesObj[1];
 			SetActivePage(1);
 
 			return pagesObj;
@@ -275,21 +287,52 @@ namespace OmnicellBlueprintingTool.Visio
 			{
 				// default to first page
 				this.appVisio.ActiveWindow.Page = pagesObj[1];
+				ConsoleOut.writeLine(string.Format("Setting the Active Page to Default page:'{0}'", pagesObj[1].Name));
 			}
 			else 
 			{
-				// set the active page to the first page
+				// the visio document should contain all the pages at this point
+				// set the active page
 				this.appVisio.ActiveWindow.Page = pagesObj[pageNumber];
+				ConsoleOut.writeLine(string.Format("Setting the Active Page to:'{0}'", pagesObj[pageNumber].Name));
+			}
+		}
+
+		/// <summary>
+		/// SetPage1Active
+		/// set the active page
+		/// pageNumber may not be less than 1 and can't be greater than the max number of pages
+		/// </summary>
+		/// <param name="pageName">Should be the name of the page or "1"</param>
+		public void SetActivePage(string pageName)
+		{
+			Visio1.Pages pagesObj = appVisio.ActiveDocument.Pages;
+			if (string.IsNullOrEmpty(pageName))
+			{
+				SetActivePage(1);	// default to first page
+			}
+			else
+			{
+				SetActivePage(1); // default to first page
+				// remember index to Visio pages does not use zero index must start with 1  (Visual Basic thing i guess)
+				for (int nIdx = 1;  nIdx <= pagesObj.Count; nIdx++)
+				{
+					var name = pagesObj[nIdx].Name.Trim();
+					if (name.ToString().ToUpper().Trim().Equals(pageName.ToUpper().Trim()))
+					{
+						SetActivePage(nIdx); // set the active page
+					}
+				}
 			}
 		}
 
 
 		/// <summary>
-		/// GetNumberOfPages
+		/// GetNumberOfVisioPages
 		/// return the number of pages in the document
 		/// </summary>
 		/// <returns></returns>
-		public int GetNumberOfPages()
+		public int GetNumberOfVisioPages()
 		{
 			return appVisio.ActiveDocument.Pages.Count;
 		}
@@ -323,6 +366,7 @@ namespace OmnicellBlueprintingTool.Visio
 			{
 				// if we get this exception the item was not found
 				// stencil not found here so lets try looking if any other stencil files have been added
+				// Fall through and continue
 			}
 
 			try
@@ -330,9 +374,9 @@ namespace OmnicellBlueprintingTool.Visio
 				if (stnObj == null)
 				{
 					// else look to see if the Stencil is part of the added stincel files
-					if (this.stencils.Count > 0)
+					if (stencilsList.Count > 0)
 					{
-						foreach (Visio1.Document stencil in this.stencils)
+						foreach (Visio1.Document stencil in stencilsList)
 						{
 							try
 							{
@@ -360,8 +404,8 @@ namespace OmnicellBlueprintingTool.Visio
 				}
 
 				Visio1.Pages pagesObj = this.appVisio.ActiveDocument.Pages;
-				// switch Visio Diagram Page if needed based on the shape data VisioPage value
-				this.appVisio.ActiveWindow.Page = pagesObj[device.ShapeInfo.VisioPage];
+
+				SetActivePage(device.ShapeInfo.VisioPage);
 
 				// draw the shape on the document
 				shpObj = this.appVisio.ActivePage.Drop(stnObj, device.ShapeInfo.Pos_x, device.ShapeInfo.Pos_y);
@@ -370,7 +414,7 @@ namespace OmnicellBlueprintingTool.Visio
 
 				#region keep
 				// keep this section because it provides an offset when resizing shapes
-				// normal stencils are normal (east-width and south-height)
+				// normal stencilsList are normal (east-width and south-height)
 				double WidthAdjustment = 0.0; // Math.Truncate(shpObj.get_Cells("Width").ResultIU * 1000) / 1000;
 				double HeightAdjustment = 0.0; // Math.Truncate(shpObj.get_Cells("Height").ResultIU * 1000) / 1000;
 				if (device.ShapeInfo.StencilImage.IndexOf("Group", StringComparison.OrdinalIgnoreCase) >= 0 ||
@@ -504,7 +548,7 @@ namespace OmnicellBlueprintingTool.Visio
 						shpObj.get_CellsU("VerticalAlign").FormulaForceU = "0";
 					}
 
-					// dont resize the text for the Title and Footer stencils or if the Stencil label font size is set to a value
+					// dont resize the text for the Title and Footer stencilsList or if the Stencil label font size is set to a value
 					if (string.IsNullOrEmpty(device.ShapeInfo.StencilLabelFontSize))
 					{
 						if (device.ShapeInfo.StencilImage.IndexOf("Title", StringComparison.OrdinalIgnoreCase) <= 0 &&
@@ -572,14 +616,14 @@ namespace OmnicellBlueprintingTool.Visio
 
 		/// <summary>
 		/// ClearStencilList
-		/// this will clear the stencils list for reuse
+		/// this will clear the stencilsList list for reuse
 		/// </summary>
 		public void ClearStencilList()
 		{
-			if (this.stencils != null)
+			if (stencilsList != null)
 			{
 				// must clear this list otherwise an Exception will occur dealing with RPS miss leading error when app is ran again without closing
-				stencils.Clear();
+				stencilsList.Clear();
 			}
 		}
 
@@ -647,6 +691,7 @@ namespace OmnicellBlueprintingTool.Visio
 			try
 			{
 				ClearStencilList();
+				ClearVisioPageNamesList();
 
 				if (this.vDocuments != null)
 				{
@@ -668,6 +713,7 @@ namespace OmnicellBlueprintingTool.Visio
 					this.appVisio.Quit();
 					this.appVisio = null;
 				}
+
 				GC.Collect();
 				GC.WaitForPendingFinalizers();
 				GC.Collect();
@@ -683,7 +729,7 @@ namespace OmnicellBlueprintingTool.Visio
 
 		/// <summary>
 		/// DrawAllShapes
-		/// Draw all the visio stencils obtained from the data file
+		/// Draw all the visio stencilsList obtained from the data file
 		/// also based on tghe dspMode the document is noShow or Show
 		/// </summary>
 		/// <param name="diagramData">DiagramData</param>
@@ -760,8 +806,7 @@ namespace OmnicellBlueprintingTool.Visio
 						// need to drop on another page
 						Visio1.Pages pagesObj = appVisio.ActiveDocument.Pages;
 
-						// switch Visio Diagram Page if needed based on the shape data VisioPage value
-						appVisio.ActiveWindow.Page = pagesObj[lookupShapeConnection.device.ShapeInfo.VisioPage];
+						SetActivePage(lookupShapeConnection.device.ShapeInfo.VisioPage);
 
 						// draw the object on the Visio diagram
 						shpConn = appVisio.ActivePage.Drop(pagesObj.Application.ConnectorToolDataObject, 0.0, 0.0);
@@ -875,7 +920,7 @@ namespace OmnicellBlueprintingTool.Visio
 
 		/// <summary>
 		/// ListStencils
-		/// List all the stencils in the master stencil document
+		/// List all the stencilsList in the master stencil document
 		/// </summary>
 		/// <param name="diagData">DiagramData</param>
 		/// <param name="dspMode">enum VisioVariables.ShowDiagram</param>
@@ -961,35 +1006,35 @@ namespace OmnicellBlueprintingTool.Visio
 
 		/** ************************************************************************************** **/
 
-		public bool SetShapeTypesMap(List<string> values)
+		public bool SetShapeTypesList(List<string> values)
 		{
 			if (values == null || values.Count <= 0)
 			{
 				return true;   // error
 			}
-			if (_shapeTypes == null)
+			if (_shapeTypesList == null)
 			{
-				_shapeTypes = new List<string>();
+				_shapeTypesList = new List<string>();
 			}
 			foreach (string value in values)
 			{
-				_shapeTypes.Add(value);
+				_shapeTypesList.Add(value);
 			}
 			return false;  // success
 		}
 
 		public List<string> GetShapeTypes()
 		{
-			if (_shapeTypes == null)
+			if (_shapeTypesList == null)
 			{
 				return null;
 			}
-			return _shapeTypes;
+			return _shapeTypesList;
 		}
 
-		public string FindShapeTypes(string value)
+		public string FindShapeType(string value)
 		{
-			if (_shapeTypes == null)
+			if (_shapeTypesList == null)
 			{
 				return "";  // Use default value
 			}
@@ -997,7 +1042,7 @@ namespace OmnicellBlueprintingTool.Visio
 			{
 				return ""; // Use default value
 			}
-			foreach (string item in _shapeTypes)
+			foreach (string item in _shapeTypesList)
 			{
 				if (item.Equals(value.Trim(), StringComparison.OrdinalIgnoreCase))
 				{
@@ -1009,35 +1054,35 @@ namespace OmnicellBlueprintingTool.Visio
 
 		/** ************************************************************************************** **/
 
-		public bool SetConnectorArrowsMap(List<string> values)
+		public bool SetConnectorArrowsList(List<string> values)
 		{
 			if (values == null || values.Count <= 0)
 			{
 				return true;   // error
 			}
-			if (_connectorArrows == null)
+			if (_connectorArrowsList == null)
 			{
-				_connectorArrows = new List<string>();
+				_connectorArrowsList = new List<string>();
 			}
 			foreach (string value in values)
 			{
-				_connectorArrows.Add(value);
+				_connectorArrowsList.Add(value);
 			}
 			return false;  // success
 		}
 
 		public List<string> GetConnectorArrows()
 		{
-			if (_connectorArrows == null)
+			if (_connectorArrowsList == null)
 			{
 				return null;
 			}
-			return _connectorArrows;
+			return _connectorArrowsList;
 		}
 
-		public string FindConnectorArrows(string value)
+		public string FindConnectorArrow(string value)
 		{
-			if (_connectorArrows == null)
+			if (_connectorArrowsList == null)
 			{
 				return "";  // Use default value
 			}
@@ -1045,7 +1090,7 @@ namespace OmnicellBlueprintingTool.Visio
 			{
 				return ""; // Use default value
 			}
-			foreach (string item in _connectorArrows)
+			foreach (string item in _connectorArrowsList)
 			{
 				if (item.Equals(value.Trim(), StringComparison.OrdinalIgnoreCase))
 				{
@@ -1057,31 +1102,31 @@ namespace OmnicellBlueprintingTool.Visio
 
 		/** ************************************************************************************** **/
 
-		public bool SetConnectorLinePatterns(List<string> values)
+		public bool SetConnectorLinePatternsList(List<string> values)
 		{
 			if (values == null || values.Count <= 0)
 			{
 				return true;   // error
 			}
 
-			if (_connectorLinePatterns == null)
+			if (_connectorLinePatternsList == null)
 			{
-				_connectorLinePatterns = new List<string>();
+				_connectorLinePatternsList = new List<string>();
 			}
 			foreach (string value in values)
 			{
-				_connectorLinePatterns.Add(value);
+				_connectorLinePatternsList.Add(value);
 			}
 			return false;  // success
 		}
 
 		public List<string> GetConnectorLinePatterns()
 		{
-			if (_connectorLinePatterns == null)
+			if (_connectorLinePatternsList == null)
 			{
 				return null;
 			}
-			return _connectorLinePatterns;
+			return _connectorLinePatternsList;
 		}
 
 		/// <summary>
@@ -1093,7 +1138,7 @@ namespace OmnicellBlueprintingTool.Visio
 		/// <returns></returns>
 		public string GetConnectorLinePatternText(double value)
 		{
-			if (_connectorLinePatterns == null)
+			if (_connectorLinePatternsList == null)
 			{
 				return "";  // Use default value
 			}
@@ -1117,9 +1162,9 @@ namespace OmnicellBlueprintingTool.Visio
 			}
 		}
 
-		public string FindConnectorLinePatterns(string value)
+		public string FindConnectorLinePattern(string value)
 		{
-			if (_connectorLinePatterns == null)
+			if (_connectorLinePatternsList == null)
 			{
 				return "";  // Use default value
 			}
@@ -1127,7 +1172,7 @@ namespace OmnicellBlueprintingTool.Visio
 			{
 				return ""; // Use default value
 			}
-			foreach (string item in _connectorLinePatterns)
+			foreach (string item in _connectorLinePatternsList)
 			{
 				if (item.Equals(value.Trim(), StringComparison.OrdinalIgnoreCase))
 				{
@@ -1139,19 +1184,19 @@ namespace OmnicellBlueprintingTool.Visio
 
 		/** ************************************************************************************** **/
 
-		public bool SetStencilLabelPositionsMap(List<string> values)
+		public bool SetStencilLabelPositionsList(List<string> values)
 		{
 			if (values == null || values.Count <= 0)
 			{
 				return true;   // error
 			}
-			if (_stencilLabelPositions == null)
+			if (_stencilLabelPositionsList == null)
 			{
-				_stencilLabelPositions = new List<string>();
+				_stencilLabelPositionsList = new List<string>();
 			}
 			foreach (string value in values)
 			{
-				_stencilLabelPositions.Add(value);
+				_stencilLabelPositionsList.Add(value);
 			}
 
 			return false;  // success
@@ -1159,16 +1204,16 @@ namespace OmnicellBlueprintingTool.Visio
 
 		public List<string> GetStencilLabelPositions()
 		{
-			if (_stencilLabelPositions == null)
+			if (_stencilLabelPositionsList == null)
 			{
 				return null;
 			}
-			return _stencilLabelPositions;
+			return _stencilLabelPositionsList;
 		}
 
-		public string FindStencilLabelPositions(string value)
+		public string FindStencilLabelPosition(string value)
 		{
-			if (_stencilLabelPositions == null)
+			if (_stencilLabelPositionsList == null)
 			{
 				return "";  // Use default value
 			}
@@ -1176,7 +1221,7 @@ namespace OmnicellBlueprintingTool.Visio
 			{
 				return ""; // Use default value
 			}
-			foreach (string item in _stencilLabelPositions)
+			foreach (string item in _stencilLabelPositionsList)
 			{
 				if (item.Equals(value.Trim(), StringComparison.OrdinalIgnoreCase))
 				{
@@ -1188,35 +1233,35 @@ namespace OmnicellBlueprintingTool.Visio
 
 		/** ************************************************************************************** **/
 
-		public bool SetStencilLabelFontSizeMap(List<string> values)
+		public bool SetStencilLabelFontSizeList(List<string> values)
 		{
 			if (values == null || values.Count <= 0)
 			{
 				return true;   // error
 			}
-			if (_stencilLabelFontSizes == null)
+			if (_stencilLabelFontSizesList == null)
 			{
-				_stencilLabelFontSizes = new List<string>();
+				_stencilLabelFontSizesList = new List<string>();
 			}
 			foreach (string value in values)
 			{
-				_stencilLabelFontSizes.Add(value);
+				_stencilLabelFontSizesList.Add(value);
 			}
 			return false;  // success
 		}
 
 		public List<string> GetStencilLabelFontSize()
 		{
-			if (_stencilLabelFontSizes == null)
+			if (_stencilLabelFontSizesList == null)
 			{
 				return null;
 			}
-			return _stencilLabelFontSizes;
+			return _stencilLabelFontSizesList;
 		}
 
 		public string FindStencilLabelFontSize(string value)
 		{
-			if (_stencilLabelFontSizes == null)
+			if (_stencilLabelFontSizesList == null)
 			{
 				return "";  // Use default value
 			}
@@ -1224,7 +1269,7 @@ namespace OmnicellBlueprintingTool.Visio
 			{
 				return ""; // Use default value
 			}
-			foreach (string item in _connectorLineWeights)
+			foreach (string item in _connectorLineWeightsList)
 			{
 				if (item.Equals(value.Trim(), StringComparison.OrdinalIgnoreCase))
 				{
@@ -1236,30 +1281,30 @@ namespace OmnicellBlueprintingTool.Visio
 
 		/** ************************************************************************************** **/
 
-		public bool SetConnectorLineWeightsMap(List<string> values)
+		public bool SetConnectorLineWeightsList(List<string> values)
 		{
 			if (values == null || values.Count <= 0)
 			{
 				return true;   // error
 			}
-			if (_connectorLineWeights == null)
+			if (_connectorLineWeightsList == null)
 			{
-				_connectorLineWeights = new List<string>();
+				_connectorLineWeightsList = new List<string>();
 			}
 			foreach (string value in values)
 			{
-				_connectorLineWeights.Add(value);
+				_connectorLineWeightsList.Add(value);
 			}
 			return false;  // success
 		}
 
 		public List<string> GetConnectorLineWeights()
 		{
-			if (_connectorLineWeights == null)
+			if (_connectorLineWeightsList == null)
 			{
 				return null;
 			}
-			return _connectorLineWeights;
+			return _connectorLineWeightsList;
 		}
 
 		/// <summary>
@@ -1273,7 +1318,7 @@ namespace OmnicellBlueprintingTool.Visio
 		/// <returns>Found value or null</returns>
 		public string FindConnectorLineWeight(string value)
 		{
-			if (_connectorLineWeights == null)
+			if (_connectorLineWeightsList == null)
 			{
 				return "";  // use default value
 			}
@@ -1281,7 +1326,7 @@ namespace OmnicellBlueprintingTool.Visio
 			{
 				return "";  // Use default value
 			}
-			foreach (string item in _connectorLineWeights)
+			foreach (string item in _connectorLineWeightsList)
 			{
 				if (item.Equals(value.Trim(), StringComparison.OrdinalIgnoreCase))
 				{
@@ -1293,7 +1338,7 @@ namespace OmnicellBlueprintingTool.Visio
 
 		/** ************************************************************************************** **/
 
-		public bool SetDefaultStencilNamesMap(List<string> names)
+		public bool SetDefaultStencilNamesList(List<string> names)
 		{
 			if (names == null || names.Count <= 0)
 			{
@@ -1346,6 +1391,105 @@ namespace OmnicellBlueprintingTool.Visio
 			}
 			return "";  // use default value
 		}
+
+		/** ************************************************************************************** **/
+
+		public void ClearVisioPageNamesList()
+		{
+			if (_visioPageNamesList != null)
+			{
+				_visioPageNamesList.Clear();
+			}
+		}
+
+		/// <summary>
+		/// AddVisioPageName
+		/// if list does not exists create it
+		/// add a new page name to the list
+		/// Note this is only necessary during the processing of reading the Excel data file.
+		/// Once the Visio diagram has been created use pagObj[x] to obtain the tabs
+		/// </summary>
+		/// <param name="name">add this value</param>
+		/// <returns>bool true - failure; false - success</returns>
+		public bool AddVisioPageName(string name)
+		{
+			if (string.IsNullOrEmpty(name))
+			{
+				return true;   // error
+			}
+
+			if (_visioPageNamesList == null)
+			{
+				_visioPageNamesList = new List<string>();
+			}
+
+			if (!_visioPageNamesList.Contains(name.Trim()))
+			{
+				_visioPageNamesList.Add(name.Trim());
+			}
+			return false;      // success
+		}
+
+		/// <summary>
+		/// GetVisioPageNames
+		/// return a list of strings containing page names
+		/// this is really only used during the processing of reading the Excel data file
+		/// after the Visio diagram has been created use pagesObj[x] to obtain the lames of tabs
+		/// </summary>
+		/// <returns>List<string></returns>
+		public List<string> GetVisioPageNames()
+		{
+			if (_visioPageNamesList == null)
+			{
+				_visioPageNamesList = new List<string>();
+			}
+			return _visioPageNamesList;
+		}
+
+		/// <summary>
+		/// GetVisioPageNumberByName
+		/// find the Visio page number based on the Visio page name
+		/// </summary>
+		/// <param string>lookup by page name</param>
+		/// <returns>int - page number</returns>
+		//public int GetVisioPageNumberByName(string name)
+		//{
+		//	string value = string.Empty;
+		//	if (_visioPageNamesList == null)
+		//	{
+		//		_visioPageNamesList = new List<string>();
+		//	}
+		//	if (string.IsNullOrEmpty(name))
+		//	{
+		//		return 1;
+		//	}
+
+		//	// search for the page
+		//	for (int nIdx = 0; nIdx <= _visioPageNamesList.Count; nIdx++)
+		//	{
+		//		if (_visioPageNamesList[nIdx] == name)
+		//		{
+		//			return nIdx+1;	// zero base index.   can't return 0 out of index for Visio everything valuid is > 0
+		//		}
+		//	}
+		//	return 1;  // use default value
+		//}
+
+		/// <summary>
+		/// GetVisioPageNameByNumber
+		/// get the page name for the given page number
+		/// </summary>
+		/// <param int>lookup vakye by page number</param>
+		/// <returns string>page name or "1" if name not found</returns>
+		//public string GetVisioPageNameByNumber(int value)
+		//{
+		//	if ( value <= 0 || _visioPageNamesList == null)
+		//	{
+		//		return "1";
+		//	}
+		//	return _visioPageNamesList[value];
+		//}
+
 
 		/** ************************************************************************************** **/
 
@@ -1531,7 +1675,7 @@ namespace OmnicellBlueprintingTool.Visio
 //visio.Visible = 1
 //# create document based on Detailed Network Diagram template (use full path)
 //doc = visio.Documents.Add("C:\Program Files\Microsoft Office\root\Office16\visio content\1033\dtlnet_m.vstx")
-//# use one of docked stencils 
+//# use one of docked stencilsList 
 //stn2 = visio.Documents("PERIPH_M.vssx")
 //#define 'Server' master-shape
 //server = stn2.Masters("Server")

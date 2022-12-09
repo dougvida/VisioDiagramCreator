@@ -8,6 +8,8 @@ using System.Windows.Forms;
 using Excel = Microsoft.Office.Interop.Excel;       //microsoft Excel 14 object in references-> COM tab
 using OmnicellBlueprintingTool.ExcelHelpers;
 using static OmnicellBlueprintingTool.Visio.VisioVariables;
+using OmnicellBlueprintingTool.Configuration;
+using System.Text.RegularExpressions;
 
 namespace OmnicellBlueprintingTool.ExcelHelpers
 {
@@ -24,12 +26,14 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 		/// <returns>DiagramData</returns>
 		/// <exception cref="ArgumentNullException"></exception>
 		/// <exception cref="Exception"></exception>
-		public DiagramData parseExcelFile(string file, DiagramData diagData, VisioHelper visioHelper)
+		public DiagramData parseExcelFile(string file, DiagramData diagData, ref VisioHelper visioHelper)
 		{
+			string sTmp = string.Empty;
+
 			if (string.IsNullOrEmpty(file))
 			{
 				// Error file is empty
-				string sTmp = string.Format("ProcessExcelDataFile::parseExcelFile - Exception\n\n(File is missing: {0})", nameof(file));
+				sTmp = string.Format("ProcessExcelDataFile::parseExcelFile - Exception\n\n(File is missing: {0})", nameof(file));
 				MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
 				return null;
 			}
@@ -55,34 +59,61 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 			{
 				for (int row = 2; row <= xlRange.Rows.Count; row++)
 				{
-					// we only need to get the first few columns to determine what to do
-					var data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.VisioPage);
-					if (data == null) // value is null skip this column
+					// Visio Page column can contain
+					// 1. first character ';' this is a comment and this line will be ignored
+					// 2. the Page name text.  if a single numeric value is use the page will be "Page-#"
+					// 3. if Blank it could be part of configuration section  Viso Page number are not needed for non Stencil types
+					var visPage = myArray.GetValue(row, (int)ExcelVariables.CellIndex.VisioPage);
+					if (visPage == null) // value is null skip this column
 					{
 						// because first column will contain ';' or a numeric or blank value
 						// this is a cluster don't have time to fix correctly
-						// so look at the 2nd column because this is normally filled if VisioPage is blank
+						// so look at the 2nd column because this is normally filled. if VisioPage is blank
 						// it's a good row to process
 						if (myArray.GetValue(row, (int)ExcelVariables.CellIndex.ShapeType) == null)
-						{ 
+						{
 							continue;   // both VisioPage and Shape Type are blank so lets skip this row
 						}
-						data = 0;
 					}
-					if (data.ToString().StartsWith(";"))   // first row is a header so skip
+					else
 					{
-						continue;
-					}
-					if ((Convert.ToInt32(data) > diagData.MaxVisioPages))
-					{
-						diagData.MaxVisioPages = Convert.ToInt32(data);
+						// check if this is a comment we need to skip
+						if (visPage.ToString().StartsWith(";"))
+						{
+							// this is a comment skip it
+							continue;
+						}
 					}
 
-					data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.ShapeType);
+					var shapeType = myArray.GetValue(row, (int)ExcelVariables.CellIndex.ShapeType);
+					if (shapeType != null)
+					{
+						if (shapeType.ToString().Trim().Equals("Disabled", StringComparison.OrdinalIgnoreCase))
+						{
+							continue;	// skip this entry it like a comment
+						}
+						if (visPage == null && shapeType.ToString().Trim().Equals("Shape",StringComparison.OrdinalIgnoreCase ))
+						{
+							// error condition.  Excel data is formatted incorrect.  Must have a valid Visio Page value
+							sTmp = string.Format("parseExcelFile - Bad formatting found in the Excel file.  Column 'Visio Page' at Row:{0}\nThis value cannot be null if ShapeType is set to 'Stencil'.", row);
+							ConsoleOut.writeLine(sTmp);
+							MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
+							return null;	// signal error
+						}
+					}
+
+					// If we got here than this is something we need to process
+					var data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.ShapeType);
 					if (data != null)
 					{
 						switch ((string)data.ToString().Trim().ToUpper())
 						{
+							case "DISABLED":
+								// Should not get here should be handled above
+								// ShapeType is Disabled so we will ignore this entry
+								ConsoleOut.writeLine(string.Format("parseExcelFile - Ignoring this row.  ShapeType:'{0}', Row:{1}", data, row));
+								break;
+
 							case "PAGE SETUP":           // Visio Page setup/Size
 								data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.UniqueKey);
 								if (data != null)
@@ -105,6 +136,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 														diagData.AutoSizeVisioPages = true;
 													}
 												}
+												ConsoleOut.writeLine(string.Format("parseExcelFile - Processing Page Setup - Autosize:{0} found at Row:{1}", saTmp[1], row));
 												break;
 
 											case "PORTRAIT":
@@ -115,6 +147,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 													// change the page size if needed
 													diagData.VisioPageSize = VisioVariables.GetVisioPageSize(saTmp[1].Trim());
 												}
+												ConsoleOut.writeLine(string.Format("parseExcelFile - Processing Page Setup - Portrait:{0} found at Row:{1}", saTmp[1], row));
 												break;
 
 											case "LANDSCAPE":
@@ -125,58 +158,81 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 													// change the page size if needed
 													diagData.VisioPageSize = VisioVariables.GetVisioPageSize(saTmp[1].Trim());
 												}
+												ConsoleOut.writeLine(string.Format("parseExcelFile - Processing Page Setup - Landscape:{0} found at Row:{1}", saTmp[1], row));
 												break;
 											
 											default:
 												diagData.AutoSizeVisioPages = false;
 												diagData.VisioPageOrientation = VisioVariables.VisioPageOrientation.Portrait;
 												diagData.VisioPageSize = VisioVariables.VisioPageSize.Letter;
+												ConsoleOut.writeLine(string.Format("parseExcelFile - Processing Page Setup - Using Default  AutoSizeVisioPage=false, Portraid:Letter found at Row:{0}", row));
 												break;
 										}
 									}
 								}
 								break;
 
-							case "TEMPLATE":           // Open a template.  This may be used with existing stencils already in the document
+							case "TEMPLATE":
+								// Open a template.  This may be used with existing stencilsList already in the document
 								data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.UniqueKey);
 								if (data != null)
 								{
 									diagData.VisioTemplateFilePath = (string)data.ToString().Trim();
+									ConsoleOut.writeLine(string.Format("parseExcelFile - Adding Template file:'{0}' found at Row:{1}", diagData.VisioTemplateFilePath, row));
 								}
 								break;
 
-							case "STENCIL":            // stencils to add
+							case "STENCIL":            // stencilsList to add
 								data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.UniqueKey);
 								string stencilFile = data.ToString();// but we only want the first part of the key
 								if (!string.IsNullOrEmpty(stencilFile))
 								{
 									diagData.VisioStencilFilePaths.Add(stencilFile);
 								}
+								ConsoleOut.writeLine(string.Format("parseExcelFile - Adding Stencil file:'{0}' found at Row:{1}", stencilFile, row));
 								break;
 
-							case "SHAPE":             // stencils to create on the document.  pass myArray object, row # and column count
-								device = _parseExcelData(visioHelper, myArray, row);
+							case "SHAPE":  
+								// device will contain all the Visio shapes to be drawn on the Visio Diagram
+								// myArray contains all the excel rows to process
+								// Excel Document column "Visio Page" can be numeric or Alphanumeric text   This will be the page name on the Visio Document
+								//     you can have multiple pages within the Excel Data file if you want to seperate drawings on different pages
+								// I.E. if the value of the column "Visio Page" is "1" this will use a name 'Page-1'  Visio will not allow for single digit tabs
+								// I.E. if the value of the column "Visio Page" is "This is first Page", this will be the name of the tab
+								// page tab order will depend on the Excel Data file shapes order
+								// please group all the shapes by Page when possible
+								device = _parseExcelData(ref visioHelper, myArray, row);
 								if (device != null)
 								{
 									devices.Add(device);
-									diagData.AllShapesMap.Add(device.ShapeInfo.UniqueKey, device);
+									if (diagData.AllShapesMap.ContainsKey(device.ShapeInfo.UniqueKey))
+									{
+										sTmp = string.Format("\"parseExcelFile - Duplicate key '{0}' found at Row:{1}.\n\nRemember uniqueKey values can't be same accross pages.", device.ShapeInfo.UniqueKey, row);
+										ConsoleOut.writeLine(sTmp);
+										MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
+									}
+									else
+									{
+										diagData.AllShapesMap.Add(device.ShapeInfo.UniqueKey, device);
+										ConsoleOut.writeLine(string.Format("parseExcelFile - Adding Shape '{0}' found at Row:{1}", device.ShapeInfo.UniqueKey, row));
+									}
 								}
 								break;
 
 							default:
 								// the finally will be called to clean / close up everything
-								string sTmp = String.Format("ProcessExcelDataFile::parseExcelFile\n\nInvalid value for the field 'ShapeType'\nFound:({0}) at Row:{1}\n\nPlease resolve this issue in the Excel Data file", data, row);
+								sTmp = String.Format("ProcessExcelDataFile::parseExcelFile\n\nInvalid 'ShapeType' found:({0}) at Row:{1}\n\nPlease resolve this issue in the Excel Data file", data, row);
+								ConsoleOut.writeLine(sTmp);
 								MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
 								return null;
 						}
 					}
-					//ConsoleOut.writeLine(string.Format("parseExcelFile - ShapeType:{0}, Row{1}", cells[(int)CellIndex.StencilImage].ToString().Trim(), row));
 				}
 			}
 			catch (Exception ex)
 			{
 				ConsoleOut.writeLine(ex.Message + " - " + ex.StackTrace);
-				string sTmp = string.Format("ProcessExcelDataFile::parseExcelFile - Exception\n\nDuplicate key:({0}) found.\nPlease resolve this issue in the Excel Data file\n{1}\n{2}", device.ShapeInfo.UniqueKey, ex.Message, ex.StackTrace);
+				sTmp = string.Format("ProcessExcelDataFile::parseExcelFile - Exception\n\nDuplicate key:({0}) found.\nPlease resolve this issue in the Excel Data file\n{1}\n{2}", device.ShapeInfo.UniqueKey, ex.Message, ex.StackTrace);
 				MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
 				return null;
 			}
@@ -199,6 +255,9 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 
 				killExcelProcesses(excelProcsOld);
 			}
+
+			// set the MaxVisioPages variable.  Only used when creating the Visio Document.  Use the pageObj[#] for document count and names
+			diagData.MaxVisioPages = visioHelper.GetVisioPageNames().Count;
 			return diagData;
 		}
 
@@ -210,7 +269,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 		/// <param name="myArray">excel data</param>
 		/// <param name="row">array row to index on</param>
 		/// <returns>Device</returns>
-		private Device _parseExcelData(VisioHelper visioHelper, System.Array myArray, int row)
+		private Device _parseExcelData(ref VisioHelper visioHelper, System.Array myArray, int row)
 		{
 			//string sColor = string.Empty;
 			Device device = new Device();
@@ -220,7 +279,20 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				var data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.VisioPage);
 				if (data != null)
 				{
-					visioInfo.VisioPage = Convert.ToInt32(data);
+					int value = -1;
+					if (Regex.Matches(data.ToString().Trim(), @"[a-zA-Z]").Count <= 0)
+					{
+						// No characters found convert to Int.    should be 1-XX for just a page number
+						if (Int32.TryParse(data.ToString().Trim(), out value))
+						{
+							visioInfo.VisioPage = string.Format("Page-{0}", value);
+						}
+					}
+					else
+					{
+						visioInfo.VisioPage = data.ToString().Trim();
+					}
+					visioHelper.AddVisioPageName(visioInfo.VisioPage);
 				}
 
 				data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.ShapeType);

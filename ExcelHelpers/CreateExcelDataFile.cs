@@ -115,7 +115,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 			{
 				// Write comment section named "Configuration"
 				shpObj = new ShapeInformation();
-				shpObj.VisioPage = 0;
+				shpObj.VisioPage = "";
 				shpObj.ShapeType = "Visio Configuration";
 				shpObj.UniqueKey = String.Empty;
 				shpObj.StencilLabel = String.Empty;
@@ -127,25 +127,24 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 					return -1;
 				}
 
-				// the Template file is no longer used.  the stencil is out of date
 				// Write Template section
-				//shpObj = new ShapeInformation();
-				//nRow++;
-				//shpObj.VisioPage = 0;
-				//shpObj.ShapeType = "Template";
-				//shpObj.UniqueKey = string.Format(@"{0}", diagramData.VisioTemplateFilePath + VisioVariables.DefaultBlueprintingTemplateFile);
-				//shpObj.StencilLabel = string.Format("Use the Blueprinting Visio Template.  Already contains the {0}", VisioVariables.DefaultBlueprintingTemplateFile);
-				//if (_writeData(workSheet, visioHelper, shpObj, nRow, true))
-				//{
-				//	sTmp = "CreateExeclDataFile::writeConfiguration Error\n\nFailed to write Template data";
-				//	MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
-				//	return -2;
-				//}
+				shpObj = new ShapeInformation();
+				nRow++;
+				shpObj.VisioPage = "";
+				shpObj.ShapeType = "Template";
+				shpObj.UniqueKey = string.Format(@"{0}", diagramData.VisioTemplateFilePath + VisioVariables.DefaultBlueprintingTemplateFile);
+				shpObj.StencilLabel = string.Format("• Use the default Application Template or use your own custom Template.\nAdd your custom stencils to the template\n\nDefault template name:'{0}'", VisioVariables.DefaultBlueprintingTemplateFile);
+				if (_writeData(workSheet, visioHelper, shpObj, nRow, true))
+				{
+					sTmp = "CreateExeclDataFile::writeConfiguration Error\n\nFailed to write Template data";
+					MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
+					return -2;
+				}
 
 				// Write the Stencil data
 				shpObj = new ShapeInformation();
 				nRow++;
-				shpObj.VisioPage = 0;
+				shpObj.VisioPage = "";
 				shpObj.ShapeType = "Stencil";
 				shpObj.UniqueKey = string.Format(@"{0}", diagramData.VisioStencilFilePaths[0] + VisioVariables.DefaultBlueprintingStencilFile);
 				shpObj.StencilLabel = string.Format("• Omnicell Blueprinting tool Stencil \"{0}\"\r\n• File Location should be where the application is installed, in the subfolder \"Data\\Stencils\"", VisioVariables.DefaultBlueprintingStencilFile);
@@ -153,13 +152,13 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				{
 					sTmp = "CreateExeclDataFile::writeConfiguration Error\n\nFailed to write Stincel data";
 					MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
-					return -3;
+					return -4;
 				}
 
 				// Write the Custom Stencil data
 				shpObj = new ShapeInformation();
 				nRow++;
-				shpObj.VisioPage = 0;
+				shpObj.VisioPage = "";
 				shpObj.ShapeType = "Stencil";
 				shpObj.UniqueKey = string.Format(@"{0}CS_CustomStencils.vssx", diagramData.VisioStencilFilePaths[0]);
 				shpObj.StencilLabel = string.Format("• Custom Stencil specific to an account\r\n• Enter the full path and file name in the Unique Key where custom stencil is located");
@@ -167,13 +166,13 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				{
 					sTmp = "CreateExeclDataFile::writeConfiguration Error\n\nFailed to write Custom Stincel data";
 					MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
-					return -4;
+					return -5;
 				}
 
 				// Write Page setup Section
 				shpObj = new ShapeInformation();
 				nRow++;
-				shpObj.VisioPage = 0;
+				shpObj.VisioPage = "";
 				shpObj.ShapeType = "Page Setup";
 				shpObj.UniqueKey = VisioVariables.VisioPageOrientation.Portrait + ":" + VisioVariables.VisioPageSize.Legal;
 				shpObj.StencilLabel = "• Orientation: Landscape or Portrait (default)\r\n• Size: Letter (default), Tabloid, Ledger, Legal, A3, A4";
@@ -181,26 +180,27 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				{
 					sTmp = "CreateExeclDataFile::writeConfiguration Error\n\nFailed to Setup Page data";
 					MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
-					return -5;
+					return -6;
 				}
 
+				// write Page setup Section
 				shpObj = new ShapeInformation();
 				nRow++;
-				shpObj.VisioPage = 0;
+				shpObj.VisioPage = "";
 				shpObj.ShapeType = "Page Setup";
 				shpObj.UniqueKey = "Autosize:true";
-				shpObj.StencilLabel = "• true - Autosize all pages\r\n• false - (default) don't Autosize the pages";
+				shpObj.StencilLabel = "• true - Autosize all pages\r\n• false - (default) don't Autosize the pages.\n\nIf you are using a CustomConfig.json file this should be false";
 				if (_writeData(workSheet, visioHelper, shpObj, nRow, false))
 				{
 					sTmp = "CreateExeclDataFile::writeConfiguration Error\n\nFailed to Setup Page data";
 					MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
-					return -6;
+					return -7;
 				}
 
 				// Write comment section named "Visio Section for shapes"
 				shpObj = new ShapeInformation();
 				nRow++;
-				shpObj.VisioPage = 0;
+				shpObj.VisioPage = "";
 				shpObj.ShapeType = "Visio Section";
 				shpObj.UniqueKey = string.Empty;
 				shpObj.StencilLabel = String.Empty;
@@ -208,7 +208,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				{
 					sTmp = "CreateExeclDataFile::writeConfiguration Error\n\nFailed to write Visio Section Comment data";
 					MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
-					return -7;
+					return -8;
 				}
 			}
 			catch(Exception ex)
@@ -389,15 +389,18 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 			try
 			{
 				string sTmp = string.Empty;
+				string sTmp2 = string.Empty;
 
 				// break apart the object and update the excel row based on the column value from the shapesMap
-				sTmp = shape.VisioPage.ToString();
+				sTmp = shape.VisioPage.Trim();;
+				sTmp2 = shape.ShapeType.Trim();
 				if (IsComment)
 				{
 					sTmp = ";";
+					sTmp2 = "Disabled";
 				}
 				((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.VisioPage]).Value = sTmp;
-				((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.ShapeType]).Value = shape.ShapeType;
+				((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.ShapeType]).Value = sTmp2;
 				((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.UniqueKey]).Value = shape.UniqueKey;
 				((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.StencilImage]).Value = shape.StencilImage;
 
