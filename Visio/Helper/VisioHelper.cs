@@ -309,11 +309,11 @@ namespace OmnicellBlueprintingTool.Visio
 			Visio1.Pages pagesObj = appVisio.ActiveDocument.Pages;
 			if (string.IsNullOrEmpty(pageName))
 			{
-				SetActivePage(1);	// default to first page
+				SetActivePage(1); // default to first page
+				return;
 			}
 			else
 			{
-				SetActivePage(1); // default to first page
 				// remember index to Visio pages does not use zero index must start with 1  (Visual Basic thing i guess)
 				for (int nIdx = 1;  nIdx <= pagesObj.Count; nIdx++)
 				{
@@ -321,8 +321,10 @@ namespace OmnicellBlueprintingTool.Visio
 					if (name.ToString().ToUpper().Trim().Equals(pageName.ToUpper().Trim()))
 					{
 						SetActivePage(nIdx); // set the active page
+						return;
 					}
 				}
+				SetActivePage(1); // if all others failed set to the first page
 			}
 		}
 
