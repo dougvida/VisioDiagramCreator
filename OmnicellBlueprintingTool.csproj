@@ -222,7 +222,6 @@
       <DependentUpon>Resources.resx</DependentUpon>
       <DesignTime>True</DesignTime>
     </Compile>
-    <None Include="CustomConfig.json" />
     <None Include="Data\ScriptData\OC_ArchitectBlueprintingData_ColorTesting.xlsm" />
     <None Include="Data\ScriptData\OC_ArchitectBlueprintingData_ColorTesting.xlsx" />
     <None Include="Data\ScriptData\OC_ArchitectBlueprintingData_Template.xlsm" />

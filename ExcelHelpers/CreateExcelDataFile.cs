@@ -23,9 +23,6 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 		private Excel.Workbook _xlWorkbook = null;
 		private Excel.Worksheet _xlWorksheet = null;
 
-		const string sIP_Only = @"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b";
-		const string sIP_Port = @"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d{1,5}\b";
-
 		public CreateExcelDataFile()
 		{
 		}
@@ -417,6 +414,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				{
 					if (shape.StencilImage.IndexOf("Server", StringComparison.CurrentCultureIgnoreCase) >= 0)
 					{
+						const string sIP_Port = @"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d{1,5}\b";
 						Regex ip = new Regex(sIP_Port, RegexOptions.IgnoreCase);
 						MatchCollection result = ip.Matches(sLabel);
 						if (result.Count > 0)
@@ -447,6 +445,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 						}
 						else
 						{
+							const string sIP_Only = @"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b";
 							ip = new Regex(sIP_Only, RegexOptions.IgnoreCase);
 							result = ip.Matches(sLabel);
 							if (result.Count > 0)
