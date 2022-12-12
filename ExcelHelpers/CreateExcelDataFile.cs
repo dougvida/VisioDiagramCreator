@@ -113,8 +113,8 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				// Write comment section named "Configuration"
 				shpObj = new ShapeInformation();
 				shpObj.VisioPage = "";
-				shpObj.ShapeType = "Visio Configuration";
-				shpObj.UniqueKey = String.Empty;
+				shpObj.ShapeType = "Disabled";
+				shpObj.UniqueKey = "Visio Configuration";
 				shpObj.StencilLabel = String.Empty;
 				if (_writeData(workSheet, visioHelper, shpObj, nRow, true))
 				{
@@ -198,8 +198,8 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				shpObj = new ShapeInformation();
 				nRow++;
 				shpObj.VisioPage = "";
-				shpObj.ShapeType = "Visio Section";
-				shpObj.UniqueKey = string.Empty;
+				shpObj.ShapeType = "Disabled";
+				shpObj.UniqueKey = "Visio Section";
 				shpObj.StencilLabel = String.Empty;
 				if (_writeData(workSheet, visioHelper, shpObj, nRow, true))
 				{
@@ -215,7 +215,6 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 			}
 			return nRow;
 		}
-
 
 		public bool PopulateExcelDataFile(DiagramData diagramData, VisioHelper visioHelper, Dictionary<int, ShapeInformation> shapesMap, string namePath)
 		{
@@ -361,15 +360,34 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 		/// </returns>
 		private int writeAllData(Excel.Worksheet workSheet, VisioHelper visioHelper, Dictionary<int, ShapeInformation> shapesMap, int rowCount)
 		{
+			string visioPageName = string.Empty;
 			try
 			{
+				int nCnt = 0;
 				foreach (KeyValuePair<int, ShapeInformation> keyValue in shapesMap)
 				{	
 					if (string.IsNullOrEmpty(keyValue.Value.ShapeType))
 					{
 						keyValue.Value.ShapeType = "Shape";
 					}
-					_writeData(workSheet, visioHelper, keyValue.Value, rowCount++, false);
+
+					// we want to skip the first time
+					if (!keyValue.Value.VisioPage.Equals(visioPageName) && nCnt > 0)
+					{
+						// we have a new page lets make a comment break
+						visioPageName = keyValue.Value.VisioPage; // update the new page
+						ShapeInformation shpInfo = new ShapeInformation();
+						shpInfo.VisioPage = visioPageName;
+						shpInfo.ShapeType = "Disabled";
+						shpInfo.UniqueKey = "New Page";
+						_writeData(workSheet, visioHelper, shpInfo, rowCount++, true);
+					}
+					else
+					{
+						nCnt++;
+						_writeData(workSheet, visioHelper, keyValue.Value, rowCount++, false);
+						visioPageName = keyValue.Value.VisioPage;
+					}
 				}
 			}
 			catch(Exception ex)
@@ -394,7 +412,10 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				if (IsComment)
 				{
 					sTmp = ";";
-					sTmp2 = "Disabled";
+					if (shape.ShapeType.Equals("New Page") || rowCount > 8)
+					{ 
+						sTmp2 = "Disabled";
+					}
 				}
 				((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.VisioPage]).Value = sTmp;
 				((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.ShapeType]).Value = sTmp2;

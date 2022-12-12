@@ -16,13 +16,16 @@ using System.Runtime.CompilerServices;
 using Microsoft.Office.Interop.Excel;
 using VisioAutomation.VDX.Elements;
 using System.Runtime.Remoting.Metadata.W3cXsd2001;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace OmnicellBlueprintingTool.Visio
 {
 	public class ProcessVisioDiagramShapes
 	{
-		Visio1.Application appVisio = null;
-		Visio1.Document vDocument = null;
+		public Visio1.Application appVisio = null;
+		public Visio1.Documents vDocuments = null;
+		public Visio1.Document vDocument = null;
+
 		Visio1.Page vPage = null;
 		VisioHelper visHlpr = null;
 
@@ -36,29 +39,39 @@ namespace OmnicellBlueprintingTool.Visio
 		{
 			// Open up one of Visio's sample drawings.
 			appVisio = new Visio1.Application();
+
 			visHlpr = new VisioHelper();
 			visHlpr.ShowVisioDiagram(appVisio, dspMode);              // don't show the diagram
 
-			this.vDocument = appVisio.Documents.Open(diagamFilePathName);
+			vDocument = appVisio.Documents.Open(diagamFilePathName);
+			vDocuments = appVisio.Documents;
+			
 			// The new document will have one page, get the a reference to it.
-			vPage = this.vDocument.Pages[1];
+			vPage = vDocument.Pages[1];
 
 			visHlpr.ShowVisioDiagram(appVisio, VisioVariables.ShowDiagram.Show);
 			ConsoleOut.writeLine(string.Format("Active Document:{0}: Master in document:{1}", appVisio.ActiveDocument, appVisio.ActiveDocument.Masters));
 
 			// get the connectors for each shape in the diagram 
-			Dictionary<int, ShapeInformation> shpConn = getShapeInformation(visioHelper, this.vDocument);
+			Dictionary<int, ShapeInformation> shpConn = getShapeInformation(visioHelper, appVisio, vDocument);
 
 			try
 			{
-				if (this.vDocument != null)
+				if (this.vDocuments != null)
 				{
-					this.vDocument.Application.ActiveDocument.Close();
+					vDocument.Saved = true;
+					vDocument.Close();
 				}
+				vDocuments = null;
 				if (appVisio != null)
 				{
 					appVisio.Quit();
+					appVisio = null;
 				}
+				GC.Collect();
+				GC.WaitForPendingFinalizers();
+				GC.Collect();
+				GC.WaitForPendingFinalizers();
 			}
 			catch (System.Runtime.InteropServices.COMException ex)
 			{
@@ -74,10 +87,11 @@ namespace OmnicellBlueprintingTool.Visio
 		/// </summary>
 		/// <param name="doc">Visio document</param>
 		/// <returns>"Dictionary<string, ShapeInformation>"</returns>
-		private static Dictionary<int, ShapeInformation> getShapeInformation(VisioHelper visioHelper, Visio1.Document doc)
+		private static Dictionary<int, ShapeInformation> getShapeInformation(VisioHelper visioHelper, Visio1.Application appVisio, Visio1.Document doc)
 		{
 			// Look at each shape in the collection.
-			Visio1.Page page = doc.Pages[1];
+			Visio1.Page page = null;
+			Visio1.Pages pagesObj = doc.Pages;
 
 			Dictionary<int, ShapeInformation> allPageShapesMap = null;
 			Dictionary<int, Visio1.Shape> connectorsMap = new Dictionary<int, Visio1.Shape>();
@@ -88,119 +102,147 @@ namespace OmnicellBlueprintingTool.Visio
 				allPageShapesMap = new Dictionary<int, ShapeInformation>();
 				string sColor = string.Empty;
 
-				foreach (Visio1.Shape shape in page.Shapes)
+				// start at 1 because Visio page indexing is not zero base
+				for (int nCnt = 1; nCnt <= pagesObj.Count; nCnt++ )	// we need to loop through each tab in the Visio Diagram 
 				{
-					// Use this index to look at each row in the properties section.
-					shpInfo = new ShapeInformation();
+					page = pagesObj[nCnt];
+					appVisio.ActiveWindow.Page = pagesObj[nCnt]; 
+					
+					ConsoleOut.writeLine(string.Format("Gathering all shapes for this page:'{0}'", page.Name));
 
-					shpInfo.ID = shape.ID;
-					shpInfo.UniqueKey = getShapeUniqueKeyName(shape);
-
-					// get shape fillForgnd and FillBkgnd colors
-					//var fillForeColor = shape.Cells["FillForegnd"].ResultIU;
-					//var fillBkColor = shape.Cells["FillBkgnd"].ResultIU;
-					Microsoft.Office.Interop.Visio.Color c =  doc.Colors.Item16[(short)shape.Cells["FillBkgnd"].ResultIU];
-					shpInfo.rgbFillColor = $"RGB({c.Red},{c.Green},{c.Blue})";
-					sColor = visioHelper.GetColorValueFromRGB(shpInfo.rgbFillColor);
-					if (string.IsNullOrEmpty(sColor))
+					foreach (Visio1.Shape shape in page.Shapes)	// get the shapes on this page
 					{
-						// no color found lets try to find the best match
-						sColor = getColorNameFromRGB(visioHelper, c.Red, c.Green, c.Blue);
-					}
-					shpInfo.FillColor = "";
-					if (!string.IsNullOrEmpty(sColor))
-					{
-						shpInfo.FillColor = sColor;
-					}
-					//if (shpInfo.rgbFillColor.IndexOf(VisioVariables.RGB_COLOR_2SKIP) >= 0)  // found
-					//{
-					//	shpInfo.rgbFillColor = "";	// we don't want to right this color value to the Excel file
-					//}
+						// Use this index to look at each row in the properties section.
+						shpInfo = new ShapeInformation();
 
-					//short iRow = (short)VisRowIndices.visRowFirst;
-					shpInfo.Pos_x = Math.Truncate(shape.Cells["PinX"].ResultIU * 1000) / 1000;
-					shpInfo.Pos_y = Math.Truncate(shape.Cells["PinY"].ResultIU * 1000) / 1000;
-
-					shpInfo.Width = 0;
-					shpInfo.Height = 0;
-					if (shape.Name.IndexOf("OC_Ethernet", StringComparison.OrdinalIgnoreCase) >= 0 || 
-						shape.Name.IndexOf("OC_Group", StringComparison.OrdinalIgnoreCase) >= 0 ||
-						shape.Name.IndexOf("OC_Footer", StringComparison.OrdinalIgnoreCase) >= 0 ||
-						shape.Name.IndexOf("OC_Dash", StringComparison.OrdinalIgnoreCase) >= 0)
-					{
-						shpInfo.Width = Math.Truncate(shape.Cells["Width"].ResultIU * 1000) / 1000;
-						if ((shape.Name.IndexOf("OC_Ethernet", StringComparison.OrdinalIgnoreCase) >= 0))
+						int nIdx = page.Name.IndexOf("Page-");
+						if (nIdx >= 0)
 						{
-							// don't set height if shape is Ethernet type
-							shpInfo.Height = 0;
+							// found lets modify the Visio Page field
+							// I.E.  Page-# is a default type of page so we will write just the # in the Excel file Visio Page column
+							string[] saTmp = page.Name.Split('-');
+							shpInfo.VisioPage = saTmp[1]; // just get the number when writing to the Excel file
+						}
+						else
+						{	
+							// use the fill page name
+							shpInfo.VisioPage = page.Name;
+						}
+
+						shpInfo.ID = shape.ID;
+						shpInfo.UniqueKey = getShapeUniqueKeyName(shape);
+
+						// get shape fillForgnd and FillBkgnd colors
+						//var fillForeColor = shape.Cells["FillForegnd"].ResultIU;
+						//var fillBkColor = shape.Cells["FillBkgnd"].ResultIU;
+						Microsoft.Office.Interop.Visio.Color c = doc.Colors.Item16[(short)shape.Cells["FillBkgnd"].ResultIU];
+						shpInfo.rgbFillColor = $"RGB({c.Red},{c.Green},{c.Blue})";
+						sColor = visioHelper.GetColorValueFromRGB(shpInfo.rgbFillColor);
+						if (string.IsNullOrEmpty(sColor))
+						{
+							// no color found lets try to find the best match
+							sColor = getColorNameFromRGB(visioHelper, c.Red, c.Green, c.Blue);
+						}
+						shpInfo.FillColor = "";
+						if (!string.IsNullOrEmpty(sColor))
+						{
+							shpInfo.FillColor = sColor;
+						}
+						if ( shpInfo.rgbFillColor == "RGB(0,0,0)" || shpInfo.FillColor.Equals("White", StringComparison.OrdinalIgnoreCase) )
+						{
+							// this is color black for a shape so we don't need to set this field empty is default for black
+							// also we don't need the RGB value
+							shpInfo.FillColor = string.Empty;
+							shpInfo.rgbFillColor = string.Empty;
+						}
+
+						//short iRow = (short)VisRowIndices.visRowFirst;
+						shpInfo.Pos_x = Math.Truncate(shape.Cells["PinX"].ResultIU * 1000) / 1000;
+						shpInfo.Pos_y = Math.Truncate(shape.Cells["PinY"].ResultIU * 1000) / 1000;
+
+						shpInfo.Width = 0;
+						shpInfo.Height = 0;
+						if (shape.Name.IndexOf("OC_Ethernet", StringComparison.OrdinalIgnoreCase) >= 0 ||
+							shape.Name.IndexOf("OC_Group", StringComparison.OrdinalIgnoreCase) >= 0 ||
+							shape.Name.IndexOf("OC_Footer", StringComparison.OrdinalIgnoreCase) >= 0 ||
+							shape.Name.IndexOf("OC_Dash", StringComparison.OrdinalIgnoreCase) >= 0)
+						{
+							shpInfo.Width = Math.Truncate(shape.Cells["Width"].ResultIU * 1000) / 1000;
+							if ((shape.Name.IndexOf("OC_Ethernet", StringComparison.OrdinalIgnoreCase) >= 0))
+							{
+								// don't set height if shape is Ethernet type
+								shpInfo.Height = 0;
+							}
+							else
+							{
+								double dHeight = Math.Truncate(shape.Cells["Height"].ResultIU * 1000) / 1000;
+								if (shape.Name.IndexOf("OC_Footer", StringComparison.OrdinalIgnoreCase) >= 0)
+								{
+									dHeight = dHeight - 0.25;
+									shpInfo.Width = 0;      // we don't want to save the width because it's already a page with in size
+								}
+								shpInfo.Height = dHeight;
+							}
 						}
 						else
 						{
-							double dHeight = Math.Truncate(shape.Cells["Height"].ResultIU * 1000) / 1000;
-							if (shape.Name.IndexOf("OC_Footer", StringComparison.OrdinalIgnoreCase) >= 0)
+							string sTmp = shape.Name;
+							if (sTmp.Equals("OC_PC") || sTmp.Equals("OC_Server") || sTmp.Equals("OC_EHRSystems") || sTmp.Equals("OC_Devices"))
 							{
-								dHeight = dHeight - 0.25;
-								shpInfo.Width = 0;		// we don't want to save the width because it's already a page with in size
+								shpInfo.Width = (Math.Truncate(shape.Cells["Width"].ResultIU * 1000) / 1000) - 0.500;
+								shpInfo.Height = (Math.Truncate(shape.Cells["Height"].ResultIU * 1000) / 1000) - 0.500;
 							}
-							shpInfo.Height = dHeight;
+							else if (sTmp.Equals("OC_IconKey"))
+							{
+								shpInfo.Width = (Math.Truncate(shape.Cells["Width"].ResultIU * 1000) / 1000) - 1.633;
+								shpInfo.Height = (Math.Truncate(shape.Cells["Height"].ResultIU * 1000) / 1000) - 1.966;
+							}
+							else if (sTmp.Equals("OC_Site"))
+							{
+								shpInfo.Width = (Math.Truncate(shape.Cells["Width"].ResultIU * 1000) / 1000) - 0.600;
+								shpInfo.Height = (Math.Truncate(shape.Cells["Height"].ResultIU * 1000) / 1000) - 0.350;
+							}
 						}
-					}
-					else
-					{
-						string sTmp = shape.Name;
-						if (sTmp.Equals("OC_PC") || sTmp.Equals("OC_Server") || sTmp.Equals("OC_EHRSystems") || sTmp.Equals("OC_Devices"))
+
+
+						// this will return a string name:ID
+						string shpName = getShapeUniqueKeyName(shape);
+						string[] saStr = shpName.Split(':');      // need to just get the Name
+						shpInfo.StencilImage = saStr[0].Trim();
+						shpInfo.StencilLabel = shape.Text.Trim();
+
+						// use the connection shape to obtain what is connected to what
+						if (shape.Style.Trim().IndexOf("Connector", StringComparison.OrdinalIgnoreCase) >= 0)
 						{
-							shpInfo.Width = (Math.Truncate(shape.Cells["Width"].ResultIU * 1000) / 1000) - 0.500;
-							shpInfo.Height = (Math.Truncate(shape.Cells["Height"].ResultIU * 1000) / 1000) - 0.500;
+							// get connection information add to the dictionary to be used later
+							if (!connectorsMap.ContainsKey(shape.ID))
+							{
+								connectorsMap.Add(shape.ID, shape);
+							}
+							// we don't want to add this shape object to the allPageShapesMap dictionary
+							continue;
 						}
-						else if (sTmp.Equals("OC_IconKey"))
+
+						ConsoleOut.writeLine(string.Format("Stencil ID:{0} Key:{1}", shpInfo.ID, shpInfo.UniqueKey));
+						if (!allPageShapesMap.ContainsKey(shape.ID))
 						{
-							shpInfo.Width = (Math.Truncate(shape.Cells["Width"].ResultIU * 1000) / 1000) - 1.633;
-							shpInfo.Height = (Math.Truncate(shape.Cells["Height"].ResultIU * 1000) / 1000) - 1.966;
+							allPageShapesMap.Add(shape.ID, shpInfo);  // shape.ID
 						}
-						else if (sTmp.Equals("OC_Site"))
+					}
+
+					// now let make the connections
+					foreach (KeyValuePair<int, Visio1.Shape> shape in connectorsMap)
+					{
+						if (shape.Value.Connects.Count > 0)
 						{
-							shpInfo.Width = (Math.Truncate(shape.Cells["Width"].ResultIU * 1000) / 1000) - 0.600;
-							shpInfo.Height = (Math.Truncate(shape.Cells["Height"].ResultIU * 1000) / 1000) - 0.350;
+							getShapeConnections(visioHelper, doc, shape.Value, ref allPageShapesMap, ref shpInfo);
 						}
-					}
-
-
-					// this will return a string name:ID
-					string shpName = getShapeUniqueKeyName(shape);
-					string[] saStr = shpName.Split(':');      // need to just get the Name
-					shpInfo.StencilImage = saStr[0].Trim();
-					shpInfo.StencilLabel = shape.Text.Trim();
-
-					// use the connection shape to obtain what is connected to what
-					if (shape.Style.Trim().IndexOf("Connector", StringComparison.OrdinalIgnoreCase) >= 0)
-					{
-						// get connection information add to the dictionary to be used later
-						connectorsMap.Add(shape.ID, shape);
-
-						// we don't want to add this shape object to the allPageShapesMap dictionary
-						continue;
-					}
-
-					ConsoleOut.writeLine(string.Format("Stencil ID:{0} Key:{1}", shpInfo.ID, shpInfo.UniqueKey));
-					if (!allPageShapesMap.ContainsKey(shape.ID))
-					{
-						allPageShapesMap.Add(shape.ID, shpInfo);	// shape.ID
-					}
-				}
-
-				// now let make the connections
-				foreach (KeyValuePair<int, Visio1.Shape> shape in connectorsMap) 
-				{ 
-					if (shape.Value.Connects.Count > 0)
-					{
-						getShapeConnections(visioHelper, doc, shape.Value, ref allPageShapesMap, ref shpInfo);
 					}
 				}
 			}
 			catch (Exception ex)
 			{
-				string sTmp = string.Format("ProcessVisioDiagramShapes::getShapeInformation - Exception\n\nForeach loop:\nWorking on {0}\n\n{1}", shpInfo.UniqueKey, ex.Message);
+				string sTmp = string.Format("ProcessVisioDiagramShapes::getShapeInformation - Exception\n\nForeach loop:\nPage:'{0}' shape ID:{1}, UniqueKey:'{2}'\n\n{3}", page.Name, shpInfo.ID, shpInfo.UniqueKey, ex.Message);
 				MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
 			}
 			return allPageShapesMap;
@@ -223,6 +265,12 @@ namespace OmnicellBlueprintingTool.Visio
 			string[] saTmp = shape.Name.Split('.');
 			if (saTmp.Length > 0)
 			{
+				if (saTmp.Length > 3)
+				{
+					// this is special lets use the full name
+					return string.Format("{0}:{1}", shape.Name.Trim(), shape.ID);
+
+				}
 				// lets get the first part as the shape name
 				return string.Format("{0}:{1}", saTmp[0].Trim(), shape.ID);
 			}
@@ -294,24 +342,31 @@ namespace OmnicellBlueprintingTool.Visio
 			connectorLabel = connShp.Text;
 
 			// testing
-			String beginArrow1 = connShp.get_CellsSRC(
-				(short)VisSectionIndices.visSectionObject, 
-				(short)VisRowIndices.visRowLine, 
-				(short)VisCellIndices.visLineBeginArrow).Formula;
+			//String beginArrow1 = connShp.get_CellsSRC(
+			//	(short)VisSectionIndices.visSectionObject, 
+			//	(short)VisRowIndices.visRowLine, 
+			//	(short)VisCellIndices.visLineBeginArrow).Formula;
 
-			String endArrow1 = connShp.get_CellsSRC(
-			(short)VisSectionIndices.visSectionObject,
-			(short)VisRowIndices.visRowLine,
-			(short)VisCellIndices.visLineEndArrow).Formula;
+			//String endArrow1 = connShp.get_CellsSRC(
+			//(short)VisSectionIndices.visSectionObject,
+			//(short)VisRowIndices.visRowLine,
+			//(short)VisCellIndices.visLineEndArrow).Formula;
 			// end testing
 
-
-
-			string data = connShp.get_CellsU("BeginArrow").FormulaU;
-			if (data.IndexOf("THEMEVAL") < 0)
+			try
 			{
-				int startArrow = int.Parse(connShp.get_CellsU("BeginArrow").FormulaU);
-				int endArrow = int.Parse(connShp.get_CellsU("EndArrow").FormulaU);
+				int startArrow = 0;
+				int endArrow = 0;
+				string data = connShp.get_CellsU("BeginArrow").FormulaU;
+				if (data.IndexOf("THEME", StringComparison.OrdinalIgnoreCase) < 0)
+				{
+					startArrow = int.Parse(connShp.get_CellsU("BeginArrow").FormulaU);
+				}
+				data = connShp.get_CellsU("EndArrow").FormulaU;
+				if (data.IndexOf("THEME", StringComparison.OrdinalIgnoreCase) < 0)
+				{
+					endArrow = int.Parse(connShp.get_CellsU("EndArrow").FormulaU);
+				}
 				if (startArrow > 0 && endArrow > 0) // both
 				{
 					arrowType = VisioVariables.sARROW_BOTH;
@@ -324,170 +379,177 @@ namespace OmnicellBlueprintingTool.Visio
 				{
 					arrowType = VisioVariables.sARROW_END;
 				}
-			}
-			var colorIdx = connShp.CellsU["LineColor"].ResultIU;
-			Microsoft.Office.Interop.Visio.Color c = doc.Colors.Item16[(short)colorIdx];
-			shpInfo.rgbFillColor = $"RGB({c.Red},{c.Green},{c.Blue})";
-			string sColor = visioHelper.GetColorValueFromRGB(shpInfo.rgbFillColor);
-			if (string.IsNullOrEmpty(sColor))
-			{
-				// no color found lets try to find the best match
-				sColor = getColorNameFromRGB(visioHelper, c.Red, c.Green, c.Blue);
-			}
-			shpInfo.ToLineColor = "";
-			if (!string.IsNullOrEmpty(sColor))
-			{
-				lineColor = sColor;
-			}
 
-			linePattern = connShp.get_CellsU("LinePattern").ResultIU;
-			
-			lineWeight = connShp.get_CellsU("LineWeight").FormulaU;
-			if (lineWeight.IndexOf("THERM", StringComparison.OrdinalIgnoreCase) >= 0)
-			{
-				lineWeight = VisioVariables.sLINE_WEIGHT_1;
-			}
-			else
-			{
-				// we have a valid value so lets see if we support it
-				lineWeight = visioHelper.FindConnectorLineWeight(lineWeight);
-				if (string.IsNullOrEmpty(lineWeight))
+				var colorIdx = connShp.CellsU["LineColor"].ResultIU;
+				Microsoft.Office.Interop.Visio.Color c = doc.Colors.Item16[(short)colorIdx];
+				shpInfo.rgbFillColor = $"RGB({c.Red},{c.Green},{c.Blue})";
+				string sColor = visioHelper.GetColorValueFromRGB(shpInfo.rgbFillColor);
+				if (string.IsNullOrEmpty(sColor))
+				{
+					// no color found lets try to find the best match
+					sColor = getColorNameFromRGB(visioHelper, c.Red, c.Green, c.Blue);
+				}
+				shpInfo.ToLineColor = "";
+				if (!string.IsNullOrEmpty(sColor))
+				{
+					lineColor = sColor;
+				}
+
+				linePattern = connShp.get_CellsU("LinePattern").ResultIU;
+
+				lineWeight = connShp.get_CellsU("LineWeight").FormulaU;
+				if (lineWeight.IndexOf("THEME", StringComparison.OrdinalIgnoreCase) >= 0)
 				{
 					lineWeight = VisioVariables.sLINE_WEIGHT_1;
 				}
-			}
-
-			int nFromCnt = 0;
-			int nToCnt = 0;
-			int ethernetID = 0;
-			string ethernetUniqueKey = string.Empty;
-
-			for (int k = 1; k <= visconnects2.Count; k++)
-			{
-				// look through the connections to get the both ends
-				visconnect = visconnects2[k];
-				toshape = visconnect.ToSheet;
-
-				if (k == 1)
-				{
-					// first end From
-					sTmp = string.Empty;
-					lookupKey = toshape.ID;
-					allPageShapesMap.TryGetValue(toshape.ID, out lookupShapeMap);
-
-					// if this first one is the Ethernet stencil we need to do some special work
-					if (toshape.Name.IndexOf("OC_Ethernet") >= 0)
-					{
-						ethernetID = toshape.ID; // save this we need to do a trick later
-						ethernetUniqueKey = getShapeUniqueKeyName(toshape);
-						sTmp = string.Format("From Shape:{0} ", ethernetUniqueKey);
-					}
-					else
-					{
-						sTmp = string.Format("Connect Shape:{0} ", ethernetUniqueKey);
-					}
-				}
 				else
 				{
-					// get the next stencil shape to connect to
-					// we need to test this section I"m not sure this will occur because all the diagram shapes should be in the allPageShapesMap
-					if (lookupShapeMap == null)
+					// we have a valid value so lets see if we support it
+					lineWeight = visioHelper.FindConnectorLineWeight(lineWeight);
+					if (string.IsNullOrEmpty(lineWeight))
 					{
-						//lookupKey = toshape.ID;
-						if (ethernetID > 0)
+						lineWeight = VisioVariables.sLINE_WEIGHT_1;
+					}
+				}
+
+				int nFromCnt = 0;
+				int nToCnt = 0;
+				int ethernetID = 0;
+				string ethernetUniqueKey = string.Empty;
+
+				for (int k = 1; k <= visconnects2.Count; k++)
+				{
+					// look through the connections to get the both ends
+					visconnect = visconnects2[k];
+					toshape = visconnect.ToSheet;
+
+					if (k == 1)
+					{
+						// first end From
+						sTmp = string.Empty;
+						lookupKey = toshape.ID;
+						allPageShapesMap.TryGetValue(toshape.ID, out lookupShapeMap);
+
+						// if this first one is the Ethernet stencil we need to do some special work
+						if (toshape.Name.IndexOf("OC_Ethernet") >= 0)
 						{
-							allPageShapesMap.TryGetValue(ethernetID, out lookupShapeMap);
-							ethernetID = 0;
+							ethernetID = toshape.ID; // save this we need to do a trick later
+							ethernetUniqueKey = getShapeUniqueKeyName(toshape);
+							sTmp = string.Format("From Shape:{0} ", ethernetUniqueKey);
 						}
 						else
 						{
-							allPageShapesMap.TryGetValue(toshape.ID, out lookupShapeMap);
+							sTmp = string.Format("Connect Shape:{0} ", ethernetUniqueKey);
 						}
-						if (lookupShapeMap != null)
-						{
-							if (string.IsNullOrEmpty(lookupShapeMap.ConnectFrom))
-							{
-								if (nFromCnt++ > 0)
-								{
-									lookupShapeMap.ConnectFrom += "," + getShapeUniqueKeyName(toshape); // lookupShape.NameU;
-								}
-								else
-								{
-									lookupShapeMap.ConnectFrom += getShapeUniqueKeyName(toshape); // lookupShape.NameU;
-								}
-								lookupShapeMap.ConnectFromID = lookupKey;
-							}
-							lookupShapeMap.FromLineLabel = connectorLabel;
-							lookupShapeMap.FromArrowType = arrowType;
-							lookupShapeMap.FromLineColor = lineColor;
-							lookupShapeMap.FromLinePattern = linePattern;
-							lookupShapeMap.FromLineWeight = lineWeight;
-						}
-						lookupKey = toshape.ID; // keep in this order.  we use this for update the object
 					}
 					else
 					{
-						// if the first connector was Ethernet we need to make this a From type
-						// this is when we need to do some special work
-						if (!string.IsNullOrEmpty(ethernetUniqueKey))
+						// get the next stencil shape to connect to
+						// we need to test this section I"m not sure this will occur because all the diagram shapes should be in the allPageShapesMap
+						if (lookupShapeMap == null)
 						{
-							// get the next shape to be populated using From..
-							allPageShapesMap.TryGetValue(toshape.ID, out lookupShapeMap);	// get the next connection shape
-							if (string.IsNullOrEmpty(lookupShapeMap.ConnectFrom))
+							//lookupKey = toshape.ID;
+							if (ethernetID > 0)
 							{
-								if (nToCnt++ > 0)
-								{
-									lookupShapeMap.ConnectFrom += "," + ethernetUniqueKey;	// append to existing value
-								}
-								else
-								{
-									lookupShapeMap.ConnectFrom += ethernetUniqueKey;			
-								}
-								lookupShapeMap.ConnectFromID = ethernetID;
+								allPageShapesMap.TryGetValue(ethernetID, out lookupShapeMap);
+								ethernetID = 0;
 							}
-
-							lookupShapeMap.FromLineLabel = connectorLabel;  // use the Text value from the connector shape
-							lookupShapeMap.FromArrowType = arrowType;
-							lookupShapeMap.FromLineColor = lineColor;
-							lookupShapeMap.FromLinePattern = linePattern;
-							lookupShapeMap.FromLineWeight = lineWeight;
-
-							lookupKey = toshape.ID;		// use the ID for this shape not the Ethernet shape
-
-							// clear these values
-							ethernetID = 0;
-							ethernetUniqueKey = string.Empty;
+							else
+							{
+								allPageShapesMap.TryGetValue(toshape.ID, out lookupShapeMap);
+							}
+							if (lookupShapeMap != null)
+							{
+								if (string.IsNullOrEmpty(lookupShapeMap.ConnectFrom))
+								{
+									if (nFromCnt++ > 0)
+									{
+										lookupShapeMap.ConnectFrom += "," + getShapeUniqueKeyName(toshape); // lookupShape.NameU;
+									}
+									else
+									{
+										lookupShapeMap.ConnectFrom += getShapeUniqueKeyName(toshape); // lookupShape.NameU;
+									}
+									lookupShapeMap.ConnectFromID = lookupKey;
+								}
+								lookupShapeMap.FromLineLabel = connectorLabel;
+								lookupShapeMap.FromArrowType = arrowType;
+								lookupShapeMap.FromLineColor = lineColor;
+								lookupShapeMap.FromLinePattern = linePattern;
+								lookupShapeMap.FromLineWeight = lineWeight;
+							}
+							lookupKey = toshape.ID; // keep in this order.  we use this for update the object
 						}
 						else
 						{
-							// shape is not an Ethernet shape so coontinue as normal
-							if (string.IsNullOrEmpty(lookupShapeMap.ConnectTo))
+							// if the first connector was Ethernet we need to make this a From type
+							// this is when we need to do some special work
+							if (!string.IsNullOrEmpty(ethernetUniqueKey))
 							{
-								if (nToCnt++ > 0)
+								// get the next shape to be populated using From..
+								allPageShapesMap.TryGetValue(toshape.ID, out lookupShapeMap);  // get the next connection shape
+								if (string.IsNullOrEmpty(lookupShapeMap.ConnectFrom))
 								{
-									lookupShapeMap.ConnectTo += "," + getShapeUniqueKeyName(toshape); // append to existing value;
+									if (nToCnt++ > 0)
+									{
+										lookupShapeMap.ConnectFrom += "," + ethernetUniqueKey;   // append to existing value
+									}
+									else
+									{
+										lookupShapeMap.ConnectFrom += ethernetUniqueKey;
+									}
+									lookupShapeMap.ConnectFromID = ethernetID;
 								}
-								else
-								{
-									lookupShapeMap.ConnectTo += getShapeUniqueKeyName(toshape);
-								}
-								lookupShapeMap.ConnectToID = toshape.ID;
-							}
 
-							lookupShapeMap.ToLineLabel = connectorLabel;  // use the Text value from the connector shape
-							lookupShapeMap.ToArrowType = arrowType;
-							lookupShapeMap.ToLineColor = lineColor;
-							lookupShapeMap.ToLinePattern = linePattern;
-							lookupShapeMap.ToLineWeight = lineWeight;
+								lookupShapeMap.FromLineLabel = connectorLabel;  // use the Text value from the connector shape
+								lookupShapeMap.FromArrowType = arrowType;
+								lookupShapeMap.FromLineColor = lineColor;
+								lookupShapeMap.FromLinePattern = linePattern;
+								lookupShapeMap.FromLineWeight = lineWeight;
+
+								lookupKey = toshape.ID;    // use the ID for this shape not the Ethernet shape
+
+								// clear these values
+								ethernetID = 0;
+								ethernetUniqueKey = string.Empty;
+							}
+							else
+							{
+								// shape is not an Ethernet shape so coontinue as normal
+								if (string.IsNullOrEmpty(lookupShapeMap.ConnectTo))
+								{
+									if (nToCnt++ > 0)
+									{
+										lookupShapeMap.ConnectTo += "," + getShapeUniqueKeyName(toshape); // append to existing value;
+									}
+									else
+									{
+										lookupShapeMap.ConnectTo += getShapeUniqueKeyName(toshape);
+									}
+									lookupShapeMap.ConnectToID = toshape.ID;
+								}
+
+								lookupShapeMap.ToLineLabel = connectorLabel;  // use the Text value from the connector shape
+								lookupShapeMap.ToArrowType = arrowType;
+								lookupShapeMap.ToLineColor = lineColor;
+								lookupShapeMap.ToLinePattern = linePattern;
+								lookupShapeMap.ToLineWeight = lineWeight;
+							}
 						}
+						sTmp += string.Format("to Shape:{0}, linelabel:'{1}'", getShapeUniqueKeyName(toshape), connShp.Text);
 					}
-					sTmp += string.Format("to Shape:{0}, linelabel:'{1}'", getShapeUniqueKeyName(toshape), connShp.Text);
+				}
+				if (lookupShapeMap != null)
+				{
+					allPageShapesMap[lookupKey] = lookupShapeMap;
 				}
 			}
-			if (lookupShapeMap != null)
+			catch (Exception ex)
 			{
-				allPageShapesMap[lookupKey] = lookupShapeMap;
+				sTmp = string.Format("ProcessVisioDiagramShapes::getShapeConnections - Exception\n\nshape ID:{0}, UniqueKey:'{2}'\n\n{3}", connShp.ID, connShp.Text, ex.Message);
+				MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
 			}
+
 			ConsoleOut.writeLine(sTmp);
 		}
 
