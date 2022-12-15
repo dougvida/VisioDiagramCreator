@@ -10,6 +10,8 @@ using Excel = Microsoft.Office.Interop.Excel;
 using Microsoft.Office.Interop.Excel;
 using System.Text.RegularExpressions;
 using System.Linq;
+using System.Diagnostics;
+
 
 ///
 /// helper URL http://csharp.net-informations.com/excel/csharp-format-excel.htm
@@ -22,13 +24,22 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 		private Excel.Application _xlApp = null;
 		private Excel.Workbook _xlWorkbook = null;
 		private Excel.Worksheet _xlWorksheet = null;
+		Process[] _excelProcsOld = null;
 
 		public CreateExcelDataFile()
 		{
 		}
 
+		/// <summary>
+		/// openFile
+		/// Open the Excel Data file for writing
+		/// </summary>
+		/// <param name="fileNamePath"></param>
+		/// <returns>bool false:success</returns>
 		private bool openFile(string fileNamePath)
 		{
+			_excelProcsOld = Process.GetProcessesByName("EXCEL");
+
 			// check if existing file name exists
 			// if so lets overwright it (give warning)
 			// open the file for wright
@@ -67,6 +78,14 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 			return false;
 		}
 
+		/// <summary>
+		/// wroteHeader
+		/// Write the Header information to the Excel file
+		/// </summary>
+		/// <param name="workSheet"></param>
+		/// <param name="headerNames"></param>
+		/// <param name="row"></param>
+		/// <returns>int : Positive value = row number | negative number = error</returns>
 		private int writeHeader(Excel.Worksheet workSheet, Dictionary<int, string> headerNames, int row = 1)
 		{
 			string headerName = string.Empty;
@@ -104,6 +123,16 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 			return row;
 		}
 
+		/// <summary>
+		/// writeConfiguration
+		/// Write the configuration section to the Excel Data file
+		/// </summary>
+		/// <param name="workSheet"></param>
+		/// <param name="diagramData"></param>
+		/// <param name="visioHelper"></param>
+		/// <param name="cellIndex"></param>
+		/// <param name="nRow"></param>
+		/// <returns>int : Positive value = row number | negative number = error</returns>
 		private int writeConfiguration(Excel.Worksheet workSheet, DiagramData diagramData, VisioHelper visioHelper,int cellIndex, int nRow)
 		{
 			ShapeInformation shpObj = null;
@@ -216,8 +245,19 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 			return nRow;
 		}
 
+		/// <summary>
+		/// PopulateExcelDataFile
+		/// higher level function that will populate the Excel Data File
+		/// </summary>
+		/// <param name="diagramData"></param>
+		/// <param name="visioHelper"></param>
+		/// <param name="shapesMap"></param>
+		/// <param name="namePath"></param>
+		/// <returns>bool false:success</returns>
 		public bool PopulateExcelDataFile(DiagramData diagramData, VisioHelper visioHelper, Dictionary<int, ShapeInformation> shapesMap, string namePath)
 		{
+			bool bSave = false;	// error
+
 			int nRow = 1;
 			string sTmp = string.Empty;
 
@@ -274,14 +314,9 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 					setColumnsDropdownList(diagramData, visioHelper);
 
 					// this should stop the check Compatibility diaglog from poping up
-					_xlWorkbook.DoNotPromptForConvert = true;             
-					
-					// save and close the excel file
-					if (saveFile(namePath))
-					{
-						sTmp = string.Format("MainForm::Excil data file has been created\n{0}", namePath);
-						MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Information);
-					}
+					_xlWorkbook.DoNotPromptForConvert = true;
+
+					bSave = true;		// prompt user to save Excel file
 				}
 				catch(Exception ex)
 				{
@@ -289,6 +324,22 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 					MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
 					closeExcel(false);
 					return true;
+				}
+				finally
+				{
+					if (bSave)
+					{
+						// save and close the excel file
+						if (saveFile(namePath))
+						{
+							sTmp = string.Format("MainForm::Excil data file has been created\n{0}", namePath);
+							MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Information);
+						}
+					}
+					else
+					{
+						closeExcel(false);   // don't save file just close Excel 
+					}
 				}
 			}
 			return false;
@@ -311,6 +362,12 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				 _xlApp.Application.Worksheets[totalSheets]);
 		}
 
+		/// <summary>
+		/// selectWorkSheet
+		/// set focus to the Excel worksheet specified by the argument
+		/// </summary>
+		/// <param name="sheetName">WorkSheet Name</param>
+		/// <returns>Excel.Worksheet</returns>
 		private Excel.Worksheet selectWorkSheet(string sheetName)
 		{
 			Excel.Worksheet workSheet = _xlWorkbook.Sheets[sheetName];
@@ -318,6 +375,11 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 			return workSheet;
 		}
 
+		/// <summary>
+		/// selectWorkSheet
+		/// set foces to the Excel worksheet specified by the argument
+		/// </summary>
+		/// <param name="nIdx">index</param>
 		private void selectWorkSheet(int nIdx)
 		{
 			// check to ensure the nIdx value is withing range
@@ -372,7 +434,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 					}
 
 					// we want to skip the first time
-					if (!keyValue.Value.VisioPage.Equals(visioPageName) && nCnt > 0)
+					if (!keyValue.Value.VisioPage.Equals(visioPageName, StringComparison.OrdinalIgnoreCase) && nCnt > 0)
 					{
 						// we have a new page lets make a comment break
 						visioPageName = keyValue.Value.VisioPage; // update the new page
@@ -399,6 +461,16 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 			return rowCount;
 		}
 
+		/// <summary>
+		/// _WriteData
+		/// write the shape information to the Excel row/cell
+		/// </summary>
+		/// <param name="workSheet">Excel worksheet</param>
+		/// <param name="visioHelper">Helper functions</param>
+		/// <param name="shape">Shape information to write</param>
+		/// <param name="rowCount">Excel Row</param>
+		/// <param name="IsComment">true:is comment</param>
+		/// <returns>bool false:success</returns>
 		private bool _writeData(Excel.Worksheet workSheet, VisioHelper visioHelper, ShapeInformation shape, int rowCount, bool IsComment)
 		{
 			try
@@ -412,7 +484,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				if (IsComment)
 				{
 					sTmp = ";";
-					if (shape.ShapeType.Equals("New Page") || rowCount > 8)
+					if (shape.ShapeType.Equals("New Page", StringComparison.CurrentCultureIgnoreCase) || rowCount > 8)
 					{ 
 						sTmp2 = "Disabled";
 					}
@@ -430,7 +502,6 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				// if so cut it out and place into the IP excel cell (xxx.xxx.xxx.xxx)
 				// also check if there is a PORT and place into the Port excel cell PORT: xxxxxx
 				string sLabel = shape.StencilLabel;
-
 				if (!string.IsNullOrEmpty(shape.StencilImage))
 				{
 					if (shape.StencilImage.IndexOf("Server", StringComparison.CurrentCultureIgnoreCase) >= 0)
@@ -459,7 +530,8 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 																						// now we need to remove the IP:Port and append the rest of the original string is there is anything
 								if ((foundIdx + sIP.Length) < sLabel.Length)
 								{
-									sTmp.Concat(" " + sLabel.Substring((foundIdx + sIP.Length), sLabel.Length));
+									sTmp2 = sLabel.Substring((foundIdx + sIP.Length));
+									sTmp += string.Format(" {0}", sTmp2);
 								}
 								shape.StencilLabel = sTmp;
 							}
@@ -479,10 +551,12 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 								string sLbl = sLabel;
 								int foundIdx = sLabel.IndexOf(sIP);
 								sTmp = sLabel.Substring(0, foundIdx - 1); // first part
-																						// now we need to remove the IP:Port and append the rest of the original string is there is anything
+								
+								// now we need to remove the IP:Port and append the rest of the original string is there is anything
 								if ((foundIdx + sIP.Length) < sLabel.Length)
 								{
-									sTmp.Concat(" " + sLabel.Substring((foundIdx + sIP.Length), sLabel.Length));
+									sTmp2 = sLabel.Substring((foundIdx + sIP.Length));
+									sTmp += string.Format(" {0}", sTmp2);
 								}
 								shape.StencilLabel = sTmp;
 							}
@@ -522,9 +596,11 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 					if (string.IsNullOrEmpty(shape.FillColor))
 					{
 						// we don't want a fill color for OC_Logo, OC_Title or OC_Footer if the FillColor is empty
-						if (shape.StencilImage.IndexOf("OC_Logo") < 0 && shape.StencilImage.IndexOf("OC_Title") < 0 && shape.StencilImage.IndexOf("OC_Footer") < 0)
+						if (shape.StencilImage.IndexOf("OC_Logo", StringComparison.OrdinalIgnoreCase) < 0 && 
+							 shape.StencilImage.IndexOf("OC_Title", StringComparison.OrdinalIgnoreCase) < 0 &&
+							 shape.StencilImage.IndexOf("OC_Footer", StringComparison.OrdinalIgnoreCase) < 0)
 						{
-							((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.rgbFillColor]).Value = shape.rgbFillColor;
+							((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.rgbFillColor]).Value = shape.RGBFillColor;
 						}
 					}
 
@@ -535,7 +611,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 					// we only want to populate this field if we are connected to another shape
 					if (!string.IsNullOrEmpty(shape.ConnectFrom))
 					{
-						sTmp = visioHelper.GetConnectorLinePatternText(shape.FromLinePattern);
+						sTmp = visioHelper.GetConnectorLinePattern(shape.FromLinePattern);
 						if (!string.IsNullOrEmpty(sTmp))
 						{
 							((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.FromLinePattern]).Value = sTmp;
@@ -544,19 +620,13 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.FromArrowType]).Value = shape.FromArrowType;
 					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.FromLineColor]).Value = shape.FromLineColor;
 
-					// get the To Line Weight value
+					// get the To Line Weight value.  We only need to set it if it's not default 1 pt
+					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.FromLineWeight]).Value = ""; // set default
 					sTmp = shape.FromLineWeight;
-					if (string.IsNullOrEmpty(sTmp))
+					if (!string.IsNullOrEmpty(sTmp))
 					{
-						((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.FromLineWeight]).Value = "";
-					}
-					else
-					{
-						// check if value is "1 pt" is so we don't want to write to the excel file.   "" is same as "1 pt"
-						if (!shape.FromLineWeight.Equals("1 pt", StringComparison.OrdinalIgnoreCase))
+						if (visioHelper.IsConnectorLineWeight(sTmp))
 						{
-							sTmp = visioHelper.FindConnectorLineWeight(sTmp);
-							// not "1 pt" so lets check if valid entry and if so persist it
 							((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.FromLineWeight]).Value = sTmp;
 						}
 					}
@@ -564,11 +634,11 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.ConnectTo]).Value = shape.ConnectTo;
 					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.ToLineLabel]).Value = shape.ToLineLabel;
 
-					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.ToLinePattern]).Value = ""; // default to solid
+					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.ToLinePattern]).Value = ""; // use default
 					// we only want to populate this field if we are connected to another shape
 					if (!string.IsNullOrEmpty(shape.ConnectTo))
 					{
-						sTmp = visioHelper.GetConnectorLinePatternText(shape.ToLinePattern);
+						sTmp = visioHelper.GetConnectorLinePattern(shape.ToLinePattern);
 						if (!string.IsNullOrEmpty(sTmp))
 						{
 							((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.ToLinePattern]).Value = sTmp;
@@ -578,17 +648,12 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.ToLineColor]).Value = shape.ToLineColor;
 
 					// get the To Line Weight value
+					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.ToLineWeight]).Value = "";	// set default
 					sTmp = shape.ToLineWeight;
-					if (string.IsNullOrEmpty(sTmp))
+					if (!string.IsNullOrEmpty(sTmp))
 					{
-						((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.ToLineWeight]).Value = "";
-					}
-					else
-					{
-						// check if value is "1 pt" is so we don't want to write to the excel file.   "" is same as "1 pt"
-						if (!shape.ToLineWeight.Equals("1 pt", StringComparison.OrdinalIgnoreCase))
+						if (visioHelper.IsConnectorLineWeight(sTmp))
 						{
-							sTmp = visioHelper.FindConnectorLineWeight(sTmp);
 							// not "1 pt" so lets check if valid entry and if so persist it
 							((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.ToLineWeight]).Value = sTmp;
 						}
@@ -609,6 +674,12 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 			return false;
 		}
 
+		/// <summary>
+		/// formatVisioDataSheet
+		/// this function will format the VisioData sheet
+		/// Header, columns widths, Colors
+		/// </summary>
+		/// <param name="workSheet"></param>
 		private void formatVisioDataSheet(Excel.Worksheet workSheet)
 		{
 			Excel.Range xlRange = workSheet.UsedRange;
@@ -734,7 +805,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				((Excel.Range)xlNewSheet.Cells[1, 3]).Value = "Arrows";
 				((Excel.Range)xlNewSheet.Cells[1, 3]).ColumnWidth = 20.00;
 				xlNewSheet.Cells[1, 3].Interior.Color = Excel.XlRgbColor.rgbDarkSeaGreen;
-				List<string> strArray = visioHelper.GetConnectorArrows();
+				List<string> strArray = visioHelper.GetConnectorArrowTypes();
 				if (strArray.Count > 0)
 				{
 					int nRow = 2;
@@ -875,7 +946,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 
 			// the count will be dynamic based on the json data in the OmnicellBlueprintingTool.json.json file
 			string tablesColorColumn = String.Format("=Tables!$A${0}:$A${1}", startingRow, visioHelper.GetAllColorNames().Count + 1);
-			string tablesArrowsColumn = String.Format("=Tables!$C${0}:$C${1}", startingRow, visioHelper.GetConnectorArrows().Count + 1);
+			string tablesArrowsColumn = String.Format("=Tables!$C${0}:$C${1}", startingRow, visioHelper.GetConnectorArrowTypes().Count + 1);
 			string tablesLabelFontSizeColumn = String.Format("=Tables!$E${0}:$E${1}", startingRow, visioHelper.GetStencilLabelFontSize().Count + 1);
 			string tablesLinePatternColumn = String.Format("=Tables!$G${0}:$G${1}", startingRow, visioHelper.GetConnectorLinePatterns().Count + 1);
 			string tablesLabelPositionColumn = String.Format("=Tables!$I${0}:$I${1}", startingRow, visioHelper.GetStencilLabelPositions().Count + 1);
@@ -988,6 +1059,16 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 			xlRange1.Validation.InCellDropdown = true;
 			xlRange1.Validation.IgnoreBlank = false;
 		}
+		
+		/// <summary>
+		/// saveFile
+		/// Prompt the user if they want to save the file
+		/// if No the file will not be saved
+		/// if Yes the file will be saved into the ExcelData folder or a folder that was specificed
+		/// All excel objects will be closed
+		/// </summary>
+		/// <param name="fileNamePath"></param>
+		/// <returns>bool true:success</returns>
 		private bool saveFile(string fileNamePath)
 		{
 			bool bSave = true;
@@ -1024,29 +1105,64 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 		/// </param>
 		private void closeExcel(bool bSave)
 		{
-			if (_xlWorkbook != null)
-			{
-				_xlWorkbook.Close(bSave, Type.Missing, Type.Missing);
-			}
-			if (_xlApp != null)
-			{
-				_xlApp.Quit();
-			}
+			//quit and release
+			_xlWorkbook.Close(bSave, Type.Missing, Type.Missing);
+			_xlApp.Quit();
 
-			if (_xlWorkbook != null)
+			//release com objects to fully kill excel process from running in the background
+			releaseObject(_xlApp);
+			releaseObject(_xlWorkbook);
+			releaseObject(_xlWorksheet);
+
+			killExcelProcesses(_excelProcsOld);
+		}
+
+		private void releaseObject(object obj)
+		{
+			try
 			{
-				Marshal.ReleaseComObject(_xlWorksheet);
-				_xlWorksheet = null;
+				System.Runtime.InteropServices.Marshal.ReleaseComObject(obj);
+				obj = null;
 			}
-			if (_xlWorksheet != null)
+			catch (Exception ex)
 			{
-				Marshal.ReleaseComObject(_xlWorkbook);
-				_xlWorkbook = null;
+				obj = null;
+				string sTmp = string.Format("ProcessExcelDataFile::releaseObject - Exception\n\nUnable to release the Object:{0}\n{1}", ex.Message, ex.StackTrace);
+				MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
 			}
-			if (_xlApp != null)
+			finally
 			{
-				Marshal.ReleaseComObject(_xlApp);
-				_xlApp = null;
+				GC.Collect();
+			}
+		}
+
+		/// <summary>
+		/// killExcelProcesses
+		/// kill all the excell processes to ensure everything is released
+		/// Keep any existing Excel processes already opened before this app has started
+		/// </summary>
+		/// <param name="excelProcsOld"></param>
+		private void killExcelProcesses(Process[] excelProcsOld)
+		{
+			//Compare the EXCEL ID and Kill it 
+			Process[] excelProcsNew = Process.GetProcessesByName("EXCEL");
+			foreach (Process procNew in excelProcsNew)
+			{
+				int exist = 0;
+				if (excelProcsOld != null)
+				{
+					foreach (Process procOld in excelProcsOld)
+					{
+						if (procNew.Id == procOld.Id)
+						{
+							exist++;
+						}
+					}
+				}
+				if (exist == 0)
+				{
+					procNew.Kill();
+				}
 			}
 		}
 

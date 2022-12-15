@@ -105,6 +105,7 @@ namespace OmnicellBlueprintingTool
 
 				return;
 			}
+			
 			// parse the data file and draw the visio diagram
 			diagramData = new DiagramData();
 		}
@@ -249,12 +250,13 @@ namespace OmnicellBlueprintingTool
 					}
 					else
 					{
-						foreach (var allShp in shapesMap)
-						{
-							int nKey = allShp.Key;
-							ShapeInformation shpInf = allShp.Value;
-							ConsoleOut.writeLine(string.Format("MainForm - ID:{0}; UniqueKey:{1}; Image:{2}, ConnectToID:{3}; ConnectTo:{4}; ToLabel:{5}; ConnectFromID:{6}; ConnectFrom:{7}; FromLabel:{8}", shpInf.ID, shpInf.UniqueKey, shpInf.StencilImage, shpInf.ConnectToID, shpInf.ConnectTo, shpInf.ToLineLabel, shpInf.ConnectFromID, shpInf.ConnectFrom, shpInf.FromLineLabel));
-						}
+						// list all the shapes and connections
+						//foreach (var allShp in shapesMap)
+						//{
+						//	int nKey = allShp.Key;
+						//	ShapeInformation shpInf = allShp.Value;
+						//	ConsoleOut.writeLine(string.Format("MainForm - ID:{0}; UniqueKey:{1}; Image:{2}, ConnectToID:{3}; ConnectTo:{4}; ToLabel:{5}; ConnectFromID:{6}; ConnectFrom:{7}; FromLabel:{8}", shpInf.ID, shpInf.UniqueKey, shpInf.StencilImage, shpInf.ConnectToID, shpInf.ConnectTo, shpInf.ToLineLabel, shpInf.ConnectFromID, shpInf.ConnectFrom, shpInf.FromLineLabel));
+						//}
 						CreateExcelDataFile createExcelDataFile = new CreateExcelDataFile();
 						string sPath = string.Format(@"{0}{1}", tb_buildExcelPath.Text.Trim(), tb_buildExcelFileName.Text.Trim());
 						if (createExcelDataFile.PopulateExcelDataFile(diagramData, visioHelper, shapesMap, sPath))

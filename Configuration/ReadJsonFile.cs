@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Web.Script.Serialization;
@@ -9,6 +10,13 @@ namespace OmnicellBlueprintingTool.Configuration
 {
 	public static class ReadJsonFile
 	{
+		/// <summary>
+		/// ReadJSONFile
+		/// Process the Application configuration JSON file to obtain app settings
+		/// </summary>
+		/// <param name="fileNamePath"></param>
+		/// <param name="visioHelper"></param>
+		/// <returns>bool false:success</returns>
 		public static bool ReadJSONFile(string fileNamePath, ref VisioHelper visioHelper)
 		{
 			//AppConfiguration appConfig = new AppConfiguration();
@@ -35,7 +43,7 @@ namespace OmnicellBlueprintingTool.Configuration
 					{
 						string key = pair.ElementAtOrDefault(0).Value.ToString().Trim();
 						string value = pair.ElementAtOrDefault(1).Value.ToString().Trim();
-						if (key.Equals("Blank"))
+						if (key.Equals("Blank", StringComparison.OrdinalIgnoreCase))
 						{
 							colors.Add("");
 							colorMap.Add("\"\"", value);
@@ -49,25 +57,25 @@ namespace OmnicellBlueprintingTool.Configuration
 					visioHelper.SetColorsMap(colorMap);
 
 					values = tables["Arrows"];
-					visioHelper.SetConnectorArrowsList(values.Select(i => i.ToString()).ToList());
+					visioHelper.SetConnectorArrowTypes(values.Select(i => i.ToString()).ToList());
 
 					values = tables["Shape Types"];
-					visioHelper.SetShapeTypesList(values.Select(i => i.ToString()).ToList());
+					visioHelper.SetShapeTypes(values.Select(i => i.ToString()).ToList());
 
 					values = tables["Line Patterns"];
-					visioHelper.SetConnectorLinePatternsList(values.Select(i => i.ToString()).ToList());
+					visioHelper.SetConnectorLinePatterns(values.Select(i => i.ToString()).ToList());
 
 					values = tables["Line Weights"];
-					visioHelper.SetConnectorLineWeightsList(values.Select(i => i.ToString()).ToList());
+					visioHelper.SetConnectorLineWeights(values.Select(i => i.ToString()).ToList());
 
 					values = tables["Stencil Label Positions"];
-					visioHelper.SetStencilLabelPositionsList(values.Select(i => i.ToString()).ToList());
+					visioHelper.SetStencilLabelPositions(values.Select(i => i.ToString()).ToList());
 
 					values = tables["Shape Label Font Sizes"];
-					visioHelper.SetStencilLabelFontSizeList(values.Select(i => i.ToString()).ToList());
+					visioHelper.SetStencilLabelFontSizes(values.Select(i => i.ToString()).ToList());
 
 					values = tables["Stencil Image Names"];
-					visioHelper.SetDefaultStencilNamesList(values.Select(i => i.ToString()).ToList());
+					visioHelper.SetDefaultStencilNames(values.Select(i => i.ToString()).ToList());
 				}
 			}
 			catch(FileNotFoundException fne)

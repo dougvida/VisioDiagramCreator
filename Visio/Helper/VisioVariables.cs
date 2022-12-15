@@ -53,14 +53,17 @@ namespace OmnicellBlueprintingTool.Visio
 		public const string RGB_COLOR_2SKIP = "RGB(77,77,77)";   // when reading a Visio diagram and writing an Excel file this is a color that is added.
 																					// it's dark gray so we want to ignore this one
 
-		public enum FormulaUse
-		{
-			Value,
-			Error,
-			Hide,
-			Match
-		}
+		public const string UNKNOWN_SHAPE = "OC_Unknown";        // value of the app default visio stencil name for an unknown shape when processing a Visio Diag.
 
+		public const double STENCIL_SIZE_BUFFER = 0.080;	// buffer size.
+																			// used in calculation to determine if the shape on the diagram has been resized
+																			// If the shape width and height are with the margin based on the stencil width,height the
+																			// shape has not been resized and the width and height can be set to 0
+
+		/// <summary>
+		/// ShowDiagram
+		/// enum
+		/// </summary>
 		public enum ShowDiagram
 		{
 			NoShow = 0,
@@ -69,14 +72,19 @@ namespace OmnicellBlueprintingTool.Visio
 
 		/** ************************************************************************************** **/
 
-		//TODO 3 Look to determine if this is needed
+
 		public enum VisioPageOrientation
 		{
 			Landscape,
 			Portrait
 		}
 
-		//TODO 3 Look to determine if this is needed
+		/// <summary>
+		/// GetVisioPageOrientation
+		/// return the VisioPazgeOrientation based on the argument value
+		/// </summary>
+		/// <param name="pgOr"></param>
+		/// <returns>VisioPageOrientation</returns>
 		public static VisioPageOrientation GetVisioPageOrientation(string pgOr)
 		{
 			switch (pgOr.Trim().ToUpper())
@@ -102,6 +110,12 @@ namespace OmnicellBlueprintingTool.Visio
 			A4
 		}
 
+		/// <summary>
+		/// GetVisioPageSize
+		/// return the supported VisioPageSize based on the value passed in
+		/// </summary>
+		/// <param name="pgSz"></param>
+		/// <returns>VisioPageSize</returns>
 		public static VisioPageSize GetVisioPageSize(string pgSz)
 		{
 			switch (pgSz.Trim().ToUpper())

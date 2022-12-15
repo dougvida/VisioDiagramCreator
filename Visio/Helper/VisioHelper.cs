@@ -27,6 +27,7 @@ namespace OmnicellBlueprintingTool.Visio
 		List<Visio1.Document> stencilsList = new List<Visio1.Document>();
 
 		//** *********************************************************************************************************** **//
+
 		// this section from json file for excel table entries for Visio
 		private static StringComparer comparer = StringComparer.OrdinalIgnoreCase;
 		private static List<string> _shapeTypesList = null;
@@ -318,7 +319,7 @@ namespace OmnicellBlueprintingTool.Visio
 				for (int nIdx = 1;  nIdx <= pagesObj.Count; nIdx++)
 				{
 					var name = pagesObj[nIdx].Name.Trim();
-					if (name.ToString().ToUpper().Trim().Equals(pageName.ToUpper().Trim()))
+					if (name.ToString().Trim().Equals(pageName.Trim(), StringComparison.OrdinalIgnoreCase))
 					{
 						SetActivePage(nIdx); // set the active page
 						return;
@@ -327,7 +328,6 @@ namespace OmnicellBlueprintingTool.Visio
 				SetActivePage(1); // if all others failed set to the first page
 			}
 		}
-
 
 		/// <summary>
 		/// GetNumberOfVisioPages
@@ -406,7 +406,6 @@ namespace OmnicellBlueprintingTool.Visio
 				}
 
 				Visio1.Pages pagesObj = this.appVisio.ActiveDocument.Pages;
-
 				SetActivePage(device.ShapeInfo.VisioPage);
 
 				// draw the shape on the document
@@ -414,46 +413,34 @@ namespace OmnicellBlueprintingTool.Visio
 				shpObj.NameU = device.ShapeInfo.UniqueKey;
 				shpObj.Name = device.ShapeInfo.StencilImage;
 
-				#region keep
-				// keep this section because it provides an offset when resizing shapes
-				// normal stencilsList are normal (east-width and south-height)
-				double WidthAdjustment = 0.0; // Math.Truncate(shpObj.get_Cells("Width").ResultIU * 1000) / 1000;
-				double HeightAdjustment = 0.0; // Math.Truncate(shpObj.get_Cells("Height").ResultIU * 1000) / 1000;
-				if (device.ShapeInfo.StencilImage.IndexOf("Group", StringComparison.OrdinalIgnoreCase) >= 0 ||
-					 device.ShapeInfo.StencilImage.IndexOf("Dash", StringComparison.OrdinalIgnoreCase) >= 0)
-				{
-					WidthAdjustment = 0.750;   // shape stencil size
-					HeightAdjustment = 0.268;  // shape stencil size
-				}
-				#endregion
 				if (device.ShapeInfo.Width > 0.0)
 				{
 					// we need to stretch East
-					shpObj.Resize(VisResizeDirection.visResizeDirE, device.ShapeInfo.Width - WidthAdjustment, VisUnitCodes.visDrawingUnits);
+					shpObj.Resize(VisResizeDirection.visResizeDirE, device.ShapeInfo.Width - device.ShapeInfo.StencilWidth, VisUnitCodes.visDrawingUnits);
 				}
 				if (device.ShapeInfo.Height > 0.0)
 				{
 					// we need to stretch south
-					shpObj.Resize(VisResizeDirection.visResizeDirS, device.ShapeInfo.Height - HeightAdjustment, VisUnitCodes.visDrawingUnits);
+					shpObj.Resize(VisResizeDirection.visResizeDirS, device.ShapeInfo.Height - device.ShapeInfo.StencilHeight, VisUnitCodes.visDrawingUnits);
 				}
 
 				//var linePatternCell = shpConn.get_CellsU("LinePattern");
 
-				// Look at the Fill color name to use.  if empty check the rgbFillColor field
+				// Look at the Fill color name to use.  if empty check the RGBFillColor field
 				string rgb = GetRGBColor(device.ShapeInfo.FillColor);
 				if (string.IsNullOrEmpty(rgb))
 				{
-					// FillColor is empty now check if we should use the rgbFillColor
-					if (!string.IsNullOrEmpty(device.ShapeInfo.rgbFillColor))
+					// FillColor is empty now check if we should use the RGBFillColor
+					if (!string.IsNullOrEmpty(device.ShapeInfo.RGBFillColor))
 					{
-						// yes use the rgbFillColor
-						rgb = device.ShapeInfo.rgbFillColor;
+						// yes use the RGBFillColor
+						rgb = device.ShapeInfo.RGBFillColor;
 
 						// we don't want to fill these objects
 						// (Logo, Footer, Title)
-						if (device.ShapeInfo.StencilImage.IndexOf("Logo") >= 0 ||
-							device.ShapeInfo.StencilImage.IndexOf("Title") >= 0 ||
-							device.ShapeInfo.StencilImage.IndexOf("Footer") >= 0 )
+						if (device.ShapeInfo.StencilImage.IndexOf("Logo", StringComparison.OrdinalIgnoreCase) >= 0 ||
+							device.ShapeInfo.StencilImage.IndexOf("Title", StringComparison.OrdinalIgnoreCase) >= 0 ||
+							device.ShapeInfo.StencilImage.IndexOf("Footer", StringComparison.OrdinalIgnoreCase) >= 0 )
 						{
 							rgb = "";
 						}
@@ -461,7 +448,7 @@ namespace OmnicellBlueprintingTool.Visio
 				}
 				if (!string.IsNullOrEmpty(rgb))
 				{
-					if (device.ShapeInfo.StencilImage.Trim().IndexOf("OC_DashOutline") >= 0)
+					if (device.ShapeInfo.StencilImage.Trim().IndexOf("OC_DashOutline", StringComparison.OrdinalIgnoreCase) >= 0)
 					{
 						// handle this shape differently.
 						// Only the line color should be set.  No fill
@@ -505,7 +492,7 @@ namespace OmnicellBlueprintingTool.Visio
 					shpObj.Text = device.ShapeInfo.StencilLabel;
 					if (!string.IsNullOrEmpty(device.ShapeInfo.StencilLabelFontSize))
 					{
-						if (device.ShapeInfo.isStencilLabelFontBold)
+						if (device.ShapeInfo.IsStencilLabelFontBold)
 						{
 							// bold font
 							shpObj.get_CellsSRC(
@@ -514,10 +501,7 @@ namespace OmnicellBlueprintingTool.Visio
 								 (short)Visio1.VisCellIndices.visCharacterStyle).FormulaU = "1";
 							//shpObj.TextStyleKeepFmt = "Bold";    // Using this code would not allow the font size to be changed
 						}
-						//shpObj.get_Cells("Char.Size").Formula = "=" + device.ShapeInfo.StencilLabelFontSize + " pt";	// was
-						shpObj.get_Cells("Char.Size").FormulaU = "=" + device.ShapeInfo.StencilLabelFontSize + " pt";   // changed to
-																																						//shpObj.Cells("Char.Size").FormulaU = device.ShapeInfo.StencilLabelFontSize + " pt";
-																																						//string fontSize = shpObj.get_Cells("Char.Size").Formula;
+						shpObj.get_Cells("Char.Size").FormulaU = "=" + device.ShapeInfo.StencilLabelFontSize + " pt";
 					}
 
 					// check if we have an IP that needs to be displayed
@@ -532,7 +516,9 @@ namespace OmnicellBlueprintingTool.Visio
 					int textLen = shpObj.Text.Length;
 
 					// check if we need to move the text box to the bottom of the stencil
-					if ((!string.IsNullOrEmpty(device.ShapeInfo.StencilLabelPosition) || (device.ShapeInfo.StencilLabelPosition.IndexOf(VisioVariables.STINCEL_LABEL_POSITION_BOTTOM)>= 0)) && textLen > 0)
+					if ((!string.IsNullOrEmpty(device.ShapeInfo.StencilLabelPosition) || 
+						 (device.ShapeInfo.StencilLabelPosition.IndexOf(VisioVariables.STINCEL_LABEL_POSITION_BOTTOM, StringComparison.OrdinalIgnoreCase) >= 0)) &&
+						 textLen > 0)
 					{
 						short exists = shpObj.RowExists[(short)Visio1.VisSectionIndices.visSectionObject,
 												 (short)Visio1.VisRowIndices.visRowTextXForm,
@@ -587,7 +573,7 @@ namespace OmnicellBlueprintingTool.Visio
 			}
 			catch(Exception ep)
 			{
-				string sTmp = string.Format("VisioHelper::_drawShape.  Drawing:{0}-{1}\n\n{3}", device.ShapeInfo.StencilImage, device.ShapeInfo.UniqueKey, ep.Message);
+				string sTmp = string.Format("VisioHelper::_drawShape.  Drawing:{0}-{1}\n\n{2}", device.ShapeInfo.StencilImage, device.ShapeInfo.UniqueKey, ep.Message);
 				MessageBox.Show(sTmp, "EXCEPTION", MessageBoxButtons.OK, MessageBoxIcon.Error);
 				ConsoleOut.writeLine(sTmp);
 				return null;
@@ -1005,10 +991,15 @@ namespace OmnicellBlueprintingTool.Visio
 			}
 		}
 
-
 		/** ************************************************************************************** **/
 
-		public bool SetShapeTypesList(List<string> values)
+		/// <summary>
+		/// SetShapeTypes
+		/// List of items to add
+		/// </summary>
+		/// <param name="value">List<string> to add</param>
+		/// <returns "bool">true error else success</returns>
+		public bool SetShapeTypes(List<string> values)
 		{
 			if (values == null || values.Count <= 0)
 			{
@@ -1018,6 +1009,12 @@ namespace OmnicellBlueprintingTool.Visio
 			{
 				_shapeTypesList = new List<string>();
 			}
+			else
+			{
+				// Clear the existing list
+				_shapeTypesList.Clear();
+			}
+
 			foreach (string value in values)
 			{
 				_shapeTypesList.Add(value);
@@ -1025,38 +1022,50 @@ namespace OmnicellBlueprintingTool.Visio
 			return false;  // success
 		}
 
+		/// <summary>
+		/// GetShapeTypes
+		/// return a list of string representing the values for Shape types
+		/// </summary>
+		/// <returns>List<string></returns>
 		public List<string> GetShapeTypes()
 		{
 			if (_shapeTypesList == null)
 			{
-				return null;
+				_shapeTypesList = new List<string>();
 			}
 			return _shapeTypesList;
 		}
 
-		public string FindShapeType(string value)
+		/// <summary>
+		/// IsShapeType
+		/// verify if value is a valid entry
+		/// </summary>
+		/// <param name="value">Search for</param>
+		/// <returns "bool">true valid else not valid</returns>
+		public bool IsShapeType(string value)
 		{
-			if (_shapeTypesList == null)
+			if (_shapeTypesList != null && !string.IsNullOrEmpty(value))
 			{
-				return "";  // Use default value
-			}
-			if (string.IsNullOrEmpty(value))
-			{
-				return ""; // Use default value
-			}
-			foreach (string item in _shapeTypesList)
-			{
-				if (item.Equals(value.Trim(), StringComparison.OrdinalIgnoreCase))
+				foreach (string item in _shapeTypesList)
 				{
-					return item;
+					if (item.Equals(value.Trim(), StringComparison.OrdinalIgnoreCase))
+					{
+						return true;
+					}
 				}
 			}
-			return "";  // Use default value
+			return false;  // Not found
 		}
 
 		/** ************************************************************************************** **/
 
-		public bool SetConnectorArrowsList(List<string> values)
+		/// <summary>
+		/// SetConnectorArrowTypes
+		/// list of items to add
+		/// </summary>
+		/// <param name="value">List<string></param>
+		/// <returns>true - error else success</returns>
+		public bool SetConnectorArrowTypes(List<string> values)
 		{
 			if (values == null || values.Count <= 0)
 			{
@@ -1066,6 +1075,12 @@ namespace OmnicellBlueprintingTool.Visio
 			{
 				_connectorArrowsList = new List<string>();
 			}
+			else
+			{
+				// Clear the existing list
+				_connectorArrowsList.Clear();
+			}
+
 			foreach (string value in values)
 			{
 				_connectorArrowsList.Add(value);
@@ -1073,38 +1088,50 @@ namespace OmnicellBlueprintingTool.Visio
 			return false;  // success
 		}
 
-		public List<string> GetConnectorArrows()
+		/// <summary>
+		/// GetConnectorArrowTypes
+		/// return a list of strings representing Arrow types
+		/// </summary>
+		/// <returns>List<string></returns>
+		public List<string> GetConnectorArrowTypes()
 		{
 			if (_connectorArrowsList == null)
 			{
-				return null;
+				_connectorArrowsList = new List<string>();
 			}
 			return _connectorArrowsList;
 		}
 
-		public string FindConnectorArrow(string value)
+		/// <summary>
+		/// IsConnectorArrowType
+		/// verify if value is a valid entry
+		/// </summary>
+		/// <param name="value"></param>
+		/// <returns "bool">true valid else not valid</returns>
+		public bool IsConnectorArrowType(string value)
 		{
-			if (_connectorArrowsList == null)
+			if (_connectorArrowsList != null && !string.IsNullOrEmpty(value))
 			{
-				return "";  // Use default value
-			}
-			if (string.IsNullOrEmpty(value))
-			{
-				return ""; // Use default value
-			}
-			foreach (string item in _connectorArrowsList)
-			{
-				if (item.Equals(value.Trim(), StringComparison.OrdinalIgnoreCase))
+				foreach (string item in _connectorArrowsList)
 				{
-					return item;
+					if (item.Equals(value.Trim(), StringComparison.OrdinalIgnoreCase))
+					{
+						return true;
+					}
 				}
 			}
-			return "";  // Use default value
+			return false;  // Not found
 		}
 
 		/** ************************************************************************************** **/
 
-		public bool SetConnectorLinePatternsList(List<string> values)
+		/// <summary>
+		/// SetConnectorLinePatterns
+		/// list of items to add
+		/// </summary>
+		/// <param name="value">List<string></param>
+		/// <returns>true - error else success</returns>
+		public bool SetConnectorLinePatterns(List<string> values)
 		{
 			if (values == null || values.Count <= 0)
 			{
@@ -1115,6 +1142,12 @@ namespace OmnicellBlueprintingTool.Visio
 			{
 				_connectorLinePatternsList = new List<string>();
 			}
+			else
+			{
+				// Clear the existing list
+				_connectorLinePatternsList.Clear();
+			}
+
 			foreach (string value in values)
 			{
 				_connectorLinePatternsList.Add(value);
@@ -1122,33 +1155,33 @@ namespace OmnicellBlueprintingTool.Visio
 			return false;  // success
 		}
 
+		/// <summary>
+		/// GetConnectorLinePatterns
+		/// return a list of strings representing line patterns
+		/// </summary>
+		/// <returns>List<string></returns>
 		public List<string> GetConnectorLinePatterns()
 		{
 			if (_connectorLinePatternsList == null)
 			{
-				return null;
+				_connectorLinePatternsList = new List<string>();
 			}
 			return _connectorLinePatternsList;
 		}
 
 		/// <summary>
-		/// GetConnectorLinePatternText
-		/// Because Visio uses a numeric value for line patterns we need
-		/// to convert to text when writing to Excel
+		/// GetConnectorLinePattern
+		/// we need to write a line pattern value to the Excel file
+		/// return a string respresenting a valid line patterns
 		/// </summary>
 		/// <param name="value"></param>
-		/// <returns></returns>
-		public string GetConnectorLinePatternText(double value)
+		/// <returns>string</returns>
+		public string GetConnectorLinePattern(double value)
 		{
-			if (_connectorLinePatternsList == null)
+			if (_connectorLinePatternsList == null || value < 1)
 			{
-				return "";  // Use default value
+				return "";
 			}
-			if (value < 1)
-			{
-				return ""; // Use default value
-			}
-
 			// convert value to int (use as an index)
 			switch(value)
 			{
@@ -1164,29 +1197,36 @@ namespace OmnicellBlueprintingTool.Visio
 			}
 		}
 
-		public string FindConnectorLinePattern(string value)
+		/// <summary>
+		/// IsConnectorLinePattern
+		/// verify if value is a valid entry
+		/// </summary>
+		/// <param name="value"></param>
+		/// <returns "bool">true valid else not valid</returns>
+		public bool IsConnectorLinePattern(string value)
 		{
-			if (_connectorLinePatternsList == null)
+			if (_connectorLinePatternsList != null && !string.IsNullOrEmpty(value))
 			{
-				return "";  // Use default value
-			}
-			if (string.IsNullOrEmpty(value))
-			{
-				return ""; // Use default value
-			}
-			foreach (string item in _connectorLinePatternsList)
-			{
-				if (item.Equals(value.Trim(), StringComparison.OrdinalIgnoreCase))
+				foreach (string item in _connectorLinePatternsList)
 				{
-					return item;
+					if (item.Equals(value.Trim(), StringComparison.OrdinalIgnoreCase))
+					{
+						return true;
+					}
 				}
 			}
-			return "";  // Use default value
+			return false;  // Not found
 		}
 
 		/** ************************************************************************************** **/
 
-		public bool SetStencilLabelPositionsList(List<string> values)
+		/// <summary>
+		/// SetStencilLabelPositions
+		/// List of items to add
+		/// </summary>
+		/// <param name="value">List<string> to add</param>
+		/// <returns "bool">true error else success</returns>
+		public bool SetStencilLabelPositions(List<string> values)
 		{
 			if (values == null || values.Count <= 0)
 			{
@@ -1196,6 +1236,12 @@ namespace OmnicellBlueprintingTool.Visio
 			{
 				_stencilLabelPositionsList = new List<string>();
 			}
+			else
+			{
+				// Clear the existing list
+				_stencilLabelPositionsList.Clear();
+			}
+
 			foreach (string value in values)
 			{
 				_stencilLabelPositionsList.Add(value);
@@ -1204,38 +1250,50 @@ namespace OmnicellBlueprintingTool.Visio
 			return false;  // success
 		}
 
+		/// <summary>
+		/// GetStencilLabelPositions
+		/// return a list of strings representing label Positions
+		/// </summary>
+		/// <returns>List<string></returns>
 		public List<string> GetStencilLabelPositions()
 		{
 			if (_stencilLabelPositionsList == null)
 			{
-				return null;
+				_stencilLabelPositionsList = new List<string>();
 			}
 			return _stencilLabelPositionsList;
 		}
 
-		public string FindStencilLabelPosition(string value)
+		/// <summary>
+		/// IsStencilLabelPosition
+		/// verify if value is a valid entry
+		/// </summary>
+		/// <param name="value"></param>
+		/// <returns "bool">true valid else not valid</returns>
+		public bool IsStencilLabelPosition(string value)
 		{
-			if (_stencilLabelPositionsList == null)
+			if (_stencilLabelPositionsList != null && !string.IsNullOrEmpty(value))
 			{
-				return "";  // Use default value
-			}
-			if (string.IsNullOrEmpty(value))
-			{
-				return ""; // Use default value
-			}
-			foreach (string item in _stencilLabelPositionsList)
-			{
-				if (item.Equals(value.Trim(), StringComparison.OrdinalIgnoreCase))
+				foreach (string item in _stencilLabelPositionsList)
 				{
-					return item;
+					if (item.Equals(value.Trim(), StringComparison.OrdinalIgnoreCase))
+					{
+						return true;
+					}
 				}
 			}
-			return "";  // Use default value
+			return false;  // Not found
 		}
 
 		/** ************************************************************************************** **/
 
-		public bool SetStencilLabelFontSizeList(List<string> values)
+		/// <summary>
+		/// SetStencilLabelFontSizes
+		/// List of items to add
+		/// </summary>
+		/// <param name="value">List<string> to add</param>
+		/// <returns "bool">true error else success</returns>
+		public bool SetStencilLabelFontSizes(List<string> values)
 		{
 			if (values == null || values.Count <= 0)
 			{
@@ -1245,6 +1303,12 @@ namespace OmnicellBlueprintingTool.Visio
 			{
 				_stencilLabelFontSizesList = new List<string>();
 			}
+			else
+			{
+				// Clear the existing list
+				_stencilLabelFontSizesList.Clear();
+			}
+
 			foreach (string value in values)
 			{
 				_stencilLabelFontSizesList.Add(value);
@@ -1252,38 +1316,50 @@ namespace OmnicellBlueprintingTool.Visio
 			return false;  // success
 		}
 
+		/// <summary>
+		/// GetStencilLabelFontSize
+		/// return a list of strings representing label Positions
+		/// </summary>
+		/// <returns>List<string></returns>
 		public List<string> GetStencilLabelFontSize()
 		{
 			if (_stencilLabelFontSizesList == null)
 			{
-				return null;
+				_stencilLabelFontSizesList = new List<string>();
 			}
 			return _stencilLabelFontSizesList;
 		}
 
-		public string FindStencilLabelFontSize(string value)
+		/// <summary>
+		/// IsStencilLabelFontSize
+		/// verify if value is a valid entry
+		/// </summary>
+		/// <param name="value"></param>
+		/// <returns "bool">true valid else not valid</returns>
+		public bool IsStencilLabelFontSize(string value)
 		{
-			if (_stencilLabelFontSizesList == null)
+			if (_stencilLabelFontSizesList != null && !string.IsNullOrEmpty(value))
 			{
-				return "";  // Use default value
-			}
-			if (string.IsNullOrEmpty(value))
-			{
-				return ""; // Use default value
-			}
-			foreach (string item in _connectorLineWeightsList)
-			{
-				if (item.Equals(value.Trim(), StringComparison.OrdinalIgnoreCase))
+				foreach (string item in _connectorLineWeightsList)
 				{
-					return item;
+					if (item.Equals(value.Trim(), StringComparison.OrdinalIgnoreCase))
+					{
+						return true;
+					}
 				}
 			}
-			return "";  // Use default value
+			return false;  // Not found
 		}
 
 		/** ************************************************************************************** **/
 
-		public bool SetConnectorLineWeightsList(List<string> values)
+		/// <summary>
+		/// SetConnectorLineWeights
+		/// List of items to add
+		/// </summary>
+		/// <param name="value">List<string> to add</param>
+		/// <returns "bool">true error else success</returns>
+		public bool SetConnectorLineWeights(List<string> values)
 		{
 			if (values == null || values.Count <= 0)
 			{
@@ -1293,6 +1369,12 @@ namespace OmnicellBlueprintingTool.Visio
 			{
 				_connectorLineWeightsList = new List<string>();
 			}
+			else
+			{
+				// Clear the existing list
+				_connectorLineWeightsList.Clear();
+			}
+
 			foreach (string value in values)
 			{
 				_connectorLineWeightsList.Add(value);
@@ -1300,47 +1382,50 @@ namespace OmnicellBlueprintingTool.Visio
 			return false;  // success
 		}
 
+		/// <summary>
+		/// GetConnectorLineWeights
+		/// return a list of strings representing label Positions
+		/// </summary>
+		/// <returns>List<string></returns>
 		public List<string> GetConnectorLineWeights()
 		{
 			if (_connectorLineWeightsList == null)
 			{
-				return null;
+				_connectorLineWeightsList = new List<string>();
 			}
 			return _connectorLineWeightsList;
 		}
 
 		/// <summary>
-		/// FindConnectorLineWeight
-		/// search the list for the paramater
-		/// if found use that value as the To or From Line Weight value as a string
-		/// if not found null will be returned so use the default value
-		/// ignore case
+		/// IsConnectorLineWeight
+		/// verify if value is a valid entry
 		/// </summary>
-		/// <param name="value">lookup</param>
-		/// <returns>Found value or null</returns>
-		public string FindConnectorLineWeight(string value)
+		/// <param name="value"></param>
+		/// <returns "bool">true valid else not valid</returns>
+		public bool IsConnectorLineWeight(string value)
 		{
-			if (_connectorLineWeightsList == null)
+			if (_connectorLineWeightsList != null && !string.IsNullOrEmpty(value))
 			{
-				return "";  // use default value
-			}
-			if (string.IsNullOrEmpty(value))
-			{
-				return "";  // Use default value
-			}
-			foreach (string item in _connectorLineWeightsList)
-			{
-				if (item.Equals(value.Trim(), StringComparison.OrdinalIgnoreCase))
+				foreach (string item in _connectorLineWeightsList)
 				{
-					return item;
+					if (item.Equals(value.Trim(), StringComparison.OrdinalIgnoreCase))
+					{
+						return true;
+					}
 				}
 			}
-			return "";  // use default value
+			return false;  // Not found
 		}
 
 		/** ************************************************************************************** **/
 
-		public bool SetDefaultStencilNamesList(List<string> names)
+		/// <summary>
+		/// SetDefaultStencilNames
+		/// List of items to add
+		/// </summary>
+		/// <param name="value">List<string> to add</param>
+		/// <returns "bool">true error else success</returns>
+		public bool SetDefaultStencilNames(List<string> names)
 		{
 			if (names == null || names.Count <= 0)
 			{
@@ -1350,6 +1435,11 @@ namespace OmnicellBlueprintingTool.Visio
 			{
 				_defaultStencilNames = new List<string>();
 			}
+			else
+			{
+				// Clear the existing list
+				_defaultStencilNames.Clear();
+			}
 			foreach (string name in names)
 			{
 				_defaultStencilNames.Add(name);
@@ -1357,45 +1447,48 @@ namespace OmnicellBlueprintingTool.Visio
 			return false;  // success
 		}
 
+		/// <summary>
+		/// GetDefaultStencilNames
+		/// return a list of strings representing label Positions
+		/// </summary>
+		/// <returns>List<string></returns>
 		public List<string> GetDefaultStencilNames()
 		{
 			if (_defaultStencilNames == null)
 			{
-				return null;
+				_defaultStencilNames = new List<string>();
 			}
 			return _defaultStencilNames;
 		}
 
-
 		/// <summary>
-		/// FindDefaultStencilName
-		/// Search if stencil map for the name value argument
-		/// ignore case
+		/// IsDefaultStencilName
+		/// verify if value is a valid entry
 		/// </summary>
-		/// <param name="name">search name</param>
-		/// <returns>null - if not found else the stencil name</returns>
-		public string FindDefaultStencilName(string name)
+		/// <param name="value"></param>
+		/// <returns "bool">true valid else not valid</returns>
+		public bool IsDefaultStencilName(string name)
 		{
-			if (_defaultStencilNames == null)
+			if (_defaultStencilNames != null && !string.IsNullOrEmpty(name))
 			{
-				return "";  // use default value
-			}
-			if (string.IsNullOrEmpty(name))
-			{
-				return "";  // use default value
-			}
-			foreach (string item in _defaultStencilNames)
-			{
-				if (item.Equals(name.Trim(), StringComparison.OrdinalIgnoreCase))
+				foreach (string item in _defaultStencilNames)
 				{
-					return item;
+					if (item.Equals(name.Trim(), StringComparison.OrdinalIgnoreCase))
+					{
+						return true;
+					}
 				}
 			}
-			return "";  // use default value
+			return false;  // Not Found
 		}
 
 		/** ************************************************************************************** **/
 
+		/// <summary>
+		/// ClearVisioPageNamesList
+		/// Clear the list containing the Visio page names
+		/// </summary>
+		/// <returns>/returns>
 		public void ClearVisioPageNamesList()
 		{
 			if (_visioPageNamesList != null)
@@ -1434,7 +1527,7 @@ namespace OmnicellBlueprintingTool.Visio
 
 		/// <summary>
 		/// GetVisioPageNames
-		/// return a list of strings containing page names
+		/// return a list page names
 		/// this is really only used during the processing of reading the Excel data file
 		/// after the Visio diagram has been created use pagesObj[x] to obtain the lames of tabs
 		/// </summary>
@@ -1448,53 +1541,15 @@ namespace OmnicellBlueprintingTool.Visio
 			return _visioPageNamesList;
 		}
 
-		/// <summary>
-		/// GetVisioPageNumberByName
-		/// find the Visio page number based on the Visio page name
-		/// </summary>
-		/// <param string>lookup by page name</param>
-		/// <returns>int - page number</returns>
-		//public int GetVisioPageNumberByName(string name)
-		//{
-		//	string value = string.Empty;
-		//	if (_visioPageNamesList == null)
-		//	{
-		//		_visioPageNamesList = new List<string>();
-		//	}
-		//	if (string.IsNullOrEmpty(name))
-		//	{
-		//		return 1;
-		//	}
-
-		//	// search for the page
-		//	for (int nIdx = 0; nIdx <= _visioPageNamesList.Count; nIdx++)
-		//	{
-		//		if (_visioPageNamesList[nIdx] == name)
-		//		{
-		//			return nIdx+1;	// zero base index.   can't return 0 out of index for Visio everything valuid is > 0
-		//		}
-		//	}
-		//	return 1;  // use default value
-		//}
-
-		/// <summary>
-		/// GetVisioPageNameByNumber
-		/// get the page name for the given page number
-		/// </summary>
-		/// <param int>lookup vakye by page number</param>
-		/// <returns string>page name or "1" if name not found</returns>
-		//public string GetVisioPageNameByNumber(int value)
-		//{
-		//	if ( value <= 0 || _visioPageNamesList == null)
-		//	{
-		//		return "1";
-		//	}
-		//	return _visioPageNamesList[value];
-		//}
-
-
 		/** ************************************************************************************** **/
 
+
+		/// <summary>
+		/// SetColorsMap
+		/// Set the ColorMap dictionary based on the argument values
+		/// </summary>
+		/// <param name="colorsMap">Dictionary<string,string></param>
+		/// <returns>bool</returns>
 		public bool SetColorsMap(Dictionary<string, string> colorsMap)
 		{
 			if (colorsMap == null || colorsMap.Count <= 0)
@@ -1515,6 +1570,11 @@ namespace OmnicellBlueprintingTool.Visio
 			return false;  // success
 		}
 
+		/// <summary>
+		/// GetColorsMap
+		/// return the Dictionary of all the support colors
+		/// </summary>
+		/// <returns>Dictionary<string,string></returns>
 		public Dictionary<string,string> GetColorsMap()
 		{
 			if (_visioColorsMap == null)
@@ -1555,22 +1615,24 @@ namespace OmnicellBlueprintingTool.Visio
 		/// search "RGB(0,0,0)" will return "Black"
 		/// </summary>
 		/// <param name="rgb"></param>
-		/// <returns>string</returns>
-		/// <text>color name</text>
+		/// <returns>string<text>color name</text></returns>
 		public string GetColorValueFromRGB(string rgb)
 		{
 			if (string.IsNullOrEmpty(rgb) || _visioColorsMap == null)
 			{
 				return "";
 			}
+
 			foreach (KeyValuePair<string, string> item in _visioColorsMap)
 			{
-				if (item.Value.Equals(rgb.Trim()))
+				if (item.Value.Equals(rgb.Trim(), StringComparison.OrdinalIgnoreCase))
 				{
 					return item.Key;
 				}
 			}
-			return "";
+			// color match not found
+			// find closest color
+			return getColorNameMatchFromRGB(rgb);
 		}
 
 		/// <summary>
@@ -1605,24 +1667,27 @@ namespace OmnicellBlueprintingTool.Visio
 			return saTmp2;
 		}
 
-		public string FindColorbyName(string name)
+		/// <summary>
+		/// IsValidColor
+		/// check if the color argument is a valid support color
+		/// </summary>
+		/// <param name="name">search for</param>
+		/// <returns>bool - true:valid else false</returns>
+		public bool IsValidColor(string name)
 		{
 			string value = string.Empty;
-			if (string.IsNullOrEmpty(name) || _visioColorsMap == null)
+			if (_visioColorsMap != null && !string.IsNullOrEmpty(name))
 			{
-				return "";
-			}
-
-			foreach (KeyValuePair<string, string> kvp in _visioColorsMap)
-			{
-				if (string.Equals(kvp.Key, name, StringComparison.OrdinalIgnoreCase))
+				foreach (KeyValuePair<string, string> kvp in _visioColorsMap)
 				{
-					return kvp.Key.Trim().ToString();
+					if (string.Equals(kvp.Key, name, StringComparison.OrdinalIgnoreCase))
+					{
+						return true;
+					}
 				}
 			}
-			return "";
+			return false;	// Not found
 		}
-
 
 		/// <summary>
 		/// SetColorNameColorMap
@@ -1659,6 +1724,63 @@ namespace OmnicellBlueprintingTool.Visio
 			return _appColorsMap;
 		}
 
+
+		/// <summary>
+		/// getColorNameMatchFromRGB
+		/// Search if the RGB value is a color match to what the application supports.
+		/// Return the closest color found based on the RGB value
+		/// No match will return an empty string
+		/// </summary>
+		/// <param name="rgb">string</param>
+		/// <returns>Color string if found otherwise empty string</returns>
+		private string getColorNameMatchFromRGB(string rgb)
+		{
+			if (!string.IsNullOrEmpty(rgb))
+			{
+				// no exact match found.  Search for closest color
+				Regex regex = new Regex(@"^RGB\((?<r>\d{1,3}),(?<g>\d{1,3}),(?<b>\d{1,3})\)", RegexOptions.IgnoreCase);
+				string nStr = rgb.Replace(", ", ",");    // Remove space after the ',' character  (should not need to do this)
+				Match match = regex.Match(nStr);
+				int r = int.Parse(match.Groups["r"].Value);
+				int g = int.Parse(match.Groups["g"].Value);
+				int b = int.Parse(match.Groups["b"].Value);
+
+				Color lookupColor = Color.FromArgb(255, r, g, b);
+
+				Dictionary<string, Color> appColorsMap = GetColorNameColorsMap();
+				List<string> matches = new List<string>();
+				foreach (KeyValuePair<string, Color> appColor in appColorsMap)
+				{
+					// start narrow than widen to find the closest color
+					for (int threshold = 5; threshold <= 75; threshold += 10)
+					{
+						if (IsColorsClose(lookupColor, appColor.Value, threshold))
+						{
+							return appColor.Key; // color found
+						}
+					}
+				}
+			}
+			return "";  // color match not found
+		}
+
+		/// <summary>
+		/// IsColorsClose
+		/// this will compare two rgb color
+		/// the color from the Visio diagram will be check if exists or a close respersentation supported by the application default colors (best match)
+		/// the threshold is used to widen the search.  most cases an exact match will not occur so we need to widen the R,G,B values
+		/// </summary>
+		/// <param name="a">Color to look up</param>
+		/// <param name="z">Color supported by application</param>
+		/// <param name="threshold">default is 75</param>
+		/// <returns>bool - true found else false</returns>
+		private bool IsColorsClose(Color a, Color z, int threshold = 75)
+		{
+			int r = (int)a.R - z.R;
+			int g = (int)a.G - z.G;
+			int b = (int)a.B - z.B;
+			return (r * r + g * g + b * b) <= (threshold * threshold);
+		}
 
 		/** ************************************************************************************** **/
 

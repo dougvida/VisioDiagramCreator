@@ -17,6 +17,11 @@ using Microsoft.Office.Interop.Excel;
 using VisioAutomation.VDX.Elements;
 using System.Runtime.Remoting.Metadata.W3cXsd2001;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
+using OmnicellBlueprintingTool.ExcelHelpers;
+using Microsoft.Extensions.FileSystemGlobbing.Internal;
+using Microsoft.Extensions.FileSystemGlobbing;
+using static System.Net.Mime.MediaTypeNames;
+using System.Xml.Linq;
 
 namespace OmnicellBlueprintingTool.Visio
 {
@@ -97,6 +102,7 @@ namespace OmnicellBlueprintingTool.Visio
 			Dictionary<int, Visio1.Shape> connectorsMap = new Dictionary<int, Visio1.Shape>();
 			ShapeInformation shpInfo = null;
 
+			double width, height;
 			try
 			{
 				allPageShapesMap = new Dictionary<int, ShapeInformation>();
@@ -115,7 +121,7 @@ namespace OmnicellBlueprintingTool.Visio
 						// Use this index to look at each row in the properties section.
 						shpInfo = new ShapeInformation();
 
-						int nIdx = page.Name.IndexOf("Page-");
+						int nIdx = page.Name.IndexOf("Page-", StringComparison.OrdinalIgnoreCase);
 						if (nIdx >= 0)
 						{
 							// found lets modify the Visio Page field
@@ -129,87 +135,94 @@ namespace OmnicellBlueprintingTool.Visio
 							shpInfo.VisioPage = page.Name;
 						}
 
+						// this will return a string name:ID
+						shpInfo.StencilImage = fixUpShapeName(shape.Name);
+						shpInfo.StencilLabel = shape.Text.Trim();
+
+						// get the origional stencel width and height to use as an offset later
+						var sizes = GetStencilSize(appVisio, shpInfo.StencilImage);
+						shpInfo.StencilWidth = sizes.width;
+						shpInfo.StencilHeight = sizes.height;
+
+						if (shpInfo.StencilImage.IndexOf("AIO") >= 0)
+						{
+							int xx = 0;
+						}
 						shpInfo.ID = shape.ID;
 						shpInfo.UniqueKey = getShapeUniqueKeyName(shape);
 
 						// get shape fillForgnd and FillBkgnd colors
 						//var fillForeColor = shape.Cells["FillForegnd"].ResultIU;
 						//var fillBkColor = shape.Cells["FillBkgnd"].ResultIU;
-						Microsoft.Office.Interop.Visio.Color c = doc.Colors.Item16[(short)shape.Cells["FillBkgnd"].ResultIU];
-						shpInfo.rgbFillColor = $"RGB({c.Red},{c.Green},{c.Blue})";
-						sColor = visioHelper.GetColorValueFromRGB(shpInfo.rgbFillColor);
-						if (string.IsNullOrEmpty(sColor))
-						{
-							// no color found lets try to find the best match
-							sColor = getColorNameFromRGB(visioHelper, c.Red, c.Green, c.Blue);
-						}
+						double colorIdx = shape.CellsU["FillBkgnd"].ResultIU;
+						Microsoft.Office.Interop.Visio.Color c = doc.Colors.Item16[(short)colorIdx];
+						//Microsoft.Office.Interop.Visio.Color c = doc.Colors.Item16[(short)shape.Cells["FillBkgnd"].ResultIU];
+						shpInfo.RGBFillColor = $"RGB({c.Red},{c.Green},{c.Blue})";
+						sColor = visioHelper.GetColorValueFromRGB(shpInfo.RGBFillColor);
 						shpInfo.FillColor = "";
 						if (!string.IsNullOrEmpty(sColor))
 						{
 							shpInfo.FillColor = sColor;
+							shpInfo.RGBFillColor = "";		// we dont need the rgb fill color if a color was found
 						}
-						if ( shpInfo.rgbFillColor == "RGB(0,0,0)" || shpInfo.FillColor.Equals("White", StringComparison.OrdinalIgnoreCase) )
+						if (shape.Name.IndexOf("OC_Dash", StringComparison.OrdinalIgnoreCase) >= 0)
 						{
-							// this is color black for a shape so we don't need to set this field empty is default for black
-							// also we don't need the RGB value
+							// TODO-2 look at this later
+							colorIdx = shape.CellsU["LineColor"].ResultIU;
+							Microsoft.Office.Interop.Visio.Color c1 = doc.Colors.Item16[(short)colorIdx];
+							shpInfo.RGBFillColor = $"RGB({c1.Red},{c1.Green},{c1.Blue})";
+							sColor = visioHelper.GetColorValueFromRGB(shpInfo.RGBFillColor);
+							shpInfo.FillColor = "";
+							if (!string.IsNullOrEmpty(sColor))
+							{
+								shpInfo.FillColor = sColor;
+								shpInfo.RGBFillColor = ""; // we dont need the rgb fill color if a color was found
+							}						
+						}
+
+						if (shpInfo.RGBFillColor.IndexOf(VisioVariables.RGB_COLOR_2SKIP, StringComparison.OrdinalIgnoreCase) >= 0 || 
+							 shpInfo.RGBFillColor.Equals("RGB(0,0,0)", StringComparison.OrdinalIgnoreCase) || 
+							 shpInfo.FillColor.IndexOf("White", StringComparison.OrdinalIgnoreCase) >= 0 )
+						{
+							// the color is black for a shape so we don't need to set this field empty is default for black
+							shpInfo.RGBFillColor = string.Empty;   // we dont need the rgb fill color if a color was found
 							shpInfo.FillColor = string.Empty;
-							shpInfo.rgbFillColor = string.Empty;
 						}
 
 						//short iRow = (short)VisRowIndices.visRowFirst;
 						shpInfo.Pos_x = Math.Truncate(shape.Cells["PinX"].ResultIU * 1000) / 1000;
 						shpInfo.Pos_y = Math.Truncate(shape.Cells["PinY"].ResultIU * 1000) / 1000;
 
-						shpInfo.Width = 0;
-						shpInfo.Height = 0;
-						if (shape.Name.IndexOf("OC_Ethernet", StringComparison.OrdinalIgnoreCase) >= 0 ||
-							shape.Name.IndexOf("OC_Group", StringComparison.OrdinalIgnoreCase) >= 0 ||
-							shape.Name.IndexOf("OC_Footer", StringComparison.OrdinalIgnoreCase) >= 0 ||
-							shape.Name.IndexOf("OC_Dash", StringComparison.OrdinalIgnoreCase) >= 0)
+						// if the shpInfo.Weight and shpInfo.Height values are already 0 skip
+						if (shpInfo.Width != 0.0 && shpInfo.Height != 0.0)
 						{
-							shpInfo.Width = Math.Truncate(shape.Cells["Width"].ResultIU * 1000) / 1000;
-							if ((shape.Name.IndexOf("OC_Ethernet", StringComparison.OrdinalIgnoreCase) >= 0))
+							// TODO-1 fix up the resizing of shapes.  Lookup Master shapes get the Width and Height of the shape as an offset
+							if (IsShapeSizeSameAsStencilSize(shpInfo))
 							{
-								// don't set height if shape is Ethernet type
-								shpInfo.Height = 0;
+								shpInfo.Width = 0;   // do not size the shape same as the stencil size
+								shpInfo.Height = 0;  // do not size the shape same as the stencil size
 							}
 							else
 							{
-								double dHeight = Math.Truncate(shape.Cells["Height"].ResultIU * 1000) / 1000;
-								if (shape.Name.IndexOf("OC_Footer", StringComparison.OrdinalIgnoreCase) >= 0)
+								// need to manage some shapes differently
+								if (shape.Name.IndexOf("OC_PortsLDAP_", StringComparison.OrdinalIgnoreCase) >= 0)
 								{
-									dHeight = dHeight - 0.25;
-									shpInfo.Width = 0;      // we don't want to save the width because it's already a page with in size
+									shpInfo.Width = 0;
+									shpInfo.Height = 0;
 								}
-								shpInfo.Height = dHeight;
-							}
-						}
-						else
-						{
-							string sTmp = shape.Name;
-							if (sTmp.Equals("OC_PC") || sTmp.Equals("OC_Server") || sTmp.Equals("OC_EHRSystems") || sTmp.Equals("OC_Devices"))
-							{
-								shpInfo.Width = (Math.Truncate(shape.Cells["Width"].ResultIU * 1000) / 1000) - 0.500;
-								shpInfo.Height = (Math.Truncate(shape.Cells["Height"].ResultIU * 1000) / 1000) - 0.500;
-							}
-							else if (sTmp.Equals("OC_IconKey"))
-							{
-								shpInfo.Width = (Math.Truncate(shape.Cells["Width"].ResultIU * 1000) / 1000) - 1.633;
-								shpInfo.Height = (Math.Truncate(shape.Cells["Height"].ResultIU * 1000) / 1000) - 1.966;
-							}
-							else if (sTmp.Equals("OC_Site"))
-							{
-								shpInfo.Width = (Math.Truncate(shape.Cells["Width"].ResultIU * 1000) / 1000) - 0.600;
-								shpInfo.Height = (Math.Truncate(shape.Cells["Height"].ResultIU * 1000) / 1000) - 0.350;
+								else if ((shape.Name.IndexOf("OC_Ethernet", StringComparison.OrdinalIgnoreCase)) >=0 )
+								{
+									// this stencil is vertical don't set height if shape is Ethernet type
+									// stencil OC_Ethernet2 is Horizontial may need to reverse the width/height
+									shpInfo.Height = 0;
+								}
 							}
 						}
 
-
-						// this will return a string name:ID
-						string shpName = getShapeUniqueKeyName(shape);
-						string[] saStr = shpName.Split(':');      // need to just get the Name
-						shpInfo.StencilImage = saStr[0].Trim();
-						shpInfo.StencilLabel = shape.Text.Trim();
+						// set the shape width including the stencil width adjustment
+						shpInfo.Width = (Math.Truncate(shape.Cells["Width"].ResultIU * 1000) / 1000) - shpInfo.StencilWidth;
+						// set the shape height including the stencil height adjustment 
+						shpInfo.Height = (Math.Truncate(shape.Cells["Height"].ResultIU * 1000) / 1000) - shpInfo.StencilHeight;
 
 						// use the connection shape to obtain what is connected to what
 						if (shape.Style.Trim().IndexOf("Connector", StringComparison.OrdinalIgnoreCase) >= 0)
@@ -217,16 +230,24 @@ namespace OmnicellBlueprintingTool.Visio
 							// get connection information add to the dictionary to be used later
 							if (!connectorsMap.ContainsKey(shape.ID))
 							{
-								connectorsMap.Add(shape.ID, shape);
+								connectorsMap.Add(shape.ID, shape);                                           
 							}
 							// we don't want to add this shape object to the allPageShapesMap dictionary
 							continue;
 						}
 
-						ConsoleOut.writeLine(string.Format("Stencil ID:{0} Key:{1}", shpInfo.ID, shpInfo.UniqueKey));
-						if (!allPageShapesMap.ContainsKey(shape.ID))
+						if (shpInfo.ID == 1)
 						{
-							allPageShapesMap.Add(shape.ID, shpInfo);  // shape.ID
+							int xx = 0;
+						}
+						if (!allPageShapesMap.ContainsKey(shpInfo.ID))
+						{
+							ConsoleOut.writeLine(string.Format("Adding Shape.ID:{0} UniqueKey:{1} Text:{2}", shpInfo.ID, shpInfo.UniqueKey, shpInfo.StencilLabel));
+							allPageShapesMap.Add(shpInfo.ID, shpInfo);  // shape.ID
+						}
+						else
+						{
+							ConsoleOut.writeLine(string.Format("ERROR::Failed to add Shape.ID:{0} UniqueKey:{1} Text:{2} already exists in the Map", shpInfo.ID, shpInfo.UniqueKey, shpInfo.StencilLabel));
 						}
 					}
 
@@ -246,6 +267,97 @@ namespace OmnicellBlueprintingTool.Visio
 				MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
 			}
 			return allPageShapesMap;
+		}
+
+		/// <summary>
+		/// GetStencilSize
+		/// Get the size width, height of the stencil based on the argument
+		/// </summary>
+		/// <param name="app">Visio1.Application</param>
+		/// <param name="stencilName">search for this</param>
+		/// <returns>(double width, double height)</returns>
+		public static (double width, double height) GetStencilSize(Visio1.Application app, string name)
+		{
+			Visio1.Masters masters = null;
+			Visio1.Master stencil = null;
+
+			double width = 0;
+			double height = 0;
+
+			// for some reason unknown at this time a stencil may not be found
+			// but i know it does exists in the stencil file because the shape was drawn using the stencil file
+			// in any case if not found just return width and height = 0
+
+			try
+			{
+				if (string.IsNullOrEmpty(name))
+				{
+					return (width, height);
+				}
+
+				foreach (Visio1.Document doc in app.Documents)
+				{
+					try
+					{
+						stencil = doc.Masters.get_ItemU(name);
+					}
+					catch (Exception ex) 
+					{
+						// eat it and fall through
+					}
+					if (stencil != null)
+					{
+						foreach (Visio1.Shape shape in stencil.Shapes)
+						{
+							if (shape.Name.Trim().IndexOf(name) >= 0)
+							{
+								width = Math.Truncate(shape.get_Cells("Width").ResultIU * 1000) / 1000;
+								height = Math.Truncate(shape.get_Cells("Height").ResultIU * 1000) / 1000;
+							}
+						}
+					}
+				}
+			}
+			catch (Exception ep)
+			{
+				ConsoleOut.writeLine(string.Format("ProcessVisioDiagramShapes::GetStencilSize - Exception\nStencil:'{0}' not found.\n\n{1}", name, ep.Message.ToString()));
+				// fall through with both width and height set to 0
+				// TODO - 1 not sure why this item was not found
+			}
+			return (width, height);
+		}
+
+		/// <summary>
+		/// IsShapeSizeSameAsStencilSize
+		/// compare the two shapes sizes
+		/// use a gap of VisioVariables.STENCIL_SIZE_BUFFER to adjust for a little bit of size differences
+		/// </summary>
+		/// <param name="shpInfo"></param>
+		/// <returns>bool</returns>
+		private static bool IsShapeSizeSameAsStencilSize(ShapeInformation shpInfo)
+		{
+			bool bWidth = false;
+			bool bHeight = false;
+
+			// lets see if the shapes are same size
+			if (shpInfo.Width <= (shpInfo.StencilWidth + VisioVariables.STENCIL_SIZE_BUFFER) && 
+				 shpInfo.Width >= Math.Abs(shpInfo.StencilWidth - VisioVariables.STENCIL_SIZE_BUFFER) )
+			{
+				// if within margin - good
+				bWidth= true;
+			}
+			if (shpInfo.Height <= (shpInfo.StencilHeight + VisioVariables.STENCIL_SIZE_BUFFER) && 
+				 shpInfo.Height >= Math.Abs(shpInfo.StencilHeight - VisioVariables.STENCIL_SIZE_BUFFER) )
+			{
+				// if within margin - good
+				bHeight = true;
+			}
+
+			if (bWidth && bHeight)
+			{
+				return true;
+			}
+			return false;
 		}
 
 		/// <summary>
@@ -276,34 +388,34 @@ namespace OmnicellBlueprintingTool.Visio
 			}
 			return string.Format("{0}:{1}", shape.Name.Trim(), shape.ID);
 		}
-
 		/// <summary>
-		/// getShapeName
+		/// fixupShapeName
 		/// return the shape name should be same as shape Image name
 		/// </summary>
 		/// <param name="shape"></param>
 		/// <returns>string</returns>
-		private static string getShapeName(Visio1.Shape shape)
+		private static string fixUpShapeName(string name)
 		{
 			// this shouuld never happen
-			if (shape == null)
+			if (string.IsNullOrEmpty(name))
 			{
 				return null;
 			}
-			string[] saTmp = shape.Name.Split('.');
+			string[] saTmp = name.Split('.');
 			if (saTmp.Length > 0)
 			{
 				// lets get the first part as the shape name
 				return saTmp[0].Trim().Trim();
 			}
-			saTmp = shape.Name.Split(':');
+			saTmp = name.Split(':');
 			if (saTmp.Length > 0)
 			{
 				// lets get the first part as the shape name
 				return saTmp[0].Trim().Trim();
 			}
-			return string.Format("{0}", shape.Name.Trim());
+			return string.Format("{0}", name.Trim());
 		}
+		
 		/// <summary>
 		/// getShapeConnections
 		/// the shape passed in is a connection shape
@@ -382,33 +494,25 @@ namespace OmnicellBlueprintingTool.Visio
 
 				var colorIdx = connShp.CellsU["LineColor"].ResultIU;
 				Microsoft.Office.Interop.Visio.Color c = doc.Colors.Item16[(short)colorIdx];
-				shpInfo.rgbFillColor = $"RGB({c.Red},{c.Green},{c.Blue})";
-				string sColor = visioHelper.GetColorValueFromRGB(shpInfo.rgbFillColor);
-				if (string.IsNullOrEmpty(sColor))
-				{
-					// no color found lets try to find the best match
-					sColor = getColorNameFromRGB(visioHelper, c.Red, c.Green, c.Blue);
-				}
+				shpInfo.RGBFillColor = $"RGB({c.Red},{c.Green},{c.Blue})";
+				string sColor = visioHelper.GetColorValueFromRGB(shpInfo.RGBFillColor);
 				shpInfo.ToLineColor = "";
 				if (!string.IsNullOrEmpty(sColor))
 				{
 					lineColor = sColor;
+					shpInfo.RGBFillColor = ""; // we dont need the rgb fill color if a color was found
 				}
 
 				linePattern = connShp.get_CellsU("LinePattern").ResultIU;
 
-				lineWeight = connShp.get_CellsU("LineWeight").FormulaU;
-				if (lineWeight.IndexOf("THEME", StringComparison.OrdinalIgnoreCase) >= 0)
-				{
-					lineWeight = VisioVariables.sLINE_WEIGHT_1;
-				}
-				else
+				lineWeight = VisioVariables.sLINE_WEIGHT_1;	// set default
+				sTmp = connShp.get_CellsU("LineWeight").FormulaU;
+				if (sTmp.IndexOf("THEME", StringComparison.OrdinalIgnoreCase) < 0)
 				{
 					// we have a valid value so lets see if we support it
-					lineWeight = visioHelper.FindConnectorLineWeight(lineWeight);
-					if (string.IsNullOrEmpty(lineWeight))
+					if (visioHelper.IsConnectorLineWeight(sTmp))
 					{
-						lineWeight = VisioVariables.sLINE_WEIGHT_1;
+						lineWeight = sTmp;	// set new lineWeight
 					}
 				}
 
@@ -431,7 +535,7 @@ namespace OmnicellBlueprintingTool.Visio
 						allPageShapesMap.TryGetValue(toshape.ID, out lookupShapeMap);
 
 						// if this first one is the Ethernet stencil we need to do some special work
-						if (toshape.Name.IndexOf("OC_Ethernet") >= 0)
+						if (toshape.Name.IndexOf("OC_Ethernet", StringComparison.OrdinalIgnoreCase) >= 0)
 						{
 							ethernetID = toshape.ID; // save this we need to do a trick later
 							ethernetUniqueKey = getShapeUniqueKeyName(toshape);
@@ -552,58 +656,8 @@ namespace OmnicellBlueprintingTool.Visio
 
 			ConsoleOut.writeLine(sTmp);
 		}
-
-		/// <summary>
-		/// getColorNameFromRGB
-		/// Search if the RGB value is a color match to what the application supports.
-		/// Return the closest color found based on the RGB value
-		/// No match will return an empty string
-		/// </summary>
-		/// <param name="visHlper">VisioHelper</param>
-		/// <param name="red">int</param>
-		/// <param name="green">int</param>
-		/// <param name="blue">int</param>
-		/// <returns>color string if found otherwise empty string</returns>
-		private static string getColorNameFromRGB(VisioHelper visHlper, int red, int green, int blue)
-		{
-			Color lookupColor = Color.FromArgb(255, red, green, blue);
-			ConsoleOut.writeLine(lookupColor.Name);
-
-			Dictionary<string,Color> appColorsMap = visHlper.GetColorNameColorsMap();
-			List<string> matches = new List<string>();
-			foreach (KeyValuePair<string,Color> appColor in appColorsMap)
-			{
-				// want to start narrow than widen to find the closest color to the app's supporrted color
-				for (int threshold = 5; threshold <= 75; threshold += 10)
-				{
-					if (IsColorsClose(lookupColor, appColor.Value, threshold))
-					{
-						return appColor.Key;	// color match found
-					}
-				}
-			}
-			return "";	// color match not found
-		}
-
-		/// <summary>
-		/// IsColorsClose
-		/// this will compare two rgb color
-		/// the color from the Visio diagram will be check if exists or a close respersentation supported by the application default colors (best match)
-		/// the threshold is used to widen the search.  most cases an exact match will not occur so we need to widen the R,G,B values
-		/// </summary>
-		/// <param name="a">Color to look up</param>
-		/// <param name="z">Color supported by application</param>
-		/// <param name="threshold">default is 75</param>
-		/// <returns>bool - true found else false</returns>
-		private static bool IsColorsClose(Color a, Color z, int threshold = 75)
-		{
-			int r = (int)a.R - z.R,
-					g = (int)a.G - z.G,
-					b = (int)a.B - z.B;
-			return (r * r + g * g + b * b) <= threshold * threshold;
-		}
-
-
+		
+		/*******************************************************************************************************************/
 
 		/// <summary>
 		/// GetShapeConnections
@@ -682,8 +736,8 @@ namespace OmnicellBlueprintingTool.Visio
 						}
 						var colorIdx = shape.CellsU["LineColor"].ResultIU;
 						Microsoft.Office.Interop.Visio.Color c = doc.Colors.Item16[(short)colorIdx];
-						shpInfo.rgbFillColor = $"RGB({c.Red},{c.Green},{c.Blue})";
-						sColor = visioHelper.GetColorValueFromRGB(shpInfo.rgbFillColor);
+						shpInfo.RGBFillColor = $"RGB({c.Red},{c.Green},{c.Blue})";
+						sColor = visioHelper.GetColorValueFromRGB(shpInfo.RGBFillColor);
 
 						shpInfo.ToLineColor = "";
 						if (!string.IsNullOrEmpty(sColor))
@@ -758,17 +812,13 @@ namespace OmnicellBlueprintingTool.Visio
 						}
 						var colorIdx = shape.CellsU["LineColor"].ResultIU;
 						Microsoft.Office.Interop.Visio.Color c = doc.Colors.Item16[(short)colorIdx];
-						shpInfo.rgbFillColor = $"RGB({c.Red},{c.Green},{c.Blue})";
-						sColor = visioHelper.GetColorValueFromRGB(shpInfo.rgbFillColor);
-						if (string.IsNullOrEmpty(sColor))
-						{
-							// no color found lets try to find the best match
-							sColor = getColorNameFromRGB(visioHelper, c.Red, c.Green, c.Blue);
-						}
+						shpInfo.RGBFillColor = $"RGB({c.Red},{c.Green},{c.Blue})";
+						sColor = visioHelper.GetColorValueFromRGB(shpInfo.RGBFillColor);
 						shpInfo.FromLineColor = "";
 						if (!string.IsNullOrEmpty(sColor))
 						{
 							shpInfo.FromLineColor = sColor;
+							shpInfo.RGBFillColor = ""; // we dont need the rgb fill color if a color was found
 						}
 
 						//shpInfo.FromLineColor = VisioVariables.sCOLOR_BLACK;
@@ -858,28 +908,24 @@ namespace OmnicellBlueprintingTool.Visio
 					}
 					var colorIdx = connShp.CellsU["LineColor"].ResultIU;
 					Microsoft.Office.Interop.Visio.Color c = doc.Colors.Item16[(short)colorIdx];
-					shpInfo.rgbFillColor = $"RGB({c.Red},{c.Green},{c.Blue})";
-					string sColor = visioHelper.GetColorValueFromRGB(shpInfo.rgbFillColor);
-					if (string.IsNullOrEmpty(sColor))
-					{
-						// no color found lets try to find the best match
-						sColor = getColorNameFromRGB(visioHelper, c.Red, c.Green, c.Blue);
-					}
+					shpInfo.RGBFillColor = $"RGB({c.Red},{c.Green},{c.Blue})";
+					string sColor = visioHelper.GetColorValueFromRGB(shpInfo.RGBFillColor);
 					shpInfo.ToLineColor = "";
 					if (!string.IsNullOrEmpty(sColor))
 					{
 						lineColor = sColor;
+						shpInfo.RGBFillColor = ""; // we dont need the rgb fill color if a color was found
 					}
 
 					//rgbLineColor = connShp.get_CellsU("LineColor").FormulaU;      // RGB color value
-					//if (rgbLineColor.IndexOf("THEME") >= 0)
+					//if (rgbLineColor.IndexOf("THEME", StringComparison.OrdinalIgnoreCase) >= 0)
 					//{
 					//	// we need to parse out the RGB value
 					//	int nStart = rgbLineColor.IndexOf("RGB");
 					//	rgbLineColor = rgbLineColor.Substring(nStart, (rgbLineColor.Length - nStart - 1));
 					//
 					//	//Color c = doc.Colors.Item16[(short)rgbLineColor];
-					//	//shpInfo.rgbFillColor = $"RGB({c.Red},{c.Green},{c.Blue})";
+					//	//shpInfo.RGBFillColor = $"RGB({c.Red},{c.Green},{c.Blue})";
 					//
 					//}
 					//lineColor = String.Empty;
@@ -890,18 +936,15 @@ namespace OmnicellBlueprintingTool.Visio
 					//}
 
 					linePattern = connShp.get_CellsU("LinePattern").ResultIU;
-					lineWeight = connShp.get_CellsU("LineWeight").FormulaU;
-					if (lineWeight.IndexOf("THERM", StringComparison.OrdinalIgnoreCase) >= 0)
-					{
-						lineWeight = VisioVariables.sLINE_WEIGHT_1;
-					}
-					else
+
+					lineWeight = VisioVariables.sLINE_WEIGHT_1;	// set default
+					sTmp = connShp.get_CellsU("LineWeight").FormulaU;
+					if (sTmp.IndexOf("THERM", StringComparison.OrdinalIgnoreCase) < 0)
 					{
 						// we have a valid value so lets see if we support it
-						lineWeight = visioHelper.FindConnectorLineWeight(lineWeight);
-						if (string.IsNullOrEmpty(lineWeight))
+						if (visioHelper.IsConnectorLineWeight(sTmp))
 						{
-							lineWeight = VisioVariables.sLINE_WEIGHT_1;
+							lineWeight = sTmp;	// set value
 						}
 					}
 				}

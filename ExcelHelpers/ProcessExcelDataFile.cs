@@ -130,7 +130,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 												if (!string.IsNullOrEmpty(saTmp[1]))
 												{
 													// the string must be true anything else is default false
-													if (saTmp[1].ToUpper().Equals("TRUE"))
+													if (saTmp[1].Equals("true", StringComparison.OrdinalIgnoreCase))
 													{
 														// user wants to Autosize the pages
 														diagData.AutoSizeVisioPages = true;
@@ -305,6 +305,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				if (data != null)
 				{
 					visioInfo.UniqueKey = data.ToString().Trim();   // unique key for this shape
+					
 				}
 
 				data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.StencilImage);
@@ -322,7 +323,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.StencilLabelPosition);
 				if (data != null)
 				{
-					if (data.ToString().Trim().ToUpper().Equals(VisioVariables.STINCEL_LABEL_POSITION_BOTTOM.ToUpper()))
+					if (data.ToString().Trim().Equals(VisioVariables.STINCEL_LABEL_POSITION_BOTTOM, StringComparison.OrdinalIgnoreCase))
 					{
 						visioInfo.StencilLabelPosition = VisioVariables.STINCEL_LABEL_POSITION_BOTTOM; // text to add to the stencil image
 					}
@@ -346,7 +347,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 					if (Int32.Parse(visioInfo.StencilLabelFontSize) > 14 || Int32.Parse(visioInfo.StencilLabelFontSize) < 6)
 					{
 						visioInfo.StencilLabelFontSize = String.Empty;  // too small or too large so default to stencil size
-						visioInfo.isStencilLabelFontBold = false;       // also change to narmal weight
+						visioInfo.IsStencilLabelFontBold = false;       // also change to narmal weight
 					}
 					else
 					{
@@ -354,7 +355,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 						{
 							if (saTmp[1].ToUpper() == "B")
 							{
-								visioInfo.isStencilLabelFontBold = true;
+								visioInfo.IsStencilLabelFontBold = true;
 								//visioInfo.LineWeight = VisioVariables.sLINE_WEIGHT_2;
 							}
 						}
@@ -470,7 +471,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				data = myArray.GetValue(row, (int)ExcelVariables.CellIndex.rgbFillColor);
 				if (data != null)
 				{
-					visioInfo.rgbFillColor = data.ToString().Trim();
+					visioInfo.RGBFillColor = data.ToString().Trim();
 				}
 
 				// connector from shape
@@ -556,8 +557,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				if (data != null)
 				{
 					sTmp = data.ToString().Trim();
-					sTmp = visioHelper.FindConnectorLineWeight(sTmp);
-					if (!string.IsNullOrEmpty(sTmp))
+					if (visioHelper.IsConnectorLineWeight(sTmp))
 					{
 						visioInfo.FromLineWeight = sTmp;
 					}
@@ -654,8 +654,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 				if (data != null)
 				{
 					sTmp = data.ToString().Trim();
-					sTmp = visioHelper.FindConnectorLineWeight(sTmp);
-					if (!string.IsNullOrEmpty(sTmp))
+					if (visioHelper.IsConnectorLineWeight(sTmp))
 					{
 						visioInfo.ToLineWeight = sTmp;
 					}
@@ -719,6 +718,12 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 			}
 		}
 
+		/// <summary>
+		/// openExcelFile
+		/// Open the Excel file based on the parameter
+		/// </summary>
+		/// <param name="file"></param>
+		/// <returns>bool true:success false:failure</returns>
 		private bool openExcelFile(string file)
 		{
 			Excel.Application excelApp = null;
