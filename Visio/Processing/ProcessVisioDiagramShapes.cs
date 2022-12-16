@@ -102,7 +102,6 @@ namespace OmnicellBlueprintingTool.Visio
 			Dictionary<int, Visio1.Shape> connectorsMap = new Dictionary<int, Visio1.Shape>();
 			ShapeInformation shpInfo = null;
 
-			double width, height;
 			try
 			{
 				allPageShapesMap = new Dictionary<int, ShapeInformation>();
@@ -144,19 +143,10 @@ namespace OmnicellBlueprintingTool.Visio
 						shpInfo.StencilWidth = sizes.width;
 						shpInfo.StencilHeight = sizes.height;
 
-						if (shpInfo.StencilImage.IndexOf("AIO") >= 0)
-						{
-							int xx = 0;
-						}
-						shpInfo.ID = shape.ID;
 						shpInfo.UniqueKey = getShapeUniqueKeyName(shape);
 
-						// get shape fillForgnd and FillBkgnd colors
-						//var fillForeColor = shape.Cells["FillForegnd"].ResultIU;
-						//var fillBkColor = shape.Cells["FillBkgnd"].ResultIU;
 						double colorIdx = shape.CellsU["FillBkgnd"].ResultIU;
 						Microsoft.Office.Interop.Visio.Color c = doc.Colors.Item16[(short)colorIdx];
-						//Microsoft.Office.Interop.Visio.Color c = doc.Colors.Item16[(short)shape.Cells["FillBkgnd"].ResultIU];
 						shpInfo.RGBFillColor = $"RGB({c.Red},{c.Green},{c.Blue})";
 						sColor = visioHelper.GetColorValueFromRGB(shpInfo.RGBFillColor);
 						shpInfo.FillColor = "";
@@ -213,7 +203,7 @@ namespace OmnicellBlueprintingTool.Visio
 								else if ((shape.Name.IndexOf("OC_Ethernet", StringComparison.OrdinalIgnoreCase)) >=0 )
 								{
 									// this stencil is vertical don't set height if shape is Ethernet type
-									// stencil OC_Ethernet2 is Horizontial may need to reverse the width/height
+									// stencil OC_Ethernet2H is Horizontial may need to reverse the width/height
 									shpInfo.Height = 0;
 								}
 							}
@@ -236,18 +226,19 @@ namespace OmnicellBlueprintingTool.Visio
 							continue;
 						}
 
-						if (shpInfo.ID == 1)
-						{
-							int xx = 0;
-						}
+						// TODO - 1 we were using shpInfo.ID as the key which causes duplicate key issue.
+						// the key for the dictionary was shape.ID
+						// need to check if make shpInfo.ID the same as shape.ID is ok
+						shpInfo.ID = shape.ID;
+						shpInfo.GUID = shape.UniqueID[(short)VisUniqueIDArgs.visGetOrMakeGUID];
 						if (!allPageShapesMap.ContainsKey(shpInfo.ID))
 						{
-							ConsoleOut.writeLine(string.Format("Adding Shape.ID:{0} UniqueKey:{1} Text:{2}", shpInfo.ID, shpInfo.UniqueKey, shpInfo.StencilLabel));
+							ConsoleOut.writeLine(string.Format("Adding Shape.ID:{0} UniqueKey:{1} GUID:{2} Text:{3}", shpInfo.ID, shpInfo.UniqueKey, shpInfo.GUID, shpInfo.StencilLabel));
 							allPageShapesMap.Add(shpInfo.ID, shpInfo);  // shape.ID
 						}
 						else
 						{
-							ConsoleOut.writeLine(string.Format("ERROR::Failed to add Shape.ID:{0} UniqueKey:{1} Text:{2} already exists in the Map", shpInfo.ID, shpInfo.UniqueKey, shpInfo.StencilLabel));
+							ConsoleOut.writeLine(string.Format("ERROR::Failed to add Shape.ID:{0} UniqueKey:{1} GUID:{2} Text:{3} already exists in the Map", shpInfo.ID, shpInfo.UniqueKey, shpInfo.GUID, shpInfo.StencilLabel));
 						}
 					}
 
@@ -336,6 +327,7 @@ namespace OmnicellBlueprintingTool.Visio
 		/// <returns>bool</returns>
 		private static bool IsShapeSizeSameAsStencilSize(ShapeInformation shpInfo)
 		{
+			// TODO - 2 we need to put this in a common module
 			bool bWidth = false;
 			bool bHeight = false;
 

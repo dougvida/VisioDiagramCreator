@@ -16,6 +16,9 @@ using Color = System.Drawing.Color;
 using System.Drawing.Imaging;
 using System.Linq;
 using VisioAutomation.VDX.Elements;
+using System.Data.SqlTypes;
+using System.Diagnostics;
+using VisioAutomation.VDX.ShapeSheet;
 
 namespace OmnicellBlueprintingTool.Visio
 {
@@ -407,12 +410,20 @@ namespace OmnicellBlueprintingTool.Visio
 				}
 
 				Visio1.Pages pagesObj = this.appVisio.ActiveDocument.Pages;
+				
 				SetActivePage(device.ShapeInfo.VisioPage);
-
+				
 				// draw the shape on the document
 				shpObj = this.appVisio.ActivePage.Drop(stnObj, device.ShapeInfo.Pos_x, device.ShapeInfo.Pos_y);
 				shpObj.NameU = device.ShapeInfo.UniqueKey;
 				shpObj.Name = device.ShapeInfo.StencilImage;
+				device.ShapeInfo.GUID = shpObj.UniqueID[(short)VisUniqueIDArgs.visGetOrMakeGUID];
+				//string cellName = "UniqueID";
+				//int rowIdx = shpObj.AddNamedRow(visSectionUser, cellName, visTagDefault)
+				//shpObj.get_CellsSRC(VisUniqueIDArgs.visSectionUser, rowIdx, visUserValue).FormulaU = device.ShapeInfo.GUID;
+				//Debug.Print vShp.NameID & "!User." & cellName & " = '" & vShp.CellsU("User." & cellName).ResultStrU("") &
+				ConsoleOut.writeLine(string.Format("Shape Name:'{0}' UniqueID:'{1}' GUID:{2}", shpObj.Name, shpObj.ID, device.ShapeInfo.GUID));
+
 				// set the shape width including the stencil width adjustment
 				device.ShapeInfo.StencilWidth = (Math.Truncate(shpObj.Cells["Width"].ResultIU * 1000) / 1000);
 				// set the shape height including the stencil height adjustment 
@@ -791,6 +802,7 @@ namespace OmnicellBlueprintingTool.Visio
 						// there was an error so lets abort
 						return true;
 					}
+					device.ShapeInfo.GUID = shpObj.UniqueID[(short)VisUniqueIDArgs.visGetOrMakeGUID];
 					device.ShapeInfo.ShpObj = shpObj;   // save this stencil object
 				}
 				catch (Exception ex)

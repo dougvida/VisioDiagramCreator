@@ -232,7 +232,7 @@ namespace OmnicellBlueprintingTool
 					//	"Note: This process may take a few minutes so please be patient.\n\n" +
 					//	"Use the excel data file with this tool to rebuild the Visio diagram.\nWhen making modifications / additions make it to the Excel Data file.\n\n" +
 					//	"You may need to modify stencilsList positions as well as connections");
-					//MessageBox.Show(this, sTmp, "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
+					//MessageBox.Show(this, sTmp, "INFORMATION", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
 					// Set cursor as hourglass
 					Cursor.Current = Cursors.WaitCursor;
@@ -497,7 +497,7 @@ namespace OmnicellBlueprintingTool
 			if (visioHelper.SaveDocument(fileNamePath, bSave))
 			{
 				string sTmp = string.Format("WARNING:: failed to save Visio diagram to the file:'{0}'", fileNamePath);
-				MessageBox.Show(sTmp, "WARNING", MessageBoxButtons.OK, MessageBoxIcon.Error);
+				MessageBox.Show(sTmp, "WARNING", MessageBoxButtons.OK, MessageBoxIcon.Warning);
 			}
 			return bSave;
 		}

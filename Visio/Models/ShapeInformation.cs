@@ -7,6 +7,7 @@ namespace OmnicellBlueprintingTool.Visio
 	{
 		public string VisioPage { get; set; } = "1";   // Visio Page can be just 1 or an actual text value 'Page-1'
 		public int ID { get; set; } = 0;          // shape ID - used when reading a Visio diagram obtain the shape information
+		public string GUID { get; set; }				// this is the uniqueID for a visio shape   note shape.ID is not unique accoross documents so you need to use the GUID wich is
 		public string ShapeType { get; set; }     // 
 		public string UniqueKey { get; set; }     // this is used to uniquly identify each shape that has been droped in the document.   used as key for Dictionary
 		public string StencilImage { get; set; } = String.Empty;  // Must be the exact name for the stencil image in the Visio template/document
