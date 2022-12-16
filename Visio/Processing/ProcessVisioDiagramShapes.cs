@@ -1,28 +1,9 @@
 ﻿using Microsoft.Office.Interop.Visio;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Windows.Forms;
 using OmnicellBlueprintingTool.Models;
 using Visio1 = Microsoft.Office.Interop.Visio;
-using Microsoft.Office.Core;
-using System.Drawing;
-using ColorV = Microsoft.Office.Interop.Visio.Color;
-using System.Data.SqlTypes;
-using System.Text.RegularExpressions;
-using Color = System.Drawing.Color;
-using System.Reflection.Emit;
-using System.Runtime.CompilerServices;
-using Microsoft.Office.Interop.Excel;
-using VisioAutomation.VDX.Elements;
-using System.Runtime.Remoting.Metadata.W3cXsd2001;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
-using OmnicellBlueprintingTool.ExcelHelpers;
-using Microsoft.Extensions.FileSystemGlobbing.Internal;
-using Microsoft.Extensions.FileSystemGlobbing;
-using static System.Net.Mime.MediaTypeNames;
-using System.Xml.Linq;
-using static OmnicellBlueprintingTool.Visio.VisioVariables;
 
 namespace OmnicellBlueprintingTool.Visio
 {
@@ -56,7 +37,7 @@ namespace OmnicellBlueprintingTool.Visio
 			vPage = vDocument.Pages[1];
 
 			visHlpr.ShowVisioDiagram(appVisio, VisioVariables.ShowDiagram.Show);
-			ConsoleOut.writeLine(string.Format("Active Document:{0,20}: Master in document:{1,20}", appVisio.ActiveDocument, appVisio.ActiveDocument.Masters));
+			//ConsoleOut.writeLine(string.Format("Active Document:{0,20}: Master in document:{1,20}", appVisio.ActiveDocument, appVisio.ActiveDocument.Masters));
 
 			// get the connectors for each shape in the diagram 
 			Dictionary<string, ShapeInformation> shpConn = getShapeInformation(visioHelper, appVisio, vDocument);
@@ -193,16 +174,14 @@ namespace OmnicellBlueprintingTool.Visio
 						if (shpInfo.Width <= (shpInfo.StencilWidth + VisioVariables.STENCIL_SIZE_BUFFER) &&
 							 shpInfo.Width >= Math.Abs(shpInfo.StencilWidth - VisioVariables.STENCIL_SIZE_BUFFER))
 						{
-							// no size adjustment needed to be added to Excel Width cell
-							shpInfo.StencilWidth = 0;
+							// no size adjustment is needed for Excel Width cell
 							shpInfo.Width = 0;
 						}
 
 						if (shpInfo.Height <= (shpInfo.StencilHeight + VisioVariables.STENCIL_SIZE_BUFFER) &&
 							 shpInfo.Height >= Math.Abs(shpInfo.StencilHeight - VisioVariables.STENCIL_SIZE_BUFFER))
 						{
-							// no size adjustment needed to be added to Excel Height cell
-							shpInfo.StencilHeight = 0;
+							// no size adjustment is needed for the Excel Height cell
 							shpInfo.Height = 0;
 						}
 
@@ -242,16 +221,21 @@ namespace OmnicellBlueprintingTool.Visio
 
 						shpInfo.ID = shape.ID;
 
-						// we are using GUID which is Visio's way of making a global unique ID for a shape
+						// we are using GUID from Visio.
+						// this is a global Unique value throught all the Visio active documents
+						// Usage is when you have a shape you can make this call to get a GUID value assigned to the shape
+						// it's only good as long as Visio is opened.  Once closed you will need to get the GUID again
 						shpInfo.GUID = shape.UniqueID[(short)VisUniqueIDArgs.visGetOrMakeGUID];				
 						if (!allPageShapesMap.ContainsKey(shpInfo.GUID))		// Using the GUID from the shape.  this is Unique through all of the documents in the file
 						{
 							allPageShapesMap.Add(shpInfo.GUID, shpInfo);  // shape.ID
-							ConsoleOut.writeLine(string.Format("Added shape UniqueKey:{0} GUID:{1} Text:'{2}'", shpInfo.UniqueKey.PadRight(25), shpInfo.GUID.PadRight(40), shpInfo.StencilLabel));
+							// ConsoleOut.writeLine(string.Format("Added shape UniqueKey:{0} GUID:{1} Text:'{2}'", shpInfo.UniqueKey.PadRight(25), shpInfo.GUID.PadRight(40), shpInfo.StencilLabel));
 						}
 						else
 						{
-							ConsoleOut.writeLine(string.Format("ERROR::Failed to add shape UniqueKey:{0} GUID:{1} Text:'{2}'", shpInfo.UniqueKey.PadRight(25), shpInfo.GUID.PadRight(40), shpInfo.StencilLabel));
+							string sTmp = string.Format("ERROR::Failed to add shape UniqueKey:{0} GUID:{1} Text:'{2}'", shpInfo.UniqueKey, shpInfo.GUID, shpInfo.StencilLabel);
+							ConsoleOut.writeLine(sTmp);
+							MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
 						}
 					}
 
@@ -325,25 +309,6 @@ namespace OmnicellBlueprintingTool.Visio
 				// fall through with both width and height set to 0
 			}
 			return (width, height);
-		}
-
-		/// <summary>
-		/// IsShapeHeightSameAsStencilHeight
-		/// compare the two shapes Heights
-		/// use a gap of VisioVariables.STENCIL_SIZE_BUFFER to adjust for a little bit of size differences
-		/// </summary>
-		/// <param name="shpInfo"></param>
-		/// <returns>bool</returns>
-		private static bool IsShapeHeightSameAsStencilHeight(ShapeInformation shpInfo)
-		{
-			// TODO - 2 we need to put this in a common module
-			if (shpInfo.Height <= (shpInfo.StencilHeight + VisioVariables.STENCIL_SIZE_BUFFER) &&
-				 shpInfo.Height >= Math.Abs(shpInfo.StencilHeight - VisioVariables.STENCIL_SIZE_BUFFER))
-			{
-				// if within margin - good
-				return true;
-			}
-			return false;
 		}
 
 		/// <summary>
@@ -540,13 +505,11 @@ namespace OmnicellBlueprintingTool.Visio
 							//lookupKey = toshape.ID;
 							if (ethernetID > 0)
 							{
-								//allPageShapesMap.TryGetValue(ethernetID, out lookupShapeMap);
 								allPageShapesMap.TryGetValue(ethernetUniqueGUID, out lookupShapeMap);
 								ethernetID = 0;
 							}
 							else
 							{
-								//allPageShapesMap.TryGetValue(toshape.ID, out lookupShapeMap);
 								allPageShapesMap.TryGetValue(lookupGUID, out lookupShapeMap);
 							}
 							if (lookupShapeMap != null)
@@ -569,7 +532,6 @@ namespace OmnicellBlueprintingTool.Visio
 								lookupShapeMap.FromLinePattern = linePattern;
 								lookupShapeMap.FromLineWeight = lineWeight;
 							}
-							//uniqueKey = getShapeUniqueKeyName(toshape);
 							lookupGUID = toshape.UniqueID[(short)VisUniqueIDArgs.visGetGUID];
 						}
 						else
@@ -640,6 +602,7 @@ namespace OmnicellBlueprintingTool.Visio
 			catch (Exception ex)
 			{
 				sTmp = string.Format("ProcessVisioDiagramShapes::getShapeConnections - Exception\n\nshape ID:{0,10}, GUID:{1,30}, Label:'{2}'\n\n{3}", connShp.ID, lookupGUID, connShp.Text, ex.Message);
+				ConsoleOut.writeLine(sTmp);
 				MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
 			}
 
@@ -693,7 +656,7 @@ namespace OmnicellBlueprintingTool.Visio
 							//shpInfo.ConnectTo = string.Empty;
 							continue;      // we don't want to save this information
 						}
-						ConsoleOut.writeLine(string.Format("Connecting shapeID:{0,10}-{1,30} To shapeID:{2,30}-{3,30} in the diagram", shpInfo.ID, shpInfo.UniqueKey, lookupShape.ID, lookupShape.NameU));
+						//ConsoleOut.writeLine(string.Format("Connecting shapeID:{0,10}-{1,30} To shapeID:{2,30}-{3,30} in the diagram", shpInfo.ID, shpInfo.UniqueKey, lookupShape.ID, lookupShape.NameU));
 						shpInfo.ConnectToID = lookupShape.ID;
 						if (nCnt++ > 0)
 						{
@@ -745,6 +708,7 @@ namespace OmnicellBlueprintingTool.Visio
 				catch (Exception exp)
 				{
 					sTmp = String.Format("ProcessVisioDiagramShapes::getShapeConnections - Exception\n\nConnection:{0}\n{1}", shpInfo.ConnectFrom, exp.Message);
+					ConsoleOut.writeLine(sTmp);
 					MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
 				}
 			}
@@ -769,7 +733,7 @@ namespace OmnicellBlueprintingTool.Visio
 							//shpInfo.ConnectFrom = string.Empty;
 							continue;      // we don't want to save this information
 						}
-						ConsoleOut.writeLine(string.Format("Connecting shapeID:{0,10}-{1,30} From shapeID:{2,30}-{3,30} in the diagram", shpInfo.ID, shpInfo.UniqueKey, lookupShape.ID, lookupShape.NameU));
+						//ConsoleOut.writeLine(string.Format("Connecting shapeID:{0,10}-{1,30} From shapeID:{2,30}-{3,30} in the diagram", shpInfo.ID, shpInfo.UniqueKey, lookupShape.ID, lookupShape.NameU));
 						shpInfo.ConnectFromID = lookupShape.ID;
 						if (nCnt++ > 0)
 						{
@@ -819,6 +783,7 @@ namespace OmnicellBlueprintingTool.Visio
 				catch (Exception exp)
 				{
 					sTmp = string.Format("ProcessVisioDiagramShapes::getShapeConnections - Exception\n\nConnection:{0}\n{1}", shpInfo.ConnectFrom, exp.Message);
+					ConsoleOut.writeLine(sTmp);
 					MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
 				}
 			}
