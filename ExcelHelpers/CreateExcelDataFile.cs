@@ -332,8 +332,8 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 						// save and close the excel file
 						if (saveFile(namePath))
 						{
-							sTmp = string.Format("MainForm::Excil data file has been created\n{0}", namePath);
-							MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Information);
+							sTmp = string.Format("MainForm::Excel data file has been created\n{0}", namePath);
+							MessageBox.Show(sTmp, "INFORMATION", MessageBoxButtons.OK, MessageBoxIcon.Information);
 						}
 					}
 					else
