@@ -93,14 +93,12 @@ namespace OmnicellBlueprintingTool.Visio
 		/// </summary>
 		/// <param name="doc">Visio document</param>
 		/// <returns>"Dictionary<string, ShapeInformation>"</returns>
-		//private static Dictionary<int, ShapeInformation> getShapeInformation(VisioHelper visioHelper, Visio1.Application appVisio, Visio1.Document doc)
 		private static Dictionary<string, ShapeInformation> getShapeInformation(VisioHelper visioHelper, Visio1.Application appVisio, Visio1.Document doc)
 		{
 			// Look at each shape in the collection.
 			Visio1.Page page = null;
 			Visio1.Pages pagesObj = doc.Pages;
 
-			//Dictionary<int, ShapeInformation> allPageShapesMap = null;
 			Dictionary<string, ShapeInformation> allPageShapesMap = null;	// changed the Key to a string because we need to use a GUID from the shape
 			Dictionary<int, Visio1.Shape> connectorsMap = new Dictionary<int, Visio1.Shape>();
 			ShapeInformation shpInfo = null;
