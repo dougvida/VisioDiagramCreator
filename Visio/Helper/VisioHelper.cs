@@ -15,6 +15,7 @@ using System.Text.RegularExpressions;
 using Color = System.Drawing.Color;
 using System.Drawing.Imaging;
 using System.Linq;
+using VisioAutomation.VDX.Elements;
 
 namespace OmnicellBlueprintingTool.Visio
 {
@@ -412,6 +413,15 @@ namespace OmnicellBlueprintingTool.Visio
 				shpObj = this.appVisio.ActivePage.Drop(stnObj, device.ShapeInfo.Pos_x, device.ShapeInfo.Pos_y);
 				shpObj.NameU = device.ShapeInfo.UniqueKey;
 				shpObj.Name = device.ShapeInfo.StencilImage;
+				// set the shape width including the stencil width adjustment
+				device.ShapeInfo.StencilWidth = (Math.Truncate(shpObj.Cells["Width"].ResultIU * 1000) / 1000);
+				// set the shape height including the stencil height adjustment 
+				device.ShapeInfo.StencilHeight = (Math.Truncate(shpObj.Cells["Height"].ResultIU * 1000) / 1000);
+				if (IsShapeSizeSameAsStencilSize(device.ShapeInfo))
+				{
+					device.ShapeInfo.Width = 0;   // do not size the shape same as the stencil size
+					device.ShapeInfo.Height = 0;  // do not size the shape same as the stencil size
+				}
 
 				if (device.ShapeInfo.Width > 0.0)
 				{
@@ -580,6 +590,40 @@ namespace OmnicellBlueprintingTool.Visio
 			}
 			ConsoleOut.writeLine(String.Format("VisioHelper::_drawShape.  Drawing:{0} - {1}",device.ShapeInfo.StencilImage, device.ShapeInfo.UniqueKey));
 			return shpObj;
+		}
+
+		/// <summary>
+		/// IsShapeSizeSameAsStencilSize
+		/// compare the two shapes sizes
+		/// use a gap of VisioVariables.STENCIL_SIZE_BUFFER to adjust for a little bit of size differences
+		/// </summary>
+		/// <param name="shpInfo"></param>
+		/// <returns>bool</returns>
+		private static bool IsShapeSizeSameAsStencilSize(ShapeInformation shpInfo)
+		{
+			// TODO - 2 we need to put this in a common module
+			bool bWidth = false;
+			bool bHeight = false;
+
+			// lets see if the shapes are same size
+			if (shpInfo.Width <= (shpInfo.StencilWidth + VisioVariables.STENCIL_SIZE_BUFFER) &&
+				 shpInfo.Width >= Math.Abs(shpInfo.StencilWidth - VisioVariables.STENCIL_SIZE_BUFFER))
+			{
+				// if within margin - good
+				bWidth = true;
+			}
+			if (shpInfo.Height <= (shpInfo.StencilHeight + VisioVariables.STENCIL_SIZE_BUFFER) &&
+				 shpInfo.Height >= Math.Abs(shpInfo.StencilHeight - VisioVariables.STENCIL_SIZE_BUFFER))
+			{
+				// if within margin - good
+				bHeight = true;
+			}
+
+			if (bWidth && bHeight)
+			{
+				return true;
+			}
+			return false;
 		}
 
 		/// <summary>
