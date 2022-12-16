@@ -224,6 +224,7 @@
     </Compile>
     <None Include="Data\ScriptData\OC_ArchitectBlueprintingData_ColorTesting.xlsm" />
     <None Include="Data\ScriptData\OC_ArchitectBlueprintingData_ColorTesting.xlsx" />
+    <None Include="Data\ScriptData\OC_ArchitectBlueprintingData_Templage2.xlsx" />
     <None Include="Data\ScriptData\OC_ArchitectBlueprintingData_Template.xlsm" />
     <None Include="Data\ScriptData\OC_ArchitectBlueprintingData_Template.xlsx" />
     <None Include="Data\Stencils\CS_CustomStencils.vssx" />
