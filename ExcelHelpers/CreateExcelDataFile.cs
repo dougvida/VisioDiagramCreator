@@ -254,7 +254,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 		/// <param name="shapesMap"></param>
 		/// <param name="namePath"></param>
 		/// <returns>bool false:success</returns>
-		public bool PopulateExcelDataFile(DiagramData diagramData, VisioHelper visioHelper, Dictionary<int, ShapeInformation> shapesMap, string namePath)
+		public bool PopulateExcelDataFile(DiagramData diagramData, VisioHelper visioHelper, Dictionary<string, ShapeInformation> shapesMap, string namePath)
 		{
 			bool bSave = false;	// error
 
@@ -420,14 +420,14 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 		/// <text>if > 0 total number of rows in the excel data file</text>
 		/// <text>if <= 0 an error has occured</text>
 		/// </returns>
-		private int writeAllData(Excel.Worksheet workSheet, VisioHelper visioHelper, Dictionary<int, ShapeInformation> shapesMap, int rowCount)
+		private int writeAllData(Excel.Worksheet workSheet, VisioHelper visioHelper, Dictionary<string, ShapeInformation> shapesMap, int rowCount)
 		{
 			string visioPageName = string.Empty;
 			try
 			{
 				int nCnt = 0;
-				foreach (KeyValuePair<int, ShapeInformation> keyValue in shapesMap)
-				{	
+				foreach (KeyValuePair<string, ShapeInformation> keyValue in shapesMap)
+				{
 					if (string.IsNullOrEmpty(keyValue.Value.ShapeType))
 					{
 						keyValue.Value.ShapeType = "Shape";
@@ -443,6 +443,10 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 						shpInfo.ShapeType = "Disabled";
 						shpInfo.UniqueKey = "New Page";
 						_writeData(workSheet, visioHelper, shpInfo, rowCount++, true);
+
+						// remember to write the real row after the comment row
+						nCnt++;
+						_writeData(workSheet, visioHelper, keyValue.Value, rowCount++, false);
 					}
 					else
 					{
@@ -489,6 +493,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 						sTmp2 = "Disabled";
 					}
 				}
+
 				((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.VisioPage]).Value = sTmp;
 				((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.ShapeType]).Value = sTmp2;
 				((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.UniqueKey]).Value = shape.UniqueKey;
@@ -595,7 +600,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 					((Excel.Range)workSheet.Cells[rowCount, ExcelVariables.CellIndex.FillColor]).Value = shape.FillColor; // should be color name
 					if (string.IsNullOrEmpty(shape.FillColor))
 					{
-						// we don't want a fill color for OC_Logo, OC_Title or OC_Footer if the FillColor is empty
+						// we don't want to set the fill color for these shapes
 						if (shape.StencilImage.IndexOf("OC_Logo", StringComparison.OrdinalIgnoreCase) < 0 && 
 							 shape.StencilImage.IndexOf("OC_Title", StringComparison.OrdinalIgnoreCase) < 0 &&
 							 shape.StencilImage.IndexOf("OC_Footer", StringComparison.OrdinalIgnoreCase) < 0)
