@@ -41,7 +41,6 @@ namespace OmnicellBlueprintingTool.Visio
 		/// </summary>
 		/// <param name="diagamFilePathName"></param>
 		/// <return>Dictionary<int, ShapeInformation> </return>
-		//public Dictionary<int, ShapeInformation> GetAllShapesProperties(VisioHelper visioHelper, string diagamFilePathName, VisioVariables.ShowDiagram dspMode)
 		public Dictionary<string, ShapeInformation> GetAllShapesProperties(VisioHelper visioHelper, string diagamFilePathName, VisioVariables.ShowDiagram dspMode)
 		{
 			// Open up one of Visio's sample drawings.
@@ -329,36 +328,6 @@ namespace OmnicellBlueprintingTool.Visio
 			}
 			return (width, height);
 		}
-
-		/// <summary>
-		/// IsShapeSizeSameAsStencilSize
-		/// compare the two shapes sizes
-		/// use a gap of VisioVariables.STENCIL_SIZE_BUFFER to adjust for a little bit of size differences
-		/// </summary>
-		/// <param name="shpInfo"></param>
-		/// <param name="check">enum StencilSizeCheck</param>
-		/// <returns>bool</returns>
-		//private static bool IsShapeSizeSameAsStencilSize(ShapeInformation shpInfo, StencilSizeCheck check)
-		//{
-		//	// TODO - 2 we need to put this in a common module
-		//	if (check == StencilSizeCheck.Width)
-		//	{
-		//		if (shpInfo.Width <= (shpInfo.StencilWidth + VisioVariables.STENCIL_SIZE_BUFFER) &&
-		//			 shpInfo.Width >= Math.Abs(shpInfo.StencilWidth - VisioVariables.STENCIL_SIZE_BUFFER))
-		//		{
-		//			return true;	// same
-		//		}
-		//	}
-		//	else
-		//	{
-		//		if (shpInfo.Height <= (shpInfo.StencilHeight + VisioVariables.STENCIL_SIZE_BUFFER) &&
-		//			 shpInfo.Height >= Math.Abs(shpInfo.StencilHeight - VisioVariables.STENCIL_SIZE_BUFFER))
-		//		{
-		//			return true;	// same
-		//		}
-		//	}
-		//	return false;
-		//}
 
 		/// <summary>
 		/// IsShapeHeightSameAsStencilHeight
