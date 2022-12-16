@@ -417,12 +417,8 @@ namespace OmnicellBlueprintingTool.Visio
 				shpObj = this.appVisio.ActivePage.Drop(stnObj, device.ShapeInfo.Pos_x, device.ShapeInfo.Pos_y);
 				shpObj.NameU = device.ShapeInfo.UniqueKey;
 				shpObj.Name = device.ShapeInfo.StencilImage;
-				device.ShapeInfo.GUID = shpObj.UniqueID[(short)VisUniqueIDArgs.visGetOrMakeGUID];
-				//string cellName = "UniqueID";
-				//int rowIdx = shpObj.AddNamedRow(visSectionUser, cellName, visTagDefault)
-				//shpObj.get_CellsSRC(VisUniqueIDArgs.visSectionUser, rowIdx, visUserValue).FormulaU = device.ShapeInfo.GUID;
-				//Debug.Print vShp.NameID & "!User." & cellName & " = '" & vShp.CellsU("User." & cellName).ResultStrU("") &
-				ConsoleOut.writeLine(string.Format("Shape Name:'{0}' UniqueID:'{1}' GUID:{2}", shpObj.Name, shpObj.ID, device.ShapeInfo.GUID));
+				//ShapeInfo.GUID = shpObj.UniqueID[(short)VisUniqueIDArgs.visGetOrMakeGUID];
+				ConsoleOut.writeLine(string.Format("Shape Name:'{0}' UniqueID:'{1}'", shpObj.Name.PadRight(25), shpObj.NameU));
 
 				// set the shape width including the stencil width adjustment
 				device.ShapeInfo.StencilWidth = (Math.Truncate(shpObj.Cells["Width"].ResultIU * 1000) / 1000);

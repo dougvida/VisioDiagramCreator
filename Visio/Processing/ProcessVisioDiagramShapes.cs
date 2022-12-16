@@ -22,6 +22,7 @@ using Microsoft.Extensions.FileSystemGlobbing.Internal;
 using Microsoft.Extensions.FileSystemGlobbing;
 using static System.Net.Mime.MediaTypeNames;
 using System.Xml.Linq;
+using static OmnicellBlueprintingTool.Visio.VisioVariables;
 
 namespace OmnicellBlueprintingTool.Visio
 {
@@ -40,7 +41,8 @@ namespace OmnicellBlueprintingTool.Visio
 		/// </summary>
 		/// <param name="diagamFilePathName"></param>
 		/// <return>Dictionary<int, ShapeInformation> </return>
-		public Dictionary<int, ShapeInformation> GetAllShapesProperties(VisioHelper visioHelper, string diagamFilePathName, VisioVariables.ShowDiagram dspMode)
+		//public Dictionary<int, ShapeInformation> GetAllShapesProperties(VisioHelper visioHelper, string diagamFilePathName, VisioVariables.ShowDiagram dspMode)
+		public Dictionary<string, ShapeInformation> GetAllShapesProperties(VisioHelper visioHelper, string diagamFilePathName, VisioVariables.ShowDiagram dspMode)
 		{
 			// Open up one of Visio's sample drawings.
 			appVisio = new Visio1.Application();
@@ -55,10 +57,10 @@ namespace OmnicellBlueprintingTool.Visio
 			vPage = vDocument.Pages[1];
 
 			visHlpr.ShowVisioDiagram(appVisio, VisioVariables.ShowDiagram.Show);
-			ConsoleOut.writeLine(string.Format("Active Document:{0}: Master in document:{1}", appVisio.ActiveDocument, appVisio.ActiveDocument.Masters));
+			ConsoleOut.writeLine(string.Format("Active Document:{0,20}: Master in document:{1,20}", appVisio.ActiveDocument, appVisio.ActiveDocument.Masters));
 
 			// get the connectors for each shape in the diagram 
-			Dictionary<int, ShapeInformation> shpConn = getShapeInformation(visioHelper, appVisio, vDocument);
+			Dictionary<string, ShapeInformation> shpConn = getShapeInformation(visioHelper, appVisio, vDocument);
 
 			try
 			{
@@ -80,7 +82,7 @@ namespace OmnicellBlueprintingTool.Visio
 			}
 			catch (System.Runtime.InteropServices.COMException ex)
 			{
-				ConsoleOut.writeLine(string.Format("This exception is OK because the user closed the Visio document before exiting the application:  {0}", ex.Message));
+				ConsoleOut.writeLine(string.Format("This exception is OK because the user closed the Visio document before exiting the application:{0}", ex.Message));
 			}
 			return shpConn;
 		}
@@ -92,19 +94,22 @@ namespace OmnicellBlueprintingTool.Visio
 		/// </summary>
 		/// <param name="doc">Visio document</param>
 		/// <returns>"Dictionary<string, ShapeInformation>"</returns>
-		private static Dictionary<int, ShapeInformation> getShapeInformation(VisioHelper visioHelper, Visio1.Application appVisio, Visio1.Document doc)
+		//private static Dictionary<int, ShapeInformation> getShapeInformation(VisioHelper visioHelper, Visio1.Application appVisio, Visio1.Document doc)
+		private static Dictionary<string, ShapeInformation> getShapeInformation(VisioHelper visioHelper, Visio1.Application appVisio, Visio1.Document doc)
 		{
 			// Look at each shape in the collection.
 			Visio1.Page page = null;
 			Visio1.Pages pagesObj = doc.Pages;
 
-			Dictionary<int, ShapeInformation> allPageShapesMap = null;
+			//Dictionary<int, ShapeInformation> allPageShapesMap = null;
+			Dictionary<string, ShapeInformation> allPageShapesMap = null;	// changed the Key to a string because we need to use a GUID from the shape
 			Dictionary<int, Visio1.Shape> connectorsMap = new Dictionary<int, Visio1.Shape>();
 			ShapeInformation shpInfo = null;
 
 			try
 			{
-				allPageShapesMap = new Dictionary<int, ShapeInformation>();
+				//allPageShapesMap = new Dictionary<int, ShapeInformation>();
+				allPageShapesMap = new Dictionary<string, ShapeInformation>();
 				string sColor = string.Empty;
 
 				// start at 1 because Visio page indexing is not zero base
@@ -113,7 +118,7 @@ namespace OmnicellBlueprintingTool.Visio
 					page = pagesObj[nCnt];
 					appVisio.ActiveWindow.Page = pagesObj[nCnt]; 
 					
-					ConsoleOut.writeLine(string.Format("Gathering all shapes for this page:'{0}'", page.Name));
+					ConsoleOut.writeLine(string.Format("Gathering all shapes from page:'{0}'", page.Name));
 
 					foreach (Visio1.Shape shape in page.Shapes)	// get the shapes on this page
 					{
@@ -135,13 +140,8 @@ namespace OmnicellBlueprintingTool.Visio
 						}
 
 						// this will return a string name:ID
-						shpInfo.StencilImage = fixUpShapeName(shape.Name);
+						shpInfo.StencilImage = getShapeName(shape.Name);
 						shpInfo.StencilLabel = shape.Text.Trim();
-
-						// get the origional stencel width and height to use as an offset later
-						var sizes = GetStencilSize(appVisio, shpInfo.StencilImage);
-						shpInfo.StencilWidth = sizes.width;
-						shpInfo.StencilHeight = sizes.height;
 
 						shpInfo.UniqueKey = getShapeUniqueKeyName(shape);
 
@@ -183,36 +183,49 @@ namespace OmnicellBlueprintingTool.Visio
 						shpInfo.Pos_x = Math.Truncate(shape.Cells["PinX"].ResultIU * 1000) / 1000;
 						shpInfo.Pos_y = Math.Truncate(shape.Cells["PinY"].ResultIU * 1000) / 1000;
 
+						// set the shape width including the stencil width adjustment
+						shpInfo.Width = (Math.Truncate(shape.Cells["Width"].ResultIU * 1000) / 1000);
+						// set the shape height including the stencil height adjustment 
+						shpInfo.Height = (Math.Truncate(shape.Cells["Height"].ResultIU * 1000) / 1000);
+
+						// get the origional stencel width and height to use as an offset later
+						var sizes = GetStencilSize(appVisio, shpInfo.StencilImage);
+						shpInfo.StencilWidth = sizes.width;
+						shpInfo.StencilHeight = sizes.height;
+
+						if (shpInfo.Width <= (shpInfo.StencilWidth + VisioVariables.STENCIL_SIZE_BUFFER) &&
+							 shpInfo.Width >= Math.Abs(shpInfo.StencilWidth - VisioVariables.STENCIL_SIZE_BUFFER))
+						{
+							// no size adjustment needed to be added to Excel Width cell
+							shpInfo.StencilWidth = 0;
+							shpInfo.Width = 0;
+						}
+
+						if (shpInfo.Height <= (shpInfo.StencilHeight + VisioVariables.STENCIL_SIZE_BUFFER) &&
+							 shpInfo.Height >= Math.Abs(shpInfo.StencilHeight - VisioVariables.STENCIL_SIZE_BUFFER))
+						{
+							// no size adjustment needed to be added to Excel Height cell
+							shpInfo.StencilHeight = 0;
+							shpInfo.Height = 0;
+						}
+
 						// if the shpInfo.Weight and shpInfo.Height values are already 0 skip
 						if (shpInfo.Width != 0.0 && shpInfo.Height != 0.0)
 						{
-							// TODO-1 fix up the resizing of shapes.  Lookup Master shapes get the Width and Height of the shape as an offset
-							if (IsShapeSizeSameAsStencilSize(shpInfo))
+							// need to manage some shapes differently
+							if (shape.Name.IndexOf("OC_PortsLDAP_", StringComparison.OrdinalIgnoreCase) >= 0 ||
+								 shape.Name.IndexOf("OC_IconKey", StringComparison.OrdinalIgnoreCase) >= 0)
 							{
-								shpInfo.Width = 0;   // do not size the shape same as the stencil size
-								shpInfo.Height = 0;  // do not size the shape same as the stencil size
+								shpInfo.Width = 0;
+								shpInfo.Height = 0;
 							}
-							else
+							else if ((shape.Name.IndexOf("OC_Ethernet", StringComparison.OrdinalIgnoreCase)) >=0 )
 							{
-								// need to manage some shapes differently
-								if (shape.Name.IndexOf("OC_PortsLDAP_", StringComparison.OrdinalIgnoreCase) >= 0)
-								{
-									shpInfo.Width = 0;
-									shpInfo.Height = 0;
-								}
-								else if ((shape.Name.IndexOf("OC_Ethernet", StringComparison.OrdinalIgnoreCase)) >=0 )
-								{
-									// this stencil is vertical don't set height if shape is Ethernet type
-									// stencil OC_Ethernet2H is Horizontial may need to reverse the width/height
-									shpInfo.Height = 0;
-								}
+								// this stencil is vertical don't set height if shape is Ethernet type
+								// stencil OC_Ethernet2H is Horizontial may need to reverse the width/height
+								shpInfo.Height = 0;
 							}
 						}
-
-						// set the shape width including the stencil width adjustment
-						shpInfo.Width = (Math.Truncate(shape.Cells["Width"].ResultIU * 1000) / 1000) - shpInfo.StencilWidth;
-						// set the shape height including the stencil height adjustment 
-						shpInfo.Height = (Math.Truncate(shape.Cells["Height"].ResultIU * 1000) / 1000) - shpInfo.StencilHeight;
 
 						// use the connection shape to obtain what is connected to what
 						if (shape.Style.Trim().IndexOf("Connector", StringComparison.OrdinalIgnoreCase) >= 0)
@@ -222,23 +235,26 @@ namespace OmnicellBlueprintingTool.Visio
 							{
 								connectorsMap.Add(shape.ID, shape);                                           
 							}
-							// we don't want to add this shape object to the allPageShapesMap dictionary
+							else
+							{
+								ConsoleOut.writeLine(string.Format("ERROR::Failed to add connection UniqueKey:{0,30} GUID:{1,40} Text:'{2}' already exists in the Map", shpInfo.ID, shape.NameU, shape.UniqueID[(short)VisUniqueIDArgs.visGetGUID], shape.Text));
+							}
+							// we don't want to add this shape object to the allPageShapesMap
 							continue;
 						}
 
-						// TODO - 1 we were using shpInfo.ID as the key which causes duplicate key issue.
-						// the key for the dictionary was shape.ID
-						// need to check if make shpInfo.ID the same as shape.ID is ok
 						shpInfo.ID = shape.ID;
-						shpInfo.GUID = shape.UniqueID[(short)VisUniqueIDArgs.visGetOrMakeGUID];
-						if (!allPageShapesMap.ContainsKey(shpInfo.ID))
+
+						// we are using GUID which is Visio's way of making a global unique ID for a shape
+						shpInfo.GUID = shape.UniqueID[(short)VisUniqueIDArgs.visGetOrMakeGUID];				
+						if (!allPageShapesMap.ContainsKey(shpInfo.GUID))		// Using the GUID from the shape.  this is Unique through all of the documents in the file
 						{
-							ConsoleOut.writeLine(string.Format("Adding Shape.ID:{0} UniqueKey:{1} GUID:{2} Text:{3}", shpInfo.ID, shpInfo.UniqueKey, shpInfo.GUID, shpInfo.StencilLabel));
-							allPageShapesMap.Add(shpInfo.ID, shpInfo);  // shape.ID
+							allPageShapesMap.Add(shpInfo.GUID, shpInfo);  // shape.ID
+							ConsoleOut.writeLine(string.Format("Added shape UniqueKey:{0} GUID:{1} Text:'{2}'", shpInfo.UniqueKey.PadRight(25), shpInfo.GUID.PadRight(40), shpInfo.StencilLabel));
 						}
 						else
 						{
-							ConsoleOut.writeLine(string.Format("ERROR::Failed to add Shape.ID:{0} UniqueKey:{1} GUID:{2} Text:{3} already exists in the Map", shpInfo.ID, shpInfo.UniqueKey, shpInfo.GUID, shpInfo.StencilLabel));
+							ConsoleOut.writeLine(string.Format("ERROR::Failed to add shape UniqueKey:{0} GUID:{1} Text:'{2}'", shpInfo.UniqueKey.PadRight(25), shpInfo.GUID.PadRight(40), shpInfo.StencilLabel));
 						}
 					}
 
@@ -254,7 +270,7 @@ namespace OmnicellBlueprintingTool.Visio
 			}
 			catch (Exception ex)
 			{
-				string sTmp = string.Format("ProcessVisioDiagramShapes::getShapeInformation - Exception\n\nForeach loop:\nPage:'{0}' shape ID:{1}, UniqueKey:'{2}'\n\n{3}", page.Name, shpInfo.ID, shpInfo.UniqueKey, ex.Message);
+				string sTmp = string.Format("ProcessVisioDiagramShapes::getShapeInformation - Exception\n\nForeach loop:\nPage:'{0,25}' UniqueKey:'{1,30}' GUID:{3}\n\n{4}", page.Name.PadRight(20), shpInfo.UniqueKey.PadRight(25), shpInfo.GUID, ex.Message);
 				MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
 			}
 			return allPageShapesMap;
@@ -269,7 +285,6 @@ namespace OmnicellBlueprintingTool.Visio
 		/// <returns>(double width, double height)</returns>
 		public static (double width, double height) GetStencilSize(Visio1.Application app, string name)
 		{
-			Visio1.Masters masters = null;
 			Visio1.Master stencil = null;
 
 			double width = 0;
@@ -278,14 +293,12 @@ namespace OmnicellBlueprintingTool.Visio
 			// for some reason unknown at this time a stencil may not be found
 			// but i know it does exists in the stencil file because the shape was drawn using the stencil file
 			// in any case if not found just return width and height = 0
-
 			try
 			{
 				if (string.IsNullOrEmpty(name))
 				{
 					return (width, height);
 				}
-
 				foreach (Visio1.Document doc in app.Documents)
 				{
 					try
@@ -313,7 +326,6 @@ namespace OmnicellBlueprintingTool.Visio
 			{
 				ConsoleOut.writeLine(string.Format("ProcessVisioDiagramShapes::GetStencilSize - Exception\nStencil:'{0}' not found.\n\n{1}", name, ep.Message.ToString()));
 				// fall through with both width and height set to 0
-				// TODO - 1 not sure why this item was not found
 			}
 			return (width, height);
 		}
@@ -324,29 +336,44 @@ namespace OmnicellBlueprintingTool.Visio
 		/// use a gap of VisioVariables.STENCIL_SIZE_BUFFER to adjust for a little bit of size differences
 		/// </summary>
 		/// <param name="shpInfo"></param>
+		/// <param name="check">enum StencilSizeCheck</param>
 		/// <returns>bool</returns>
-		private static bool IsShapeSizeSameAsStencilSize(ShapeInformation shpInfo)
+		//private static bool IsShapeSizeSameAsStencilSize(ShapeInformation shpInfo, StencilSizeCheck check)
+		//{
+		//	// TODO - 2 we need to put this in a common module
+		//	if (check == StencilSizeCheck.Width)
+		//	{
+		//		if (shpInfo.Width <= (shpInfo.StencilWidth + VisioVariables.STENCIL_SIZE_BUFFER) &&
+		//			 shpInfo.Width >= Math.Abs(shpInfo.StencilWidth - VisioVariables.STENCIL_SIZE_BUFFER))
+		//		{
+		//			return true;	// same
+		//		}
+		//	}
+		//	else
+		//	{
+		//		if (shpInfo.Height <= (shpInfo.StencilHeight + VisioVariables.STENCIL_SIZE_BUFFER) &&
+		//			 shpInfo.Height >= Math.Abs(shpInfo.StencilHeight - VisioVariables.STENCIL_SIZE_BUFFER))
+		//		{
+		//			return true;	// same
+		//		}
+		//	}
+		//	return false;
+		//}
+
+		/// <summary>
+		/// IsShapeHeightSameAsStencilHeight
+		/// compare the two shapes Heights
+		/// use a gap of VisioVariables.STENCIL_SIZE_BUFFER to adjust for a little bit of size differences
+		/// </summary>
+		/// <param name="shpInfo"></param>
+		/// <returns>bool</returns>
+		private static bool IsShapeHeightSameAsStencilHeight(ShapeInformation shpInfo)
 		{
 			// TODO - 2 we need to put this in a common module
-			bool bWidth = false;
-			bool bHeight = false;
-
-			// lets see if the shapes are same size
-			if (shpInfo.Width <= (shpInfo.StencilWidth + VisioVariables.STENCIL_SIZE_BUFFER) && 
-				 shpInfo.Width >= Math.Abs(shpInfo.StencilWidth - VisioVariables.STENCIL_SIZE_BUFFER) )
+			if (shpInfo.Height <= (shpInfo.StencilHeight + VisioVariables.STENCIL_SIZE_BUFFER) &&
+				 shpInfo.Height >= Math.Abs(shpInfo.StencilHeight - VisioVariables.STENCIL_SIZE_BUFFER))
 			{
 				// if within margin - good
-				bWidth= true;
-			}
-			if (shpInfo.Height <= (shpInfo.StencilHeight + VisioVariables.STENCIL_SIZE_BUFFER) && 
-				 shpInfo.Height >= Math.Abs(shpInfo.StencilHeight - VisioVariables.STENCIL_SIZE_BUFFER) )
-			{
-				// if within margin - good
-				bHeight = true;
-			}
-
-			if (bWidth && bHeight)
-			{
 				return true;
 			}
 			return false;
@@ -380,13 +407,14 @@ namespace OmnicellBlueprintingTool.Visio
 			}
 			return string.Format("{0}:{1}", shape.Name.Trim(), shape.ID);
 		}
+		
 		/// <summary>
-		/// fixupShapeName
+		/// getShapeName
 		/// return the shape name should be same as shape Image name
 		/// </summary>
 		/// <param name="shape"></param>
 		/// <returns>string</returns>
-		private static string fixUpShapeName(string name)
+		private static string getShapeName(string name)
 		{
 			// this shouuld never happen
 			if (string.IsNullOrEmpty(name))
@@ -407,20 +435,20 @@ namespace OmnicellBlueprintingTool.Visio
 			}
 			return string.Format("{0}", name.Trim());
 		}
-		
+
 		/// <summary>
 		/// getShapeConnections
 		/// the shape passed in is a connection shape
 		/// from the connector shape get the connector information (color, text, weight, etc.)
 		/// from the connector shape get the toSheet that the connector is connected to (should be a stencil shape already in the AllPageShapesMap)
-		/// 
+		/// the Key should be the shape GUID
 		/// </summary>
 		/// <param name="visioHelper"></param>
 		/// <param name="doc">document object</param>
 		/// <param name="connShp"> connection shape object</param>
 		/// <param name="allPageShapesMap">dictionary that contains all the shapes in the diagram</param>
 		/// <param name="shpInfo">dictionary to hold the modified shapes to be returned</param>
-		private static void getShapeConnections(VisioHelper visioHelper, Visio1.Document doc, Visio1.Shape connShp, ref Dictionary<int, ShapeInformation> allPageShapesMap, ref ShapeInformation shpInfo)
+		private static void getShapeConnections(VisioHelper visioHelper, Visio1.Document doc, Visio1.Shape connShp, ref Dictionary<string, ShapeInformation> allPageShapesMap, ref ShapeInformation shpInfo)
 		{
 			// the shape passed in is the connection
 			// the toSheet is what the connection is connected to.
@@ -434,7 +462,8 @@ namespace OmnicellBlueprintingTool.Visio
 			Visio1.Connect visconnect = null;
 
 			ShapeInformation lookupShapeMap = null;
-			int lookupKey = 0;
+			string lookupGUID = string.Empty;		//  use the shape GUID which is what was used as the key to appPageShapesMap
+			
 			string connectorLabel = string.Empty;
 			string arrowType = VisioVariables.sARROW_NONE;
 			string lineColor = VisioVariables.sCOLOR_BLACK;
@@ -444,18 +473,6 @@ namespace OmnicellBlueprintingTool.Visio
 
 			// get the connector information
 			connectorLabel = connShp.Text;
-
-			// testing
-			//String beginArrow1 = connShp.get_CellsSRC(
-			//	(short)VisSectionIndices.visSectionObject, 
-			//	(short)VisRowIndices.visRowLine, 
-			//	(short)VisCellIndices.visLineBeginArrow).Formula;
-
-			//String endArrow1 = connShp.get_CellsSRC(
-			//(short)VisSectionIndices.visSectionObject,
-			//(short)VisRowIndices.visRowLine,
-			//(short)VisCellIndices.visLineEndArrow).Formula;
-			// end testing
 
 			try
 			{
@@ -512,6 +529,7 @@ namespace OmnicellBlueprintingTool.Visio
 				int nToCnt = 0;
 				int ethernetID = 0;
 				string ethernetUniqueKey = string.Empty;
+				string ethernetUniqueGUID = string.Empty;
 
 				for (int k = 1; k <= visconnects2.Count; k++)
 				{
@@ -523,19 +541,27 @@ namespace OmnicellBlueprintingTool.Visio
 					{
 						// first end From
 						sTmp = string.Empty;
-						lookupKey = toshape.ID;
-						allPageShapesMap.TryGetValue(toshape.ID, out lookupShapeMap);
+						lookupGUID = toshape.UniqueID[(short)VisUniqueIDArgs.visGetGUID];
+						//uniqueKey = getShapeUniqueKeyName(toshape);
+
+						// the key must match the same key (UniqueKey or GUID)
+						allPageShapesMap.TryGetValue(lookupGUID, out lookupShapeMap);
 
 						// if this first one is the Ethernet stencil we need to do some special work
 						if (toshape.Name.IndexOf("OC_Ethernet", StringComparison.OrdinalIgnoreCase) >= 0)
 						{
 							ethernetID = toshape.ID; // save this we need to do a trick later
 							ethernetUniqueKey = getShapeUniqueKeyName(toshape);
-							sTmp = string.Format("From Shape:{0} ", ethernetUniqueKey);
+							ethernetUniqueGUID = toshape.UniqueID[(short)VisUniqueIDArgs.visGetGUID];
+							sTmp = string.Format("Connect From Shape:{0} ", ethernetUniqueKey);
 						}
 						else
 						{
-							sTmp = string.Format("Connect Shape:{0} ", ethernetUniqueKey);
+							// shape is not a Ethernet type shape
+							sTmp = string.Format("Connect Shape:{0} GUID:{1} ", getShapeUniqueKeyName(toshape).PadRight(30), lookupGUID.PadRight(40));
+							ethernetID = 0;      // not ethernet shpe type
+							ethernetUniqueKey = string.Empty;
+							ethernetUniqueGUID = string.Empty;
 						}
 					}
 					else
@@ -547,12 +573,14 @@ namespace OmnicellBlueprintingTool.Visio
 							//lookupKey = toshape.ID;
 							if (ethernetID > 0)
 							{
-								allPageShapesMap.TryGetValue(ethernetID, out lookupShapeMap);
+								//allPageShapesMap.TryGetValue(ethernetID, out lookupShapeMap);
+								allPageShapesMap.TryGetValue(ethernetUniqueGUID, out lookupShapeMap);
 								ethernetID = 0;
 							}
 							else
 							{
-								allPageShapesMap.TryGetValue(toshape.ID, out lookupShapeMap);
+								//allPageShapesMap.TryGetValue(toshape.ID, out lookupShapeMap);
+								allPageShapesMap.TryGetValue(lookupGUID, out lookupShapeMap);
 							}
 							if (lookupShapeMap != null)
 							{
@@ -566,7 +594,7 @@ namespace OmnicellBlueprintingTool.Visio
 									{
 										lookupShapeMap.ConnectFrom += getShapeUniqueKeyName(toshape); // lookupShape.NameU;
 									}
-									lookupShapeMap.ConnectFromID = lookupKey;
+									lookupShapeMap.ConnectFromID = toshape.ID;
 								}
 								lookupShapeMap.FromLineLabel = connectorLabel;
 								lookupShapeMap.FromArrowType = arrowType;
@@ -574,7 +602,8 @@ namespace OmnicellBlueprintingTool.Visio
 								lookupShapeMap.FromLinePattern = linePattern;
 								lookupShapeMap.FromLineWeight = lineWeight;
 							}
-							lookupKey = toshape.ID; // keep in this order.  we use this for update the object
+							//uniqueKey = getShapeUniqueKeyName(toshape);
+							lookupGUID = toshape.UniqueID[(short)VisUniqueIDArgs.visGetGUID];
 						}
 						else
 						{
@@ -583,7 +612,7 @@ namespace OmnicellBlueprintingTool.Visio
 							if (!string.IsNullOrEmpty(ethernetUniqueKey))
 							{
 								// get the next shape to be populated using From..
-								allPageShapesMap.TryGetValue(toshape.ID, out lookupShapeMap);  // get the next connection shape
+								allPageShapesMap.TryGetValue(toshape.UniqueID[(short)VisUniqueIDArgs.visGetGUID], out lookupShapeMap);  // get the next connection shape
 								if (string.IsNullOrEmpty(lookupShapeMap.ConnectFrom))
 								{
 									if (nToCnt++ > 0)
@@ -603,7 +632,8 @@ namespace OmnicellBlueprintingTool.Visio
 								lookupShapeMap.FromLinePattern = linePattern;
 								lookupShapeMap.FromLineWeight = lineWeight;
 
-								lookupKey = toshape.ID;    // use the ID for this shape not the Ethernet shape
+								//uniqueKey = getShapeUniqueKeyName(toshape);
+								lookupGUID = toshape.UniqueID[(short)VisUniqueIDArgs.visGetGUID];
 
 								// clear these values
 								ethernetID = 0;
@@ -632,17 +662,17 @@ namespace OmnicellBlueprintingTool.Visio
 								lookupShapeMap.ToLineWeight = lineWeight;
 							}
 						}
-						sTmp += string.Format("to Shape:{0}, linelabel:'{1}'", getShapeUniqueKeyName(toshape), connShp.Text);
+						sTmp += string.Format("to Shape:{0,10}, linelabel:'{1}'", getShapeUniqueKeyName(toshape), connShp.Text);
 					}
 				}
 				if (lookupShapeMap != null)
 				{
-					allPageShapesMap[lookupKey] = lookupShapeMap;
+					allPageShapesMap[lookupGUID] = lookupShapeMap;
 				}
 			}
 			catch (Exception ex)
 			{
-				sTmp = string.Format("ProcessVisioDiagramShapes::getShapeConnections - Exception\n\nshape ID:{0}, UniqueKey:'{2}'\n\n{3}", connShp.ID, connShp.Text, ex.Message);
+				sTmp = string.Format("ProcessVisioDiagramShapes::getShapeConnections - Exception\n\nshape ID:{0,10}, GUID:{1,30}, Label:'{2}'\n\n{3}", connShp.ID, lookupGUID, connShp.Text, ex.Message);
 				MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
 			}
 
@@ -696,7 +726,7 @@ namespace OmnicellBlueprintingTool.Visio
 							//shpInfo.ConnectTo = string.Empty;
 							continue;      // we don't want to save this information
 						}
-						ConsoleOut.writeLine(string.Format("Connecting shapeID:{0}-{1} To shapeID:{2}-{3} in the diagram", shpInfo.ID, shpInfo.UniqueKey, lookupShape.ID, lookupShape.NameU));
+						ConsoleOut.writeLine(string.Format("Connecting shapeID:{0,10}-{1,30} To shapeID:{2,30}-{3,30} in the diagram", shpInfo.ID, shpInfo.UniqueKey, lookupShape.ID, lookupShape.NameU));
 						shpInfo.ConnectToID = lookupShape.ID;
 						if (nCnt++ > 0)
 						{
@@ -772,7 +802,7 @@ namespace OmnicellBlueprintingTool.Visio
 							//shpInfo.ConnectFrom = string.Empty;
 							continue;      // we don't want to save this information
 						}
-						ConsoleOut.writeLine(string.Format("Connecting shapeID:{0}-{1} From shapeID:{2}-{3} in the diagram", shpInfo.ID, shpInfo.UniqueKey, lookupShape.ID, lookupShape.NameU));
+						ConsoleOut.writeLine(string.Format("Connecting shapeID:{0,10}-{1,30} From shapeID:{2,30}-{3,30} in the diagram", shpInfo.ID, shpInfo.UniqueKey, lookupShape.ID, lookupShape.NameU));
 						shpInfo.ConnectFromID = lookupShape.ID;
 						if (nCnt++ > 0)
 						{
@@ -881,8 +911,8 @@ namespace OmnicellBlueprintingTool.Visio
 
 					sTmp = string.Empty;
 					sTmp2 = string.Empty;
-					sTmp = string.Format("Connector ID:'{0}' Shape ID:'{1}'-'{2}' LineLabel:'{3}'", connShp.ID, toshape.ID, getShapeUniqueKeyName(toshape), connShp.Text);
-					sTmp2 = string.Format("id:'{0}';name:'{1}';label:'{2}'", toshape.ID, toshape.Name, connShp.Text);
+					sTmp = string.Format("Connector ID:'{0,10}' Shape ID:'{1,10}'-'{2,30}' LineLabel:'{3}'", connShp.ID, toshape.ID, getShapeUniqueKeyName(toshape), connShp.Text);
+					sTmp2 = string.Format("id:'{0,10}';name:'{1,30}';label:'{2}'", toshape.ID, toshape.Name, connShp.Text);
 
 					int startArrow = int.Parse(connShp.get_CellsU("BeginArrow").FormulaU);
 					int endArrow = int.Parse(connShp.get_CellsU("EndArrow").FormulaU);
@@ -978,8 +1008,8 @@ namespace OmnicellBlueprintingTool.Visio
 						lookupShapeMap.ToLineWeight = lineWeight;
 					}
 
-					sTmp += string.Format(" - '{0}' To Shape ID:'{1}'-'{2}' LineLabel:'{3}'", connShp.ID, toshape.ID, getShapeUniqueKeyName(toshape), connShp.Text);
-					sTmp2 += string.Format("|id:'{0}';name:'{1}';label:'{2}'", toshape.ID, toshape.Name, connShp.Text);
+					sTmp += string.Format(" - '{0,10}' To Shape ID:'{1,10}'-'{2,30}' LineLabel:'{3}'", connShp.ID, toshape.ID, getShapeUniqueKeyName(toshape), connShp.Text);
+					sTmp2 += string.Format("|id:'{0,10}';name:'{1,30}';label:'{2}'", toshape.ID, toshape.Name, connShp.Text);
 				}
 			}
 			if (lookupShapeMap != null)
@@ -989,7 +1019,7 @@ namespace OmnicellBlueprintingTool.Visio
 
 			connectorsMap.Add(connShp.ID, sTmp2);
 			ConsoleOut.writeLine(sTmp);
-			ConsoleOut.writeLine(string.Format("Found shape ID:'{0}'-'{1}' in the diagram", shpInfo.ID, shpInfo.UniqueKey));
+			ConsoleOut.writeLine(string.Format("Found shape ID:'{0,10}'-'{1,30}' in the diagram", shpInfo.ID, shpInfo.UniqueKey));
 		}
 
 

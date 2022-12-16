@@ -242,7 +242,7 @@ namespace OmnicellBlueprintingTool
 
 					// buid data file from existing Visio file
 					ConsoleOut.writeLine("build excel data file from a Visio file");
-					Dictionary<int, ShapeInformation> shapesMap = new ProcessVisioDiagramShapes().GetAllShapesProperties(visioHelper, tb_buildVisioFilePath.Text.Trim(), VisioVariables.ShowDiagram.Show);
+					Dictionary<string, ShapeInformation> shapesMap = new ProcessVisioDiagramShapes().GetAllShapesProperties(visioHelper, tb_buildVisioFilePath.Text.Trim(), VisioVariables.ShowDiagram.Show);
 					if (shapesMap == null)
 					{
 						sTmp = "MainForm\n\nNo shapes found on the Visio Diagram";
@@ -253,9 +253,10 @@ namespace OmnicellBlueprintingTool
 						// list all the shapes and connections
 						//foreach (var allShp in shapesMap)
 						//{
-						//	int nKey = allShp.Key;
+						//	string sKey = allShp.Key;
 						//	ShapeInformation shpInf = allShp.Value;
-						//	ConsoleOut.writeLine(string.Format("MainForm - ID:{0}; UniqueKey:{1}; Image:{2}, ConnectToID:{3}; ConnectTo:{4}; ToLabel:{5}; ConnectFromID:{6}; ConnectFrom:{7}; FromLabel:{8}", shpInf.ID, shpInf.UniqueKey, shpInf.StencilImage, shpInf.ConnectToID, shpInf.ConnectTo, shpInf.ToLineLabel, shpInf.ConnectFromID, shpInf.ConnectFrom, shpInf.FromLineLabel));
+						//	ConsoleOut.writeLine(string.Format("MainForm - GUID:{0}; UniqueKey:{1}; Image:{2}, ConnectToID:{3}; ConnectTo:{4}; ToLabel:{5}; ConnectFromID:{6}; ConnectFrom:{7}; FromLabel:{8}",
+						//	shpInf.GUID.PadRight(40), shpInf.UniqueKey.PadRight(25), shpInf.StencilImage.PadRight(25), shpInf.ConnectToID.ToString().PadRight(10), shpInf.ConnectTo.PadRight(20), shpInf.ToLineLabel, shpInf.ConnectFromID, shpInf.ConnectFrom, shpInf.FromLineLabel));
 						//}
 						CreateExcelDataFile createExcelDataFile = new CreateExcelDataFile();
 						string sPath = string.Format(@"{0}{1}", tb_buildExcelPath.Text.Trim(), tb_buildExcelFileName.Text.Trim());
