@@ -295,7 +295,7 @@ namespace OmnicellBlueprintingTool.Visio
 				// the visio document should contain all the pages at this point
 				// set the active page
 				this.appVisio.ActiveWindow.Page = pagesObj[pageNumber];
-				ConsoleOut.writeLine(string.Format("Setting the Active Page to:'{0}'", pagesObj[pageNumber].Name));
+				//ConsoleOut.writeLine(string.Format("Setting the Active Page to:'{0}'", pagesObj[pageNumber].Name));
 			}
 		}
 
