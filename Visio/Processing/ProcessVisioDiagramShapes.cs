@@ -286,7 +286,7 @@ namespace OmnicellBlueprintingTool.Visio
 					{
 						stencil = doc.Masters.get_ItemU(name);
 					}
-					catch (Exception ex) 
+					catch (Exception) 
 					{
 						// eat it and fall through
 					}

@@ -368,7 +368,7 @@ namespace OmnicellBlueprintingTool.Visio
 					stnObj = vDocument.Masters[device.ShapeInfo.StencilImage];
 				}
 			}
-			catch (System.Runtime.InteropServices.COMException com)
+			catch (System.Runtime.InteropServices.COMException)
 			{
 				// if we get this exception the item was not found
 				// stencil not found here so lets try looking if any other stencil files have been added
@@ -388,7 +388,7 @@ namespace OmnicellBlueprintingTool.Visio
 							{
 								stnObj = stencil.Masters[device.ShapeInfo.StencilImage];
 							}
-							catch (System.Runtime.InteropServices.COMException com)
+							catch (System.Runtime.InteropServices.COMException)
 							{
 								// if we get this exception the item was not found so lets try searching the next stencil
 								//Console.WriteLine(string.Format("failed to locate this Stencil:{0} for this stencil file:{1}", device.ShapeInfo.StencilImage, stencil.Template));

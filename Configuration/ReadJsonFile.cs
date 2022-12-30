@@ -78,7 +78,7 @@ namespace OmnicellBlueprintingTool.Configuration
 					visioHelper.SetDefaultStencilNames(values.Select(i => i.ToString()).ToList());
 				}
 			}
-			catch(FileNotFoundException fne)
+			catch(FileNotFoundException)
 			{
 				string sTmp = string.Empty;
 				sTmp = string.Format("ReadJsonFile - Exception\n\nThe Custom Config JSON file '{0}' was not found\n\nPlease ensure this file in the folder specified within the Excel Data file", fileNamePath);

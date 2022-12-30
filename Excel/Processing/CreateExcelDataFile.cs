@@ -1089,7 +1089,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 					//						Excel.XlSaveAsAccessMode.xlExclusive, Type.Missing, Type.Missing, Type.Missing, Type.Missing, Type.Missing);
 				}
 			}
-			catch (Exception ep)
+			catch (Exception)
 			{
 				bSave = false;
 			}

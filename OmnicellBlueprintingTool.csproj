@@ -186,12 +186,15 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Configuration\ReadJsonFile.cs" />
-    <Compile Include="ExcelHelpers\CreateExcelDataFile.cs" />
-    <Compile Include="ExcelHelpers\ExcelVariables.cs" />
-    <Compile Include="ExcelHelpers\ProcessExcelDataFile.cs" />
+    <Compile Include="Excel\Processing\CreateExcelDataFile.cs" />
+    <Compile Include="Excel\Helper\ExcelVariables.cs" />
+    <Compile Include="Excel\Processing\ProcessExcelDataFile.cs" />
     <Compile Include="Extensions\FileExtension.cs" />
     <Compile Include="Models\ConsoleOut.cs" />
     <Compile Include="Models\AppConfiguration.cs" />
+    <Compile Include="OIS\Models\OISSetupData.cs" />
+    <Compile Include="OIS\Processing\ParseOISSetup.cs" />
+    <Compile Include="OIS\Processing\WriteOISData.cs" />
     <Compile Include="Visio\Models\ShapeConnection.cs" />
     <Compile Include="Visio\Helper\ColorRGB.cs" />
     <Compile Include="Visio\Processing\ProcessVisioDiagramShapes.cs" />
@@ -297,6 +300,9 @@
     <None Include="OmnicellBlueprintingTool.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="OIS\Helper\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
