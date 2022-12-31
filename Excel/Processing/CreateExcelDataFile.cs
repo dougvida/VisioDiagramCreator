@@ -256,7 +256,8 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 		/// <returns>bool false:success</returns>
 		public bool PopulateExcelDataFile(DiagramData diagramData, VisioHelper visioHelper, Dictionary<string, ShapeInformation> shapesMap, string namePath)
 		{
-			bool bSave = false;	// error
+			bool bSave = false;
+			bool bErr = false;	// successful
 
 			int nRow = 1;
 			string sTmp = string.Empty;
@@ -332,8 +333,12 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 						// save and close the excel file
 						if (saveFile(namePath))
 						{
-							sTmp = string.Format("MainForm::Excel data file has been created\n{0}", namePath);
+							sTmp = string.Format("MainForm::The Excel data file has been created successfully\n\n{0}", namePath);
 							MessageBox.Show(sTmp, "INFORMATION", MessageBoxButtons.OK, MessageBoxIcon.Information);
+						}
+						else
+						{
+							bErr = true;
 						}
 					}
 					else
@@ -342,7 +347,7 @@ namespace OmnicellBlueprintingTool.ExcelHelpers
 					}
 				}
 			}
-			return false;
+			return bErr;
 		}
 
 		/// <summary>

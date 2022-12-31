@@ -6,12 +6,16 @@ namespace OmnicellBlueprintingTool.Models
 	public class DiagramData
 	{
 		public string BaseWorkingDir = string.Empty;
-		public string ScriptDataPath = string.Empty;
+		public string ExcelScriptDataPath = string.Empty;
+
 		public string visioTemplateFilesPath = string.Empty;
 		public string visioStencilFilesPath = string.Empty;
-		public string ExcelDataPath = string.Empty;
 		public string VisioFilesPath = string.Empty;
+
+		public string ExcelDataFileSavePath = string.Empty;
 		public string ExcelDataFileName = string.Empty;
+
+		public string oisFilesPath = string.Empty;
 
 		public VisioVariables.VisioPageOrientation VisioPageOrientation { get; set; } = VisioVariables.VisioPageOrientation.Portrait;
 		public VisioVariables.VisioPageSize VisioPageSize { get; set; } = VisioVariables.VisioPageSize.Letter;
@@ -39,22 +43,21 @@ namespace OmnicellBlueprintingTool.Models
 
 			visioTemplateFilesPath = string.Empty;
 			visioStencilFilesPath = string.Empty;
-			ExcelDataPath = string.Empty;
+			
+			/// TODO-1 removed for testing.  I don't think we need to clear this variable
+			//ExcelDataFileSavePath = string.Empty;
 
 			if (AllShapesMap != null)
 			{
 				AllShapesMap.Clear();
-				AllShapesMap = null;
 			}
 			if (ShapeConnectionsMap != null)
 			{
 				ShapeConnectionsMap.Clear();
-				ShapeConnectionsMap = null;
 			}
 			if (Devices != null)
 			{
 				Devices.Clear();
-				Devices = null;
 			}
 		}
 	}

@@ -88,5 +88,6 @@ namespace OmnicellBlueprintingTool.Extensions
 		{
 			return Path.GetFileNameWithoutExtension(fileNamePath);
 		}
+
 	}
 }
