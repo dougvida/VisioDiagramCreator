@@ -66,7 +66,7 @@
 			// 
 			this.lbl_Title.AutoSize = true;
 			this.lbl_Title.Font = new System.Drawing.Font("Microsoft Sans Serif", 14F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-			this.lbl_Title.Location = new System.Drawing.Point(110, 24);
+			this.lbl_Title.Location = new System.Drawing.Point(110, 17);
 			this.lbl_Title.Name = "lbl_Title";
 			this.lbl_Title.Size = new System.Drawing.Size(538, 24);
 			this.lbl_Title.TabIndex = 20;
@@ -87,7 +87,7 @@
 			this.MainTabControl.Controls.Add(this.BuildVisioFromExcel);
 			this.MainTabControl.Controls.Add(this.BuildExcelFromVisio);
 			this.MainTabControl.Controls.Add(this.BuildExcelFromOIS);
-			this.MainTabControl.Location = new System.Drawing.Point(4, 58);
+			this.MainTabControl.Location = new System.Drawing.Point(5, 58);
 			this.MainTabControl.Name = "MainTabControl";
 			this.MainTabControl.SelectedIndex = 0;
 			this.MainTabControl.Size = new System.Drawing.Size(730, 407);
@@ -95,7 +95,7 @@
 			// 
 			// BuildVisioFromExcel
 			// 
-			this.BuildVisioFromExcel.BackColor = System.Drawing.SystemColors.ControlLight;
+			this.BuildVisioFromExcel.BackColor = System.Drawing.SystemColors.GradientInactiveCaption;
 			this.BuildVisioFromExcel.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
 			this.BuildVisioFromExcel.Controls.Add(this.t1_btn_Submit);
 			this.BuildVisioFromExcel.Controls.Add(this.t1_tb_ExcelDataFile);
@@ -147,7 +147,7 @@
 			// 
 			// BuildExcelFromVisio
 			// 
-			this.BuildExcelFromVisio.BackColor = System.Drawing.SystemColors.ControlLight;
+			this.BuildExcelFromVisio.BackColor = System.Drawing.SystemColors.GradientActiveCaption;
 			this.BuildExcelFromVisio.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
 			this.BuildExcelFromVisio.Controls.Add(this.t2_btn_Submit);
 			this.BuildExcelFromVisio.Controls.Add(this.t2_tb_BuildVisioFilePath);
@@ -249,7 +249,7 @@
 			// 
 			// BuildExcelFromOIS
 			// 
-			this.BuildExcelFromOIS.BackColor = System.Drawing.SystemColors.ControlLight;
+			this.BuildExcelFromOIS.BackColor = System.Drawing.Color.SkyBlue;
 			this.BuildExcelFromOIS.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
 			this.BuildExcelFromOIS.Controls.Add(this.t3_btn_Submit);
 			this.BuildExcelFromOIS.Controls.Add(this.t3_tb_BuildOISFilePath);
