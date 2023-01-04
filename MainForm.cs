@@ -1,12 +1,15 @@
 ﻿using Microsoft.Office.Interop.Excel;
+using OIS.Models;
 using OmnicellBlueprintingTool.Configuration;
 using OmnicellBlueprintingTool.ExcelHelpers;
 using OmnicellBlueprintingTool.Extensions;
 using OmnicellBlueprintingTool.Models;
 using OmnicellBlueprintingTool.Visio;
+using OmnicellOISNodes.Processing;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using Application = System.Windows.Forms.Application;
@@ -58,9 +61,18 @@ namespace OmnicellBlueprintingTool
 			t2_tb_BuildExcelFileName.Text = string.Empty; // String.Format("_{0}.xlsx", DateTime.Now.ToString("MMddyyyy"));
 
 			t2_tb_BuildExcelPath.Text = _excelFileDataPath;
+			t3_tb_BuildExcelPath.Text = _excelFileDataPath;
+
+			// create this folder if not already
 			if (!Directory.Exists(_excelFileDataPath))
 			{
 				Directory.CreateDirectory(_excelFileDataPath);
+			}
+
+			// create this folder if not already
+			if (!Directory.Exists(_oisFilesPath))
+			{
+				Directory.CreateDirectory(_oisFilesPath);
 			}
 
 			//////////////////////////////////////////////////////////////////////
@@ -97,6 +109,7 @@ namespace OmnicellBlueprintingTool
 			diagramData.ExcelDataFileSavePath = _excelFileDataPath;  // used for saving Excel script data files created from a Visio Diagram
 
 			diagramData.VisioFilesPath = _visioFilesPath;
+			diagramData.oisFilesPath = _oisFilesPath;
 		}
 
 		private void timeToWork(BuildType buildType)
@@ -120,6 +133,7 @@ namespace OmnicellBlueprintingTool
 			{
 				switch (buildType)
 				{
+#region BuildVisioFromExcel
 					case BuildType.BuildVisioFromExcel:
 						// Set cursor as hourglass
 						Cursor.Current = Cursors.WaitCursor;
@@ -170,7 +184,8 @@ namespace OmnicellBlueprintingTool
 							}
 						}
 						break;
-
+#endregion
+#region BuildExcelFromVisio
 					case BuildType.BuildExcelFromVisio:
 			
 						diagramData.VisioTemplateFilePath = _visioTemplateFilesPath;
@@ -215,12 +230,55 @@ namespace OmnicellBlueprintingTool
 							}
 						}
 						break;
-
+#endregion
+#region BuildExcelFromOIS
 					case BuildType.BuildExcelFromOIS:
-						diagramData.oisFilesPath = _oisFilesPath;
+						//diagramData.VisioTemplateFilePath = _visioTemplateFilesPath;
+						diagramData.VisioStencilFilePaths.Add(_visioStencilFilesPath);
 
+						Dictionary<string, ShapeInformation> oisShapeInfoMap = null;
+
+						// Set cursor as hourglass
+						Cursor.Current = Cursors.WaitCursor;
+
+						// buid data file from existing Visio file
+						ConsoleOut.writeLine("Build Excel data file from OIS setup (CSV) file");
+
+						Dictionary<string, List<OISSetupData>> oisDataMap = ParseOISSetup.ParseOISSetupFile(t3_tb_BuildOISFilePath.Text.Trim());
+						if (oisDataMap == null)
+						{
+							sTmp = string.Format("MainForm\n\nNo OIS entries found in this file:\b'{0}'", t3_tb_BuildOISFilePath.Text.Trim());
+							MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
+						}
+						else
+						{
+							
+							// translate the data from OIS Data to ShapeInformation map
+							oisShapeInfoMap = TranslateData.ConvertData(oisDataMap);
+
+							/// TODO-3 testing
+							//var groupNodes = from s in oisShapeInfoMap.Values
+							//					  group s by s.StencilLabel into sg
+							//					  orderby sg.Key
+							//					  select new { sg.Key, sg };
+							//
+							//foreach (var group in groupNodes)
+							//{
+							//	// Console.WriteLine(string.Format("LinQ output {0}", group.Key));
+							//	group.sg.ToList().ForEach(st => Console.WriteLine(string.Format("{0} {1}", st.UniqueKey, st.StencilLabel)));
+							//}
+
+
+							CreateExcelDataFile createExcelDataFile = new CreateExcelDataFile();
+							string sPath = Path.Combine(@t3_tb_BuildExcelPath.Text.Trim(), @t3_tb_BuildExcelFileName.Text.Trim());
+							if (createExcelDataFile.PopulateExcelDataFile(diagramData, visioHelper, oisShapeInfoMap, sPath))
+							{
+								sTmp = String.Format("MainForm - Error\n\nFailed to create excel data file:\n'{0}'\n\nVerify the file namd and path is correct", sPath);
+								MessageBox.Show(sTmp, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+							}
+						}
 						break;
-
+#endregion
 					default:
 						break;
 				}
@@ -315,6 +373,48 @@ namespace OmnicellBlueprintingTool
 			timeToWork(BuildType.BuildExcelFromOIS);
 		}
 
+		/// <summary>
+		/// btn_readExcelfile_Click
+		/// this function will prompt the user with a file dialog to select the 
+		/// Excel file to open for read
+		/// the variable "tb_excelDataFile.Text" will be set to the file name & path selected by the user
+		/// </summary>
+		/// <param name="sender"></param>
+		/// <param name="e"></param>
+		private void t1_btn_readExcelfile_Click(object sender, EventArgs e)
+		{
+			string filePath = string.Empty;
+			if (string.IsNullOrEmpty(diagramData.ExcelScriptDataPath))
+			{
+				diagramData.ExcelScriptDataPath = _excelFileDataPath;
+			}
+
+			filePath = FileExtension.getFilePath(diagramData.ExcelScriptDataPath, "Excel(*.xls;*.xlsx;*.xlsm)|*.xls;*.xlsx;*.xlsm;", "Select the Excel data file to uild a Visio diagram");
+			if (string.IsNullOrEmpty(filePath))
+			{
+				// Cancel was pressed.  filePath will be empty
+				ConsoleOut.writeLine("Cancel button pressed.  No file was selected");
+			}
+			else
+			{
+				// lets save the selected Excel Data Path
+				diagramData.ExcelScriptDataPath = Path.GetDirectoryName(filePath);
+
+				//Get the path of specified file
+				t1_tb_ExcelDataFile.Text = filePath;
+
+				// check if valid is so enable submit button
+				if (IsFormValidated(BuildType.BuildVisioFromExcel))
+				{
+					t1_btn_Submit.Enabled = true;
+				}
+				else
+				{
+					t1_btn_Submit.Enabled = false;
+				}
+			}
+		}
+
 		private void t2_tb_buildExcelFileName_TextChanged(object sender, EventArgs e)
 		{
 			// check if a valid file name
@@ -355,12 +455,10 @@ namespace OmnicellBlueprintingTool
 			else
 			{
 				// this will contain the folder path
-				//_excelFileDataPath = folder;
 				diagramData.ExcelDataFileSavePath = folder;
 				t2_tb_BuildExcelPath.Text = folder;
 
 				// check if valid is so enable submit button
-				//if (IsValidFileName(t2_tb_BuildExcelFileName.Text) && IsFormValidated(BuildType.BuildVisioFromExcel))
 				if (IsValidFileName(t2_tb_BuildExcelPath.Text) && IsFormValidated(BuildType.BuildExcelFromVisio))
 				{
 					t2_btn_Submit.Enabled = true;
@@ -424,23 +522,76 @@ namespace OmnicellBlueprintingTool
 			}
 		}
 
+		private void t3_tb_buildExcelFileName_TextChanged(object sender, EventArgs e)
+		{
+			// check if a valid file name
+			if (IsValidFileName(t3_tb_BuildExcelFileName.Text) && IsFormValidated(BuildType.BuildExcelFromOIS))
+			{
+				t3_btn_Submit.Enabled = true;
+			}
+			else
+			{
+				t3_btn_Submit.Enabled = false;
+			}
+		}
+
 		/// <summary>
-		/// btn_readExcelfile_Click
-		/// this function will prompt the user with a file dialog to select the 
-		/// Excel file to open for read
-		/// the variable "tb_excelDataFile.Text" will be set to the file name & path selected by the user
+		/// t3_btn_openExcelPath_Clock
+		/// this function will open a folder dialog 
+		/// allowing the user to select a folder to save the newly created Excel file
+		/// both variables "_excelFileDataPath" and "t3_tb_buildExcelPath.Text" will be set to the folder path
 		/// </summary>
 		/// <param name="sender"></param>
 		/// <param name="e"></param>
-		private void t1_btn_readExcelfile_Click(object sender, EventArgs e)
+		private void t3_btn_openExcelPath_Click(object sender, EventArgs e)
 		{
-			string filePath = string.Empty;
-			if (string.IsNullOrEmpty(diagramData.ExcelScriptDataPath))
+			string folder = string.Empty;
+			if (string.IsNullOrEmpty(diagramData.ExcelDataFileSavePath))
 			{
-				diagramData.ExcelScriptDataPath = _excelFileDataPath;
+				diagramData.ExcelDataFileSavePath = _excelFileDataPath;
 			}
 
-			filePath = FileExtension.getFilePath(diagramData.ExcelScriptDataPath, "Excel(*.xls;*.xlsx;*.xlsm)|*.xls;*.xlsx;*.xlsm;", "Select the Excel data file to uild a Visio diagram");
+			//folder = FileExtension.getFolder(_excelFileDataPath, "Select the Excel output path");
+			folder = FileExtension.getFolder(diagramData.ExcelDataFileSavePath, "Select the Excel output path");
+			if (string.IsNullOrEmpty(folder))
+			{
+				// Cancel was pressed.  filePath will be empty
+				ConsoleOut.writeLine("Cancel button pressed.  No folder selected");
+			}
+			else
+			{
+				// this will contain the folder path
+				diagramData.ExcelDataFileSavePath = folder;
+				t3_tb_BuildExcelPath.Text = folder;
+
+				// check if valid is so enable submit button
+				if (IsValidFileName(t3_tb_BuildExcelPath.Text) && IsFormValidated(BuildType.BuildExcelFromOIS))
+				{
+					t3_btn_Submit.Enabled = true;
+				}
+				else
+				{
+					t3_btn_Submit.Enabled = false;
+				}
+			}
+		}
+
+		/// <summary>
+		/// btn_VisioFileToRead_Click
+		/// this function will open a file dialog allowing the user to select the Visio file to open and process
+		/// the variable "tb_buildVisioFilePath.Text" will be populated with the path & file name selected by the user
+		/// </summary>
+		/// <param name="sender"></param>
+		/// <param name="e"></param>
+		private void t3_btn_OISFileToRead_Click(object sender, EventArgs e)
+		{
+			string filePath = string.Empty;
+			if (string.IsNullOrEmpty(diagramData.oisFilesPath))
+			{
+				diagramData.oisFilesPath = _oisFilesPath;
+			}
+
+			filePath = FileExtension.getFilePath(diagramData.oisFilesPath, "Visio files (*.csv)|*.csv", "Select a CSV file to process into an Excel data file");
 			if (string.IsNullOrEmpty(filePath))
 			{
 				// Cancel was pressed.  filePath will be empty
@@ -448,21 +599,32 @@ namespace OmnicellBlueprintingTool
 			}
 			else
 			{
-				// lets save the selected Excel Data Path
-				diagramData.ExcelScriptDataPath = Path.GetDirectoryName(filePath);
+				t3_tb_BuildOISFilePath.Text = filePath;
 
-				//Get the path of specified file
-				t1_tb_ExcelDataFile.Text = filePath;
+				// need to break apart the file remove any date format and append current data
+				string sName = Path.GetFileNameWithoutExtension(filePath);
+				if (sName.Length > 8)
+				{
+					string sTmp = sName.Substring(sName.Length - 8);
+					if (Regex.IsMatch(sTmp, @"^\d+$"))
+					{
+						sName = sName.Substring(0, sName.Length - 8);
+					}
+				}
+				t3_tb_BuildExcelFileName.Text = String.Format("{0}_ExcelData_{1}.xlsx", sName, DateTime.Now.ToString("MMddyyyy"));
 
 				// check if valid is so enable submit button
-				if (IsFormValidated(BuildType.BuildVisioFromExcel))
+				if (IsValidFileName(t3_tb_BuildExcelFileName.Text) && IsFormValidated(BuildType.BuildExcelFromOIS))
 				{
-					t1_btn_Submit.Enabled = true;
+					t3_btn_Submit.Enabled = true;
 				}
 				else
 				{
-					t1_btn_Submit.Enabled = false;
+					t3_btn_Submit.Enabled = false;
 				}
+
+				// keep the folder that was selected for next time if needed
+				diagramData.oisFilesPath = Path.GetDirectoryName(filePath);
 			}
 		}
 
@@ -571,5 +733,6 @@ namespace OmnicellBlueprintingTool
 
 			return true;
 		}
+
 	}
 }

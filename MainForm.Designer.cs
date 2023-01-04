@@ -301,6 +301,7 @@
 			this.t3_btn_OISFileToRead.TabIndex = 38;
 			this.t3_btn_OISFileToRead.Text = "...";
 			this.t3_btn_OISFileToRead.UseVisualStyleBackColor = true;
+			this.t3_btn_OISFileToRead.Click += new System.EventHandler(this.t3_btn_OISFileToRead_Click);
 			// 
 			// t3_btn_SetExcelPath
 			// 
@@ -310,6 +311,7 @@
 			this.t3_btn_SetExcelPath.TabIndex = 37;
 			this.t3_btn_SetExcelPath.Text = "...";
 			this.t3_btn_SetExcelPath.UseVisualStyleBackColor = true;
+			this.t3_btn_SetExcelPath.Click += new System.EventHandler(this.t3_btn_openExcelPath_Click);
 			// 
 			// t3_lbl_OISFileToRead
 			// 
@@ -327,6 +329,7 @@
 			this.t3_tb_BuildExcelFileName.ReadOnly = true;
 			this.t3_tb_BuildExcelFileName.Size = new System.Drawing.Size(333, 20);
 			this.t3_tb_BuildExcelFileName.TabIndex = 35;
+			this.t3_tb_BuildExcelFileName.TextChanged += new System.EventHandler(this.t3_tb_buildExcelFileName_TextChanged);
 			// 
 			// t3_lbl_ExcelFileName
 			// 

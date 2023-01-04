@@ -24,5 +24,6 @@ namespace OmnicellBlueprintingTool.Models
 
 		// Visio diagram section
 		public ShapeInformation ShapeInfo { get; set; }  // Visio diagram Shape info/and connections
+		public ShapeInformation shapeInfo { get; set; }	= new ShapeInformation();
 	}
 }

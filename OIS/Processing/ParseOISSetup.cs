@@ -1,7 +1,10 @@
 ﻿using LumenWorks.Framework.IO.Csv;
+using Microsoft.Office.Interop.Excel;
 using OIS.Models;
+using OmnicellBlueprintingTool.Visio;
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.IO;
 
 namespace OmnicellOISNodes.Processing
@@ -11,8 +14,9 @@ namespace OmnicellOISNodes.Processing
 		public static Dictionary<string, List<OISSetupData>> ParseOISSetupFile(string OISSetupFilePath)
 		{
 			Dictionary<string, List<OISSetupData>> oisDataMap = new Dictionary<string, List<OISSetupData>>();
+
 			List<OISSetupData> oisDataList = new List<OISSetupData>();	// contains the list of like nodes
-			OISSetupData oisData = null;											// data for each node
+			OISSetupData oisData = null;                                // data for each node
 
 			bool bHeader = true;
 			using (CsvReader csv = new CsvReader(new StreamReader(OISSetupFilePath), bHeader))
@@ -25,15 +29,6 @@ namespace OmnicellOISNodes.Processing
 					oisData = new OISSetupData();
 					for (int i = 0; i < fieldCount; i++)
 					{
-						//if (bHeader)
-						//{
-						//	Console.Write(string.Format("{0}={1}|", headers[i], csv[i]));
-						//}
-						//else
-						//{
-						//	Console.Write(string.Format("{0};", csv[i]));
-						//}
-
 						// we need to group the same like nodes together
 						// I.E.  ABC is group with ABC1 and ABC11 not ADT
 						switch(i)

@@ -16,5 +16,9 @@ namespace OIS.Models
 		public string Desc { get; set; } = string.Empty;
 		public string Details { get; set; } = string.Empty;
 		public string RegExpr { get; set; } = string.Empty;
+		public string Label { get; set; } = string.Empty;
+
+		//public string Direction { get; set; } = string.Empty;
+		//public string Stencil { get; set; } = string.Empty;
 	}
 }
