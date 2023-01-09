@@ -59,8 +59,8 @@ namespace OmnicellBlueprintingTool
 			// this section is for Building the excel data file from a Visio file
 			// use todays date as part of the file name
 			t2_tb_BuildExcelFileName.Text = string.Empty; // String.Format("_{0}.xlsx", DateTime.Now.ToString("MMddyyyy"));
-
 			t2_tb_BuildExcelPath.Text = _excelFileDataPath;
+
 			t3_tb_BuildExcelPath.Text = _excelFileDataPath;
 
 			// create this folder if not already
@@ -97,7 +97,6 @@ namespace OmnicellBlueprintingTool
 			{
 				// The user wants to exit the application. Close everything down.
 				Application.Exit();
-
 				return;
 			}
 			
@@ -137,6 +136,11 @@ namespace OmnicellBlueprintingTool
 					case BuildType.BuildVisioFromExcel:
 						// Set cursor as hourglass
 						Cursor.Current = Cursors.WaitCursor;
+
+						if (diagramData.visioStencilFilesPath != null)
+						{
+							diagramData.VisioStencilFilePaths.Clear();
+						}
 
 						// build visio file form data file
 						ConsoleOut.writeLine(String.Format("MainForm - Build Visio file from an excel data file:{0}", t1_tb_ExcelDataFile.Text));
@@ -187,8 +191,10 @@ namespace OmnicellBlueprintingTool
 #endregion
 #region BuildExcelFromVisio
 					case BuildType.BuildExcelFromVisio:
-			
+
 						diagramData.VisioTemplateFilePath = _visioTemplateFilesPath;
+
+						diagramData.VisioStencilFilePaths.Clear();
 						diagramData.VisioStencilFilePaths.Add(_visioStencilFilesPath);
 
 						// sTmp = string.Format("This process will build an Excel data file from a Visio file.\n\n" +
@@ -233,7 +239,9 @@ namespace OmnicellBlueprintingTool
 #endregion
 #region BuildExcelFromOIS
 					case BuildType.BuildExcelFromOIS:
+
 						//diagramData.VisioTemplateFilePath = _visioTemplateFilesPath;
+						diagramData.VisioStencilFilePaths.Clear();
 						diagramData.VisioStencilFilePaths.Add(_visioStencilFilesPath);
 
 						Dictionary<string, ShapeInformation> oisShapeInfoMap = null;
@@ -255,19 +263,6 @@ namespace OmnicellBlueprintingTool
 							
 							// translate the data from OIS Data to ShapeInformation map
 							oisShapeInfoMap = TranslateData.ConvertData(oisDataMap);
-
-							/// TODO-3 testing
-							//var groupNodes = from s in oisShapeInfoMap.Values
-							//					  group s by s.StencilLabel into sg
-							//					  orderby sg.Key
-							//					  select new { sg.Key, sg };
-							//
-							//foreach (var group in groupNodes)
-							//{
-							//	// Console.WriteLine(string.Format("LinQ output {0}", group.Key));
-							//	group.sg.ToList().ForEach(st => Console.WriteLine(string.Format("{0} {1}", st.UniqueKey, st.StencilLabel)));
-							//}
-
 
 							CreateExcelDataFile createExcelDataFile = new CreateExcelDataFile();
 							string sPath = Path.Combine(@t3_tb_BuildExcelPath.Text.Trim(), @t3_tb_BuildExcelFileName.Text.Trim());

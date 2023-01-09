@@ -13,6 +13,7 @@ namespace OmnicellOISNodes.Processing
 {
 	internal class TranslateData
 	{
+
 		public static Dictionary<string, ShapeInformation> ConvertData(Dictionary<string, List<OISSetupData>> dataMap)
 		{
 			Dictionary<string, ShapeInformation> shapeInfoMap = new Dictionary<string, ShapeInformation>();
@@ -22,17 +23,21 @@ namespace OmnicellOISNodes.Processing
 
 			int nCounter = 1;
 
-			double dRootPosX = 0.250;	// root node
-			double dTopPosY = 10.500;	// top of page
+			const double dColumnGap = 1.225;
+			const double Column1 = 0.250;
+			const double Column2 = 0.900;
+			const double Column3 = Column2 + dColumnGap;
 
-			if (dataMap.Values.Count <= 20)
-			{
-				dRootPosX = 0.250;		// root node
-				dTopPosY = 20.000;      // top of page
-			}
+			double dRootPosX = 0.250;	// Left most column position
+			double dTopPosY = 20.000;  // Top Row position
 
-			double dSkipX = 1.300;     // move right
-			double dSkipY = 0.600;		// move down
+			double dSkipX = 0.375;     // Column gap
+			double dSkipY = 0.600;     // Row gap
+
+//			double dSquareWidth = 0.500;		// width of Square shape
+//			double dRectangleWidth = 1.000;	// width of Rectangle shape
+//			double dFileWidth = 1.020;			// width of File shape
+//			double dDatabaseWidth = 1.500;	// width of Database shape
 
 			double dPosX = dRootPosX;
 			double dPosY =  dTopPosY;
@@ -48,60 +53,87 @@ namespace OmnicellOISNodes.Processing
 				for (int nCnt = 0; nCnt < item.Value.Count; nCnt++)
 				{
 					nodes = parseNode(item.Value[nCnt]);
-					foreach(OISSetupData node in nodes)
+
+					for (int nIdx = 0; nIdx < nodes.Count; nIdx++) // foreach (OISSetupData node in nodes)
 					{					
 						sStencilImage = string.Empty;
-						sFillColor = "Silver";
+						sFillColor = string.Empty;
 
-						sStencilImage = "OC_Rectangle2";
-						if (node.Node.Length == 3 ) //4 && node.Node.IndexOf(":") == -1)
+						if (nodes[nIdx].Node.Length == 3 )
 						{
 							sStencilImage = "OC_Square2";
 							sFillColor = "Green Light";
+							dPosX = Column2;
+							if (nIdx == 1 && (nodes[nIdx].Details.IndexOf("MSMQ") >= 0) ) // second shape
+							{
+								// first item was a OC_Database2 (MSMQ) so lets set shape position to left
+								dPosX = Column1;
+							}
 						}
-						else if (node.Type.IndexOf("[X~Y]", StringComparison.OrdinalIgnoreCase) >= 0)
+						else if (nodes[nIdx].Type.IndexOf("[X~Y]", StringComparison.OrdinalIgnoreCase) >= 0)
 						{
 							sStencilImage = "OC_Rectangle2";
 							sFillColor = "Blue Light";
 						}
-						else if (node.Node.IndexOf("Input", StringComparison.OrdinalIgnoreCase) >= 0)
+						else if (nodes[nIdx].Node.IndexOf("Input", StringComparison.OrdinalIgnoreCase) >= 0)
 						{
+							dPosX = Column1;     // shape is first one set to Left
+
 							sStencilImage = "OC_Rectangle2";
 							sFillColor = "Orange";
 
-							if (node.Label.IndexOf("File", StringComparison.OrdinalIgnoreCase) >= 0)
+							if (nodes[nIdx].Label.IndexOf("File", StringComparison.OrdinalIgnoreCase) >= 0)
 							{
 								sStencilImage = "OC_File2";
-								sFillColor = "Orange";
+								sFillColor = "Silver";
+								if (nIdx == 0)  // is First object (Input)
+								{
+//									dPosX = Column1;     // shape is first one set to Left
+									dPosY += 0.075;      // we need to shift the object up
+								}
 							}
-							else if (node.Label.IndexOf("MSMQ", StringComparison.OrdinalIgnoreCase) >= 0)
+							else if (nodes[nIdx].Label.IndexOf("MSMQ", StringComparison.OrdinalIgnoreCase) >= 0)
 							{
 								sStencilImage = "OC_Database2";
-								sFillColor = "Orange";
+								sFillColor = "Silver";
+								if (nIdx == 0)	// Is first object (Input)
+								{
+									// MSMQ is the first input shape, shift it to 3 columns
+									dPosX = Column3;
+									dPosY -= 0.150;		// add more space between previous row and this shape
+								}
 							}
 						}
-						else if (node.Node.IndexOf("Output", StringComparison.OrdinalIgnoreCase) >= 0)
+						else if (nodes[nIdx].Node.IndexOf("Output", StringComparison.OrdinalIgnoreCase) >= 0)
 						{
 							sStencilImage = "OC_Rectangle2";
 							sFillColor = "Orange";
 
-							if (node.Label.IndexOf("File", StringComparison.OrdinalIgnoreCase) >= 0)
+							dPosX += dSkipX; // output device so give a bit more space after left shape
+
+							if (nodes[nIdx].Label.IndexOf("File", StringComparison.OrdinalIgnoreCase) >= 0)
 							{
 								sStencilImage = "OC_File2";
 								sFillColor = "Cyan";
+								dPosY += 0.065;      // ship up to aline center
 							}
-							else if (node.Label.IndexOf("MSMQ", StringComparison.OrdinalIgnoreCase) >= 0)
+							else if (nodes[nIdx].Label.IndexOf("MSMQ", StringComparison.OrdinalIgnoreCase) >= 0)
 							{
 								sStencilImage = "OC_Database2";
 								sFillColor = "Cyan";
+								dPosY -= 0.036;		// shift down to align center
 							}
+						}
+						else if (nodes[nIdx].Node.Length == 5)
+						{
+							sStencilImage = "OC_Square2";
 						}
 						else
 						{
 							// the sStencilImage may have been set already if null than this is an ERROR
 							if (string.IsNullOrEmpty(sStencilImage))
 							{
-								Console.WriteLine(string.Format("*** ERROR *** Selecting a StencilImage: '{0}' '{1}'", node.Node, node.Label));
+								Console.WriteLine(string.Format("*** ERROR *** Selecting a StencilImage: '{0}' '{1}'", nodes[nIdx].Node, nodes[nIdx].Label));
 								sStencilImage = "OC_Process2";  // this is an error 
 								sFillColor = "red";
 							}
@@ -113,22 +145,39 @@ namespace OmnicellOISNodes.Processing
 						shapeInfo.ShapeType = "Shape";
 						shapeInfo.UniqueKey = string.Format("{0}:{1}", sStencilImage, nCounter++);
 						shapeInfo.StencilImage = sStencilImage;
-						//shapeInfo.StencilLabel = string.Format("{0}\n{1}", node.Node, node.Desc);
-						shapeInfo.StencilLabel = string.Format("{0}\n{1}", node.Node, node.Label);
+						shapeInfo.StencilLabel = string.Format("{0}\n{1}", nodes[nIdx].Node, nodes[nIdx].Label);
 						shapeInfo.FillColor = sFillColor;
 						shapeInfo.Pos_x = (Math.Truncate(dPosX * 1000) / 1000);
 						shapeInfo.Pos_y = (Math.Truncate(dPosY * 1000) / 1000);
 
-						if (shapeInfo.StencilLabel.IndexOf("Input", StringComparison.OrdinalIgnoreCase) >= 0 )
+						if (shapeInfo.StencilLabel.IndexOf("Input", StringComparison.OrdinalIgnoreCase) >= 0)
 						{
 							// the node was an Input so we want all other nodes to be shifted down half row
-							dPosY -= dSkipY;
-							dPosX += (dSkipX /2);
+
+							if ( (nodes[nIdx].Label.IndexOf("MSMQ", StringComparison.OrdinalIgnoreCase) >= 0 ||
+								   nodes[nIdx].Label.IndexOf("File", StringComparison.OrdinalIgnoreCase) >= 0 ) && nIdx == 0)
+							{
+								// Current shape is an Input shape of (MSMQ or File) so set X position to Left for next shape
+								dPosX = dRootPosX;
+								dPosY -= dSkipY;
+							}
+							else
+							{
+								dPosX += dColumnGap;
+								dPosY -= dSkipY;
+							}
 						}
 						else
 						{
 							// set Position X for next node
-							dPosX += dSkipX;
+							if (shapeInfo.StencilImage.IndexOf("OC_Square") >= 0)
+							{
+								dPosX += 0.700;
+							}
+							else
+							{
+								dPosX += dColumnGap;
+							}
 						}
 
 						// make a connection
@@ -140,13 +189,13 @@ namespace OmnicellOISNodes.Processing
 
 						Console.WriteLine(string.Format("\nTranslateData:: UniqueKey:'{0}' Label:'{1}'", shapeInfo.UniqueKey, shapeInfo.StencilLabel));
 
-						if (!shapeInfoMap.ContainsKey(node.Node))
+						if (!shapeInfoMap.ContainsKey(nodes[nIdx].Node))
 						{
-							shapeInfoMap.Add(node.Node, shapeInfo);
+							shapeInfoMap.Add(nodes[nIdx].Node, shapeInfo);
 						}
 						else
 						{
-							Console.WriteLine(string.Format("*** ERROR *** Key :'{0}' already exists in the Map", node.Node));
+							Console.WriteLine(string.Format("*** ERROR *** Key :'{0}' already exists in the Map", nodes[nIdx].Node));
 						}
 					}
 				}
@@ -228,8 +277,6 @@ namespace OmnicellOISNodes.Processing
 
 			// the input node needs to be the first one of two
 			// the output node needs to be the last one of two
-
-			// get the line and check if the Details contain "Input Node" or "Output Node"
 			switch(nodeArg.Type)
 			{
 				case "[X~Y]":
@@ -252,7 +299,7 @@ namespace OmnicellOISNodes.Processing
 			//		break;
 			//	case "FileReaderComm":
 			//		break;
-			//	case "FileWriterComm":
+			//	case "":
 			//		break;
 			//	case "ClientSocketComm":
 			//		break;
@@ -299,18 +346,18 @@ namespace OmnicellOISNodes.Processing
 							int nMSMQ = nodeArg.Details.Substring(nInputNode).IndexOf("MSMQ:", StringComparison.OrdinalIgnoreCase);
 							if (nMSMQ >= 0)
 							{
-								node.Label = string.Format("Input MSMQ: {0}", nodeArg.Details.Substring(nMSMQ));
+								node.Label = nodeArg.Details.Substring(nMSMQ).Trim();
 							}
 							else
 							{
 								int nFile = nodeArg.Details.Substring(nInputNode).IndexOf("[File]", StringComparison.OrdinalIgnoreCase);
 								if (nFile >= 0)
 								{
-									node.Label = string.Format("Input File:\n{0}", nodeArg.Details.Substring(nFile + 6));
+									node.Label = nodeArg.Details.Substring(nFile).Trim();
 								}
 								else
 								{
-									node.Label = string.Format("Input UNKNOWN\n{0}", nodeArg.Details.Substring(nInputNode));
+									node.Label = string.Format("UNKNOWN\n{0}", nodeArg.Details.Substring(nInputNode));
 								}
 							}
 						}
@@ -327,18 +374,18 @@ namespace OmnicellOISNodes.Processing
 							int nMSMQ = nodeArg.Details.Substring(nOutputNode).IndexOf("MSMQ:", StringComparison.OrdinalIgnoreCase);
 							if (nMSMQ >= 0)
 							{
-								node.Label = string.Format("Output MSMQ: {0}", nodeArg.Details.Substring(nMSMQ));
+								node.Label = nodeArg.Details.Substring(nMSMQ).Trim();
 							}
 							else
 							{
 								int nFile = nodeArg.Details.Substring(nOutputNode).IndexOf("[File]", StringComparison.OrdinalIgnoreCase);
 								if (nFile >= 0)
 								{
-									node.Label = string.Format("Output File:\n{0}", nodeArg.Details.Substring(nFile + 6));
+									node.Label = nodeArg.Details.Substring(nFile).Trim();
 								}
 								else
 								{
-									node.Label = string.Format("Output UNKNOWN\n{0}", nodeArg.Details.Substring(nOutputNode));
+									node.Label = string.Format("UNKNOWN\n{0}", nodeArg.Details.Substring(nOutputNode));
 								}
 							}
 						}
@@ -347,7 +394,7 @@ namespace OmnicellOISNodes.Processing
 							node.Label = string.Format("{0}\n{1}", node.Type, node.Desc);
 							if (string.IsNullOrEmpty(node.Desc))
 							{
-								node.Label = string.Format("{0}\n{1}", node.Type);
+								node.Label = string.Format("{0}", node.Type);
 							}
 						}
 					}
