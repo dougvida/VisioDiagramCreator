@@ -44,9 +44,6 @@ namespace OmnicellBlueprintingTool.Models
 			visioTemplateFilesPath = string.Empty;
 			visioStencilFilesPath = string.Empty;
 			
-			/// TODO-1 removed for testing.  I don't think we need to clear this variable
-			//ExcelDataFileSavePath = string.Empty;
-
 			if (AllShapesMap != null)
 			{
 				AllShapesMap.Clear();

@@ -608,7 +608,6 @@ namespace OmnicellBlueprintingTool.Visio
 		/// <returns>bool</returns>
 		private static bool IsShapeSizeSameAsStencilSize(ShapeInformation shpInfo)
 		{
-			// TODO - 2 we need to put this in a common module
 			bool bWidth = false;
 			bool bHeight = false;
 

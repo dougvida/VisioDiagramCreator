@@ -135,7 +135,6 @@ namespace OmnicellBlueprintingTool.Visio
 						}
 						if (shape.Name.IndexOf("OC_Dash", StringComparison.OrdinalIgnoreCase) >= 0)
 						{
-							// TODO-2 look at this later
 							colorIdx = shape.CellsU["LineColor"].ResultIU;
 							Microsoft.Office.Interop.Visio.Color c1 = doc.Colors.Item16[(short)colorIdx];
 							shpInfo.RGBFillColor = $"RGB({c1.Red},{c1.Green},{c1.Blue})";
